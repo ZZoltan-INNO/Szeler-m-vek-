@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="hu">
 <head>
 <meta charset="utf-8">
@@ -875,7 +875,7 @@ footer a{color:var(--accent)}
         <span class="hint" id="vsStatus"></span>
       </div>
       <p class="small">Tipp: a jelölőket húzással is mozgathatod. Egy turbinára kattintva kiválaszthatod, hogy a kép arra nézzen, vagy törölheted.</p>
-      <div class="legend" aria-label="A láthatósági térkép jelmagyarázata">
+      <div class="legend" role="group" aria-label="A láthatósági térkép jelmagyarázata">
         <span><i style="background:var(--v1)"></i>csak a lapátvégek</span>
         <span><i style="background:var(--v2)"></i>a gondola (agy) is</span>
         <span><i style="background:var(--v3)"></i>a teljes rotor</span>
@@ -917,7 +917,7 @@ footer a{color:var(--accent)}
         <span class="flabel">Előtte álló takarások</span>
         <p class="small">A sávok merőlegesek a turbina felé néző irányra. A távolság tőled mérve értendő; az oldalirányú eltolással a ház vagy a fasor kitolható a rálátás vonalából.</p>
         <div class="obs" id="obs"></div>
-        <div class="addrow" id="addrow" aria-label="Takarás hozzáadása"></div>
+        <div class="addrow" id="addrow" role="group" aria-label="Takarás hozzáadása"></div>
       </div>
     </section>
   </div>
@@ -1040,24 +1040,31 @@ function model() { const m = state.model === 'custom' ? { hub: +state.custom.hub
 /* ---------- Domborzat (AWS Terrain Tiles, terrarium kódolás) ---------- */
 const DEM_Z = 12, TS = 256, WORLD = TS * 2 ** DEM_Z;
 const tiles = new Map();
-let demFail = 0;
+let demFail = 0, demOk = 0;
+const failedAt = new Map();
 const mx = lon => (lon + 180) / 360 * WORLD;
 const my = lat => { const s = Math.sin(lat * RAD); return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * WORLD; };
 const latOfMy = y => Math.atan(Math.sinh(Math.PI * (1 - 2 * y / WORLD))) / RAD;
 function loadTile(tx, ty) {
   const key = tx * 65536 + ty, have = tiles.get(key);
-  if (have !== undefined) return have instanceof Promise ? have : Promise.resolve();
+  if (have !== undefined && !(have === null && Date.now() - (failedAt.get(key) || 0) > 15000)) return have instanceof Promise ? have : Promise.resolve();
   const p = new Promise(res => {
+    let tries = 0;
     const img = new Image(); img.crossOrigin = 'anonymous';
     img.onload = () => {
       const c = document.createElement('canvas'); c.width = c.height = TS;
       const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0);
       const d = g.getImageData(0, 0, TS, TS).data, a = new Float32Array(TS * TS);
       for (let i = 0; i < a.length; i++) a[i] = d[i * 4] * 256 + d[i * 4 + 1] + d[i * 4 + 2] / 256 - 32768;
-      tiles.set(key, a); lk = -1; res();
+      tiles.set(key, a); lk = -1; demOk++; res();
     };
-    img.onerror = () => { tiles.set(key, null); demFail++; res(); };
-    img.src = `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${DEM_Z}/${tx}/${ty}.png`;
+    const url = `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${DEM_Z}/${tx}/${ty}.png`;
+    // átmeneti hálózati hibánál újrapróbálja; csak ezután adja fel
+    img.onerror = () => {
+      if (++tries <= 3) { setTimeout(() => { img.src = url + (url.includes('?') ? '&' : '?') + 'r=' + tries; }, 250 * 3 ** (tries - 1)); return; }
+      tiles.set(key, null); failedAt.set(key, Date.now()); lk = -1; demFail++; res();
+    };
+    img.src = url;
   });
   tiles.set(key, p); return p;
 }
@@ -1074,8 +1081,10 @@ function pendingTiles(bb) {
   return false;
 }
 let lk = -1, la = null;
-const FLAT = new Float32Array(TS * TS); // ha egy domborzati csempe nem tölthető le: sík terep, 0 m
-function tileArr(tx, ty) { const key = tx * 65536 + ty; if (key === lk) return la; lk = key; const a = tiles.get(key); la = a instanceof Float32Array ? a : a === null ? FLAT : null; return la; }
+// Ha egyetlen domborzati csempe sem tölthető le (nincs internet), sík terepként (0 m) számol.
+// Ha csak néhány hiányzik, azokat nem tölti ki hamis adattal: ott nincs magasság (NaN).
+const FLAT = new Float32Array(TS * TS);
+function tileArr(tx, ty) { const key = tx * 65536 + ty; if (key === lk) return la; lk = key; const a = tiles.get(key); la = a instanceof Float32Array ? a : a === null && demOk === 0 ? FLAT : null; return la; }
 function pix(x, y) { const a = tileArr(x >> 8, y >> 8); return a ? a[(y & 255) * 256 + (x & 255)] : NaN; }
 function elevPx(px, py) {
   px -= 0.5; py -= 0.5;
@@ -1256,6 +1265,7 @@ function renderPano(q = 1) {
   if (sel && sel.aTip > c + span * 0.4) c = sel.aTip - span * 0.4;
   if (sel && sel.aBase < c - span * 0.45) c = Math.max(sel.aBase + span * 0.4, sel.aTip - span * 0.4);
   const yOfDeg = a => H / 2 - (a - c) * k, degOfY = y => c + (H / 2 - y) / k;
+  renderPano.last = { W, H, k, c, az0, eyeZ }; // a vetítés paraméterei (ellenőrzéshez)
   const { dMax } = panoBBox();
   const img = ctx.createImageData(W, H), buf = new Uint32Array(img.data.buffer);
   for (let y = 0; y < H; y++) {
@@ -1801,7 +1811,10 @@ async function update() {
   if (pendingTiles(bb)) { $('busy').hidden = false; renderPano(0.5); await ensureTiles(bb); if (my_ !== gen) return; recalc(); }
   renderPano(1);
   $('busy').hidden = true;
-  if (demFail) { warn('<b>Nincs internetkapcsolat a domborzati adathoz, ezért az oldal most sík terepként számol</b> (a takarások így is működnek). Ha a Claude alkalmazás előnézetében nyitottad meg, az nem enged internetet: töltsd le a fájlt, és nyisd meg Chrome-ban.', 'dem'); }
+  const missing = [...tiles.values()].some(v => v === null);
+  if (missing && demOk === 0) warn('<b>Nincs internetkapcsolat a domborzati adathoz, ezért az oldal most sík terepként számol</b> (a takarások így is működnek). Ha a Claude alkalmazás előnézetében nyitottad meg, az nem enged internetet: töltsd le a fájlt, és nyisd meg Chrome-ban.', 'dem');
+  else if (missing) warn('Néhány domborzati csempe nem töltődött be, ezért a terep egy része hiányzik a számításból. Pár másodperc múlva mozdítsd meg a nézőpontot, és újra megpróbálja.', 'dem');
+  else warn('', 'dem');
   saveHash();
 }
 
