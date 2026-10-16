@@ -994,7 +994,7 @@ h_takart = z_szem + D · tan(α_max) − z_talppont</div>
 </script>
 <script>
 "use strict";
-window.addEventListener('error', e => { const el = document.getElementById('netStatus'); if (el) { el.hidden = false; el.dataset.keep = '1'; el.textContent = 'Hiba történt az oldal futása közben: ' + (e.message || 'ismeretlen hiba') + '. Próbáld újratölteni, vagy nyisd meg Chrome-ban.'; } });
+window.addEventListener('error', e => { const el = document.getElementById('netStatus'); if (el) { el.hidden = false; el.textContent = 'Hiba történt az oldal futása közben: ' + (e.message || 'ismeretlen hiba') + '. Próbáld újratölteni, vagy nyisd meg Chrome-ban.'; } });
 const $ = id => document.getElementById(id);
 const RAD = Math.PI / 180, R_E = 6371000, K_REFR = 0.13, REFF = R_E / (1 - K_REFR), EYE = 1.7;
 const drop = d => d * d / (2 * REFF);
@@ -1074,7 +1074,8 @@ function pendingTiles(bb) {
   return false;
 }
 let lk = -1, la = null;
-function tileArr(tx, ty) { const key = tx * 65536 + ty; if (key === lk) return la; lk = key; const a = tiles.get(key); la = a instanceof Float32Array ? a : null; return la; }
+const FLAT = new Float32Array(TS * TS); // ha egy domborzati csempe nem tölthető le: sík terep, 0 m
+function tileArr(tx, ty) { const key = tx * 65536 + ty; if (key === lk) return la; lk = key; const a = tiles.get(key); la = a instanceof Float32Array ? a : a === null ? FLAT : null; return la; }
 function pix(x, y) { const a = tileArr(x >> 8, y >> 8); return a ? a[(y & 255) * 256 + (x & 255)] : NaN; }
 function elevPx(px, py) {
   px -= 0.5; py -= 0.5;
@@ -1528,7 +1529,8 @@ const BASES = [
 ];
 const base = Object.fromEntries(BASES);
 let activeBase = BASES[0][1], baseFails = new Set();
-function warn(msg) { const el = $('netStatus'); el.hidden = !msg; el.innerHTML = msg || ''; }
+const WARN = {};
+function warn(msg, kind = 'map') { WARN[kind] = msg; const t = Object.values(WARN).filter(Boolean), el = $('netStatus'); el.hidden = !t.length; el.innerHTML = t.join('<br>'); }
 BASES.forEach(([name, layer], i) => {
   let ok = 0, bad = 0;
   layer.on('tileload', () => { ok++; });
@@ -1799,7 +1801,7 @@ async function update() {
   if (pendingTiles(bb)) { $('busy').hidden = false; renderPano(0.5); await ensureTiles(bb); if (my_ !== gen) return; recalc(); }
   renderPano(1);
   $('busy').hidden = true;
-  if (demFail && AN.some(a => !a.ok)) { $('netStatus').dataset.keep = '1'; warn('A domborzati adat nem töltődött be (s3.amazonaws.com), ezért a számítás nem fut. Ellenőrizd az internetkapcsolatot. Ha a Claude alkalmazásban nyitottad meg, töltsd le a fájlt, és nyisd meg Chrome-ban vagy Edge-ben.'); }
+  if (demFail) { warn('<b>Nincs internetkapcsolat a domborzati adathoz, ezért az oldal most sík terepként számol</b> (a takarások így is működnek). Ha a Claude alkalmazás előnézetében nyitottad meg, az nem enged internetet: töltsd le a fájlt, és nyisd meg Chrome-ban.', 'dem'); }
   saveHash();
 }
 
