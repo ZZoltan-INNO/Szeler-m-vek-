@@ -1,0 +1,1074 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Szélerőmű-rálátás</title>
+<meta name="description" content="Tedd le a szélturbinát a valós domborzati térképre, válassz nézőpontot, add hozzá a fasort, bokrot, házat, és nézd meg, mennyi látszik a gépből szemmagasságból.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Elrendezés: bal oldalon a térkép és a beállítások, jobb oldalon a szemmagasságú kép, az eredmény és az oldalnézet; mobilon egy oszlop. */
+:root{
+  --paper:#eef1ec; --card:#ffffff; --ink:#17221d; --muted:#56655d; --line:#d3dbd2; --soft:#e4e9e2;
+  --accent:#1d5fa6; --accent-ink:#ffffff;
+  --terrain:#b9c99b; --terrain-edge:#6f8a4f; --shadow:#d6453a;
+  --v0:#5f7f6b; --v1:#e3b52b; --v2:#ea8227; --v3:#d6336c;
+  --display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#111815; --card:#19221e; --ink:#e5ebe6; --muted:#9aaaa1; --line:#2d3a33; --soft:#222d28;
+    --accent:#6ea8ea; --accent-ink:#0d1a28;
+    --terrain:#3f5532; --terrain-edge:#8fae6a; --shadow:#ff6b5e;
+    --v0:#8fb39c; --v1:#f0c63f; --v2:#f39a45; --v3:#f0588a;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#111815; --card:#19221e; --ink:#e5ebe6; --muted:#9aaaa1; --line:#2d3a33; --soft:#222d28;
+  --accent:#6ea8ea; --accent-ink:#0d1a28;
+  --terrain:#3f5532; --terrain-edge:#8fae6a; --shadow:#ff6b5e;
+  --v0:#8fb39c; --v1:#f0c63f; --v2:#f39a45; --v3:#f0588a;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 var(--body)}
+.wrap{max-width:1360px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:clamp(1.9rem,4.2vw,3rem);font-weight:700;letter-spacing:-.01em}
+h2{font-size:1.3rem;font-weight:600}
+h3{font-size:1.05rem;font-weight:600}
+p{margin:0}
+.eyebrow{font:500 .78rem/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+header.top{padding-block:28px 18px}
+header.top .wrap{display:grid;gap:10px}
+.lede{max-width:68ch;color:var(--muted);font-size:1.05rem}
+.lede b{color:var(--ink);font-weight:600}
+
+.cols{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:20px;align-items:start;padding-bottom:20px}
+.col{display:flex;flex-direction:column;gap:20px;min-width:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.hint{font-size:.88rem;color:var(--muted)}
+.small{font-size:.8rem;color:var(--muted);line-height:1.45}
+
+/* térkép */
+.mapbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--soft)}
+.seg button{font:500 .88rem/1 var(--body);border:0;background:transparent;color:var(--ink);padding:9px 11px;cursor:pointer;white-space:nowrap}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.seg button:focus-visible,.btn:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.search{display:flex;gap:6px;flex:1 1 220px;min-width:0;position:relative}
+.search input{flex:1;min-width:0}
+.results-pop{position:absolute;top:100%;left:0;right:0;z-index:1200;background:var(--card);border:1px solid var(--line);border-radius:8px;margin-top:4px;box-shadow:0 8px 24px rgba(0,0,0,.15);overflow:hidden}
+.results-pop button{display:block;width:100%;text-align:left;border:0;background:none;color:var(--ink);font:inherit;font-size:.88rem;padding:8px 10px;cursor:pointer}
+.results-pop button:hover,.results-pop button:focus-visible{background:var(--soft)}
+input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:7px;padding:7px 9px}
+.btn{font:600 .88rem/1 var(--body);border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:8px;padding:9px 12px;cursor:pointer;white-space:nowrap}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn:disabled{opacity:.55;cursor:progress}
+#map{height:460px;border-radius:8px;border:1px solid var(--line);background:var(--soft);z-index:0}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.82rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:14px;height:14px;border-radius:3px;display:inline-block;opacity:.85}
+.vs-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.leaflet-container{font-family:var(--body)}
+.pin{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45)}
+.pin.eye{background:#1d5fa6}
+.tpin{display:flex;flex-direction:column;align-items:center}
+.tpin b{font:600 11px/1 var(--mono);background:#17221d;color:#fff;padding:2px 4px;border-radius:3px;margin-top:-2px}
+.tpin.sel b{background:#d6336c}
+.popbtns{display:flex;gap:6px;margin-top:6px}
+.popbtns button{font:600 12px/1 var(--body);padding:6px 8px;border-radius:6px;border:1px solid #c9d1c8;background:#f1f4f0;cursor:pointer}
+
+/* szemmagasságú kép */
+.pano-wrap{position:relative;border-radius:8px;overflow:hidden;background:#cddbe6;border:1px solid var(--line)}
+#pano{display:block;width:100%;height:auto;touch-action:pan-y;cursor:grab}
+#pano.drag{cursor:grabbing}
+.busy{position:absolute;right:10px;top:10px;font:500 .78rem/1 var(--mono);background:rgba(23,34,29,.78);color:#fff;padding:6px 8px;border-radius:6px;pointer-events:none}
+.pano-tools{display:flex;gap:8px 12px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.check{display:inline-flex;gap:7px;align-items:center;font-size:.88rem;color:var(--muted);cursor:pointer}
+
+/* eredmény */
+.verdict{display:grid;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:8px;font:600 1.15rem/1.15 var(--display);padding:7px 12px 7px 10px;border-radius:999px;background:var(--soft);width:fit-content}
+.pill i{width:12px;height:12px;border-radius:50%;flex:none}
+.verdict .main{font-size:1.02rem;max-width:70ch}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.fact{background:var(--card);padding:9px 11px;display:grid;gap:2px}
+.fact span{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.fact b{font:500 1.02rem/1.2 var(--mono);font-variant-numeric:tabular-nums}
+.season{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.season div{border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-size:.9rem}
+.season div b{display:block;font-family:var(--display);font-size:1rem}
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-weight:600;color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.05em}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+tr.sel td{background:var(--soft)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.linkbtn{border:0;background:none;color:var(--accent);font:600 .85rem var(--body);cursor:pointer;padding:2px 4px}
+
+/* beállítások */
+.field{display:grid;gap:6px}
+.field>label,.flabel{font-weight:600;font-size:.92rem}
+.rng{display:flex;align-items:center;gap:10px}
+.rng input[type=range]{flex:1;min-width:0;accent-color:var(--accent)}
+.rng output{font:500 .9rem var(--mono);min-width:5.5em;text-align:right;font-variant-numeric:tabular-nums}
+.custom{display:flex;gap:10px;flex-wrap:wrap}
+.custom label{display:grid;gap:4px;font-size:.85rem;color:var(--muted)}
+.custom input{width:7em}
+.obs{display:grid;gap:10px}
+.ob{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:6px;background:var(--paper)}
+.ob-head{display:flex;align-items:center;gap:8px}
+.ob-head b{font-family:var(--display);font-size:1.02rem;flex:1}
+.ob-head .sw{width:12px;height:12px;border-radius:3px}
+.ob-head button{border:0;background:none;color:var(--muted);font-size:1.3rem;line-height:1;cursor:pointer;padding:2px 6px;border-radius:4px}
+.ob-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px}
+.ob-grid label{display:grid;gap:0;font-size:.8rem;color:var(--muted)}
+.ob-grid .rng output{font-size:.82rem;min-width:4.6em}
+.addrow{display:flex;flex-wrap:wrap;gap:6px}
+.addrow .btn{font-weight:500;padding:7px 10px}
+.empty{font-size:.88rem;color:var(--muted);border:1px dashed var(--line);border-radius:8px;padding:10px}
+
+/* oldalnézet */
+#prof{width:100%;height:auto;display:block}
+#prof text{font-family:var(--body);fill:var(--muted)}
+
+/* módszer */
+.method{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;padding-block:8px 40px}
+.method .card p+p{margin-top:2px}
+.method p,.method li{font-size:.93rem;color:var(--muted);max-width:66ch}
+.method ul{margin:0;padding-left:1.1em;display:grid;gap:4px}
+.formula{font:400 .86rem/1.6 var(--mono);background:var(--soft);border-radius:7px;padding:10px 12px;overflow-x:auto;white-space:pre;color:var(--ink)}
+footer{padding-block:0 32px;font-size:.8rem;color:var(--muted)}
+footer a{color:var(--accent)}
+
+@media (max-width:900px){
+  .cols{display:flex;flex-direction:column;align-items:stretch}
+  .col{display:contents}
+  #c-map{order:1} #c-view{order:2} #c-ctrl{order:3} #c-prof{order:4}
+  #map{height:360px}
+}
+@media (max-width:520px){
+  .ob-grid{grid-template-columns:1fr}
+  .season{grid-template-columns:1fr}
+  .facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .seg button{padding:9px 9px;font-size:.84rem}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <p class="eyebrow">Látványvizsgálat · valós domborzattal</p>
+    <h1>Honnan látszik a szélerőmű?</h1>
+    <p class="lede">Tedd le a turbinát a domborzati térképre, kattints oda, ahonnan nézed, és add hozzá, ami előtted áll: <b>bokorsor, fasor, ház, kerítés, földhát</b>. Az oldal a valós terepmagasságokból kiszámolja, mekkora rész takarásban van, és megmutatja, mit látsz szemmagasságból.</p>
+  </div>
+</header>
+
+<main class="wrap cols">
+  <div class="col">
+    <section class="card" id="c-map" aria-labelledby="h-map">
+      <div class="card-head"><h2 id="h-map">Térkép</h2><span class="hint" id="mapHint">Kattints a térképre: a nézőpont oda kerül.</span></div>
+      <div class="mapbar">
+        <div class="seg" role="group" aria-label="Mit tegyen a kattintás a térképen">
+          <button type="button" id="modeView" aria-pressed="true">Nézőpont áthelyezése</button>
+          <button type="button" id="modeTurb" aria-pressed="false">Új turbina</button>
+        </div>
+        <form class="search" id="searchForm" role="search">
+          <input type="text" id="q" placeholder="Település keresése…" aria-label="Település vagy cím keresése" autocomplete="off">
+          <button class="btn" type="submit">Keres</button>
+          <div class="results-pop" id="qres" hidden></div>
+        </form>
+      </div>
+      <div id="map" role="application" aria-label="Domborzati térkép a nézőponttal és a turbinákkal"></div>
+      <div class="vs-row">
+        <button class="btn primary" type="button" id="vsBtn">Láthatósági térkép számítása</button>
+        <select id="vsR" aria-label="A láthatósági térkép sugara">
+          <option value="5000">5 km sugarú körben</option>
+          <option value="10000" selected>10 km sugarú körben</option>
+          <option value="15000">15 km sugarú körben</option>
+          <option value="20000">20 km sugarú körben</option>
+        </select>
+        <button class="btn" type="button" id="vsClear" hidden>Elrejtés</button>
+        <span class="hint" id="vsStatus"></span>
+      </div>
+      <div class="legend" aria-label="A láthatósági térkép jelmagyarázata">
+        <span><i style="background:var(--v1)"></i>csak a lapátvégek</span>
+        <span><i style="background:var(--v2)"></i>a gondola (agy) is</span>
+        <span><i style="background:var(--v3)"></i>a teljes rotor</span>
+        <span><i style="background:transparent;border:1px solid var(--line)"></i>nem látszik</span>
+      </div>
+      <p class="small">A láthatósági térkép csak a domborzattal számol, 1,7 m-es szemmagasságból, fák és épületek nélkül. Ez a legrosszabb eset: a valóságban a növényzet és a beépítés sok helyen tovább csökkenti a rálátást.</p>
+    </section>
+
+    <section class="card" id="c-ctrl" aria-labelledby="h-ctrl">
+      <h2 id="h-ctrl">Beállítások</h2>
+      <div class="field">
+        <label for="model">Turbinatípus</label>
+        <select id="model"></select>
+        <div class="custom" id="customBox" hidden>
+          <label>Agymagasság (m)<input type="number" id="cHub" min="30" max="260" step="1" value="165"></label>
+          <label>Rotorátmérő (m)<input type="number" id="cRot" min="20" max="260" step="1" value="170"></label>
+        </div>
+        <p class="small" id="modelNote"></p>
+      </div>
+      <div class="field">
+        <span class="flabel" id="lbl-floor">Honnan nézed?</span>
+        <div class="seg" role="group" aria-labelledby="lbl-floor" id="floorSeg">
+          <button type="button" data-f="-1.5">Árokból</button>
+          <button type="button" data-f="0">Talajról</button>
+          <button type="button" data-f="3">Emeletről</button>
+          <button type="button" data-f="12">4. emeletről</button>
+        </div>
+        <div class="rng"><input type="range" id="floor" min="-3" max="40" step="0.5" value="0" aria-label="A nézőpont emelése a talajszinthez képest"><output id="floorO"></output></div>
+        <p class="small">A szemmagasság mindig 1,7 m a talpadhoz képest. Árokban a szem a környező talaj alá kerül, így az árok pereme is takar.</p>
+      </div>
+      <div class="field">
+        <span class="flabel" id="lbl-season">Évszak</span>
+        <div class="seg" role="group" aria-labelledby="lbl-season">
+          <button type="button" id="sSummer" aria-pressed="true">Nyár, lombos fák</button>
+          <button type="button" id="sWinter" aria-pressed="false">Tél, lombtalan fák</button>
+        </div>
+      </div>
+      <div class="field">
+        <span class="flabel">Előtte álló takarások</span>
+        <p class="small">A sávok merőlegesek a turbina felé néző irányra. A távolság tőled mérve értendő; az oldalirányú eltolással a ház vagy a fasor kitolható a rálátás vonalából.</p>
+        <div class="obs" id="obs"></div>
+        <div class="addrow" id="addrow" aria-label="Takarás hozzáadása"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card" id="c-view" aria-labelledby="h-view">
+      <div class="card-head"><h2 id="h-view">Amit szemmagasságból látsz</h2><span class="hint">Húzd oldalra a képet a körülnézéshez, dupla kattintással visszaáll a turbinára.</span></div>
+      <div class="pano-wrap">
+        <canvas id="pano" role="img" aria-label="A nézőpontból látott kép: domborzat, takarások és a szélturbina"></canvas>
+        <div class="busy" id="busy" hidden>Domborzat betöltése…</div>
+      </div>
+      <div class="pano-tools">
+        <div class="seg" role="group" aria-label="Látószög">
+          <button type="button" data-fov="65">Széles, 65°</button>
+          <button type="button" data-fov="40">Normál, 40°</button>
+          <button type="button" data-fov="15">Nagyított, 15°</button>
+        </div>
+        <label class="check"><input type="checkbox" id="ghost" checked> A takart rész szaggatott vonallal</label>
+      </div>
+      <p class="small">A kép torzítatlan: a vízszintes és a függőleges szögek azonos léptékűek, a bal szélen fokbeosztás. Kinyújtott karral a kisujjad kb. 1°, a hüvelykujjad kb. 2° széles, az öklöd kb. 10° magas. A telihold 0,5°.</p>
+      <div class="verdict" id="verdict" aria-live="polite"></div>
+      <div class="tbl-wrap" id="tblWrap"></div>
+    </section>
+
+    <section class="card" id="c-prof" aria-labelledby="h-prof">
+      <div class="card-head"><h2 id="h-prof">Oldalnézet a turbina felé</h2><span class="hint" id="exNote"></span></div>
+      <svg id="prof" viewBox="0 0 700 280" role="img" aria-label="Terepmetszet a nézőponttól a turbináig a rálátás vonalával"></svg>
+      <p class="small">A piros szaggatott vonal a rálátás határa: a szemedtől a legjobban takaró ponton át húzódik. Ami a turbinánál ez alá esik, az nem látszik. A függőleges léptéket a jobb olvashatóság miatt nagyítottuk; ettől az egyenesek egyenesek maradnak, így a takarás képe helyes.</p>
+    </section>
+  </div>
+</main>
+
+<section class="wrap method" aria-label="Módszer és korlátok">
+  <div class="card">
+    <h3>Hogyan számol?</h3>
+    <p>Minden takaró pont, legyen az domb, fa vagy háztető, a szemedhez képest egy emelkedési szöget takar el. A legnagyobb ilyen szög határozza meg, hogy a turbinánál meddig ér a takarás.</p>
+    <div class="formula">α = atan( (z_akadály − z_szem) / d )
+α_max = a legnagyobb α a turbináig
+h_takart = z_szem + D · tan(α_max) − z_talppont</div>
+    <p>A magasságok a valós terepből jönnek (SRTM alapú domborzati modell, kb. 25–30 m-es rács). A Föld görbületét és a légköri fénytörést is beszámítja: <span style="font-family:var(--mono)">süllyedés = d² / (2 · 7 323 km)</span>, ez 2 km-en 0,3 m, 10 km-en 6,8 m.</p>
+  </div>
+  <div class="card">
+    <h3>Mire figyelj?</h3>
+    <ul>
+      <li>A domborzati modell nem lát kis árkokat, töltéseket és egyes fákat; ezeket kézzel add hozzá takarásként.</li>
+      <li>Az erdős területeken a modell részben a lombkorona tetejét méri, ott a terep a valóságnál magasabbnak tűnhet.</li>
+      <li>Télen a lombhullató fák áttetszőek, a turbina átsejlik az ágak között.</li>
+      <li>Magasabb nézőpontról (emelet, domb, kilátó) a közeli takarás gyorsan elveszti a hatását.</li>
+      <li>A lapát a legmagasabb állásban van, a rotor szemből látszik. Ez a legnagyobb látható felület.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>Ökölszabályok</h3>
+    <ul>
+      <li>Egy 15 m-es fasor 100 m-re kb. 7,6°-ot takar. 1,5 km-ről ez a turbinánál 200 m magasságig tart.</li>
+      <li>Egy 2 m-es bokor 20 m-re csak kb. 0,9°-ot takar, 1,5 km-ről a torony alsó 24 m-ét.</li>
+      <li>Minél közelebb áll hozzád a takarás, annál nagyobb részt fed le, ugyanakkora magasság mellett.</li>
+      <li>Egy 250 m-es lapátvég 1,5 km-ről kb. 9,4°-ban látszik, 5 km-ről 2,8°-ban, 10 km-ről 1,4°-ban.</li>
+    </ul>
+  </div>
+</section>
+
+<footer class="wrap">
+  <p>Térkép: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> közreműködők, <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> (CC-BY-SA). Domborzat: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">AWS Terrain Tiles</a> (SRTM és más források). A számítás tájékoztató jellegű, nem helyettesíti a hivatalos látványtervet. <button class="linkbtn" type="button" id="copyLink">Link másolása ehhez a beállításhoz</button> <span id="copyMsg"></span></p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const RAD = Math.PI / 180, R_E = 6371000, K_REFR = 0.13, REFF = R_E / (1 - K_REFR), EYE = 1.7;
+const drop = d => d * d / (2 * REFF);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const wrapPi = a => { a = (a + Math.PI) % (2 * Math.PI); if (a < 0) a += 2 * Math.PI; return a - Math.PI; };
+const nf = (v, dec = 0) => Number(v).toLocaleString('hu-HU', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+const km = m => m >= 1000 ? nf(m / 1000, m < 10000 ? 2 : 1) + ' km' : nf(m) + ' m';
+function hash(a, b) { let h = (a * 374761393 + b * 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
+
+/* ---------- Turbinák, takarások ---------- */
+const MODELS = {
+  sg170: { name: 'SG 7.0-170 · 165 m agy, 170 m rotor', hub: 165, rotor: 170, note: 'A tervezett nagy gépekre jellemző méret: a lapátvég 250 m magasan jár.' },
+  v172: { name: 'V172-7.2 · 175 m agy, 172 m rotor', hub: 175, rotor: 172, note: 'Lapátvég 261 m.' },
+  v172h: { name: 'V172-7.2 · 199 m agy, 172 m rotor', hub: 199, rotor: 172, note: 'A legmagasabb toronnyal: lapátvég 285 m.' },
+  v150: { name: 'V150-4.2 · 169 m agy, 150 m rotor', hub: 169, rotor: 150, note: 'Lapátvég 244 m.' },
+  v90: { name: 'V90-2.0 · 105 m agy, 90 m rotor', hub: 105, rotor: 90, note: 'A 2010 körül épült hazai gépekre jellemző méret, összehasonlításnak. Lapátvég 150 m.' },
+  custom: { name: 'Egyedi méret…', hub: 165, rotor: 170, note: '' }
+};
+const OB = {
+  bush:   { name: 'Bokorsor',      art: 'a', h: 2,  d: 20,  w: Infinity, leafy: true,  col: '#6f9a3c', hmax: 6 },
+  fence:  { name: 'Tömör kerítés', art: 'a', h: 2,  d: 8,   w: 30,       leafy: false, col: '#9b8f7e', hmax: 4 },
+  trees:  { name: 'Fasor',         art: 'a', h: 15, d: 100, w: Infinity, leafy: true,  col: '#2f5e25', hmax: 35 },
+  forest: { name: 'Erdősáv',       art: 'az', h: 22, d: 400, w: 600,     leafy: true,  col: '#24491d', hmax: 40 },
+  house:  { name: 'Családi ház',   art: 'a', h: 8,  d: 40,  w: 12,       leafy: false, col: '#a24b33', hmax: 14 },
+  block:  { name: 'Társasház',     art: 'a', h: 15, d: 150, w: 60,       leafy: false, col: '#8c8f96', hmax: 45 },
+  mound:  { name: 'Földhát, töltés', art: 'a', h: 4, d: 60, w: Infinity, leafy: false, col: '#8a7a45', hmax: 20 }
+};
+const OB_ORDER = ['bush', 'fence', 'trees', 'forest', 'house', 'block', 'mound'];
+
+/* ---------- Állapot ---------- */
+const DEFAULT = {
+  viewer: { lat: 46.4618, lon: 17.8498 },
+  turbines: [{ lat: 46.4762, lon: 17.8838 }, { lat: 46.4818, lon: 17.8828 }],
+  sel: 0, model: 'sg170', custom: { hub: 165, rotor: 170 }, floor: 0, season: 'summer',
+  obstacles: [{ type: 'house', dist: 60, h: 8, w: 12, off: -14 }, { type: 'trees', dist: 600, h: 15, w: 300, off: 260 }],
+  fov: 40, pan: 0, ghost: true, isExample: true
+};
+let state = JSON.parse(JSON.stringify(DEFAULT, (k, v) => v === Infinity ? 'inf' : v), (k, v) => v === 'inf' ? Infinity : v);
+let uid = 1; state.obstacles.forEach(o => o.id = uid++);
+let AN = [];         // a turbinák elemzése
+function model() { const m = state.model === 'custom' ? { hub: +state.custom.hub, rotor: +state.custom.rotor } : MODELS[state.model]; const R = m.rotor / 2; return { hub: m.hub, R, tip: m.hub + R, low: m.hub - R }; }
+
+/* ---------- Domborzat (AWS Terrain Tiles, terrarium kódolás) ---------- */
+const DEM_Z = 12, TS = 256, WORLD = TS * 2 ** DEM_Z;
+const tiles = new Map();
+const mx = lon => (lon + 180) / 360 * WORLD;
+const my = lat => { const s = Math.sin(lat * RAD); return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * WORLD; };
+const latOfMy = y => Math.atan(Math.sinh(Math.PI * (1 - 2 * y / WORLD))) / RAD;
+function loadTile(tx, ty) {
+  const key = tx * 65536 + ty, have = tiles.get(key);
+  if (have !== undefined) return have instanceof Promise ? have : Promise.resolve();
+  const p = new Promise(res => {
+    const img = new Image(); img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const c = document.createElement('canvas'); c.width = c.height = TS;
+      const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0);
+      const d = g.getImageData(0, 0, TS, TS).data, a = new Float32Array(TS * TS);
+      for (let i = 0; i < a.length; i++) a[i] = d[i * 4] * 256 + d[i * 4 + 1] + d[i * 4 + 2] / 256 - 32768;
+      tiles.set(key, a); lk = -1; res();
+    };
+    img.onerror = () => { tiles.set(key, null); res(); };
+    img.src = `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${DEM_Z}/${tx}/${ty}.png`;
+  });
+  tiles.set(key, p); return p;
+}
+function ensureTiles(bb) {
+  const x0 = Math.floor(mx(bb.w) / TS), x1 = Math.floor(mx(bb.e) / TS), y0 = Math.floor(my(bb.n) / TS), y1 = Math.floor(my(bb.s) / TS);
+  const ps = [];
+  if ((x1 - x0 + 1) * (y1 - y0 + 1) > 180) return Promise.resolve();
+  for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) ps.push(loadTile(x, y));
+  return Promise.all(ps);
+}
+function pendingTiles(bb) {
+  const x0 = Math.floor(mx(bb.w) / TS), x1 = Math.floor(mx(bb.e) / TS), y0 = Math.floor(my(bb.n) / TS), y1 = Math.floor(my(bb.s) / TS);
+  for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) { const t = tiles.get(x * 65536 + y); if (t === undefined || t instanceof Promise) return true; }
+  return false;
+}
+let lk = -1, la = null;
+function tileArr(tx, ty) { const key = tx * 65536 + ty; if (key === lk) return la; lk = key; const a = tiles.get(key); la = a instanceof Float32Array ? a : null; return la; }
+function pix(x, y) { const a = tileArr(x >> 8, y >> 8); return a ? a[(y & 255) * 256 + (x & 255)] : NaN; }
+function elevPx(px, py) {
+  px -= 0.5; py -= 0.5;
+  const x0 = Math.floor(px), y0 = Math.floor(py), fx = px - x0, fy = py - y0, lx = x0 & 255, ly = y0 & 255;
+  if (lx < 255 && ly < 255) {
+    const a = tileArr(x0 >> 8, y0 >> 8); if (!a) return NaN;
+    const i = ly * 256 + lx;
+    return (a[i] * (1 - fx) + a[i + 1] * fx) * (1 - fy) + (a[i + 256] * (1 - fx) + a[i + 257] * fx) * fy;
+  }
+  return (pix(x0, y0) * (1 - fx) + pix(x0 + 1, y0) * fx) * (1 - fy) + (pix(x0, y0 + 1) * (1 - fx) + pix(x0 + 1, y0 + 1) * fx) * fy;
+}
+/* Helyi síkkoordináták (x kelet, y észak, méter) egy pont körül */
+function frame(lat0, lon0) {
+  const cos0 = Math.cos(lat0 * RAD), sec = 1 / cos0, tan = Math.tan(lat0 * RAD);
+  const px0 = mx(lon0), py0 = my(lat0), C = WORLD / (2 * Math.PI);
+  const PX = x => px0 + C * sec * x / R_E;
+  const PY = y => { const dp = y / R_E; return py0 - C * sec * (dp + 0.5 * tan * dp * dp); };
+  return {
+    elev: (x, y) => elevPx(PX(x), PY(y)),
+    toLL: (x, y) => [lat0 + y / R_E / RAD, lon0 + x / (R_E * cos0) / RAD],
+    fromLL: (lat, lon) => [(lon - lon0) * RAD * R_E * cos0, (lat - lat0) * RAD * R_E]
+  };
+}
+function bboxAround(pts, m) {
+  let n = -90, s = 90, e = -180, w = 180;
+  for (const p of pts) { const dl = m / 111195, dn = m / (111195 * Math.cos(p.lat * RAD)); n = Math.max(n, p.lat + dl); s = Math.min(s, p.lat - dl); e = Math.max(e, p.lon + dn); w = Math.min(w, p.lon - dn); }
+  return { n, s, e, w };
+}
+
+/* ---------- Rálátás a nézőpontból egy turbinára ---------- */
+function eyeInfo() {
+  const V = state.viewer, fr = frame(V.lat, V.lon), g = fr.elev(0, 0);
+  return { fr, g, eyeZ: g + state.floor + EYE, start: state.floor < 0 ? 2.5 : 0.8 };
+}
+function analyze(t, ei) {
+  const m = model(), { fr, g, eyeZ, start } = ei;
+  const [tx, ty] = fr.fromLL(t.lat, t.lon), D = Math.hypot(tx, ty), az = Math.atan2(tx, ty);
+  const zT = fr.elev(tx, ty);
+  const res = { D, az, ok: !(isNaN(g) || isNaN(zT)), zT, zV: g, eyeZ };
+  if (!res.ok || D < 60) { res.ok = false; return res; }
+  const sx = tx / D, sy = ty / D, baseApp = zT - drop(D);
+  res.baseApp = baseApp;
+  let best = { a: -Infinity, kind: 'none' };
+  const prof = [];
+  const dEnd = D * 1.06, stopOcc = D - 40;
+  for (let d = start; d <= dEnd; d += (d < 200 ? 2 : 6)) {
+    const z = fr.elev(sx * d, sy * d); if (z !== z) continue;
+    const za = z - drop(d);
+    if (d <= stopOcc) { const a = Math.atan2(za - eyeZ, d); if (a > best.a) best = { a, kind: 'terrain', d, z: za, zg: z }; }
+    if (!prof.length || d - prof[prof.length - 1][0] >= dEnd / 700) prof.push([d, za]);
+  }
+  res.terrain = best.kind === 'terrain' ? { ...best } : null;
+  res.prof = prof;
+  // takarások a rálátás vonalán
+  let bestS = { ...best }, bestW = { ...best };
+  res.obs = [];
+  for (const o of state.obstacles) {
+    if (o.dist >= D - 40) continue;
+    if (!(Math.abs(o.off) <= o.w / 2)) continue;
+    const z = fr.elev(sx * o.dist, sy * o.dist); if (z !== z) continue;
+    const top = z + o.h - drop(o.dist), a = Math.atan2(top - eyeZ, o.dist);
+    res.obs.push({ o, g: z - drop(o.dist), top, a });
+    if (a > bestS.a) bestS = { a, kind: 'ob', o, d: o.dist, z: top };
+    if (!OB[o.type].leafy && a > bestW.a) bestW = { a, kind: 'ob', o, d: o.dist, z: top };
+  }
+  const hid = b => b.a === -Infinity ? -Infinity : eyeZ + D * Math.tan(b.a) - baseApp;
+  res.blockS = bestS; res.blockW = bestW;
+  res.hidS = hid(bestS); res.hidW = hid(bestW);
+  const A = h => Math.atan2(baseApp + h - eyeZ, D) / RAD;
+  res.aTip = A(m.tip); res.aHub = A(m.hub); res.aBase = A(0);
+  return res;
+}
+function hiddenFor(a) { return state.season === 'winter' ? { h: a.hidW, b: a.blockW } : { h: a.hidS, b: a.blockS }; }
+function classify(h) {
+  const m = model();
+  if (h >= m.tip) return 0;
+  if (h >= m.hub) return 1;
+  if (h >= m.low) return 2;
+  return 3;
+}
+const VLABEL = ['Nem látszik', 'Csak a lapátvégek látszanak', 'A gondola és a lapátok látszanak', 'Szinte az egész turbina látszik'];
+const VCOL = ['var(--v0)', 'var(--v1)', 'var(--v2)', 'var(--v3)'];
+function blockerText(b) {
+  if (!b || b.kind === 'none') return 'semmi';
+  if (b.kind === 'terrain') return `a domborzat (egy hajlat ${km(b.d)}-re, ${nf(b.zg)} m tengerszint feletti magasságban)`;
+  const d = OB[b.o.type]; return `${d.art} ${d.name.toLowerCase()} (${km(b.o.dist)}-re)`;
+}
+function verdictText(h, b) {
+  const m = model(), c = classify(h), H = Math.round(Math.max(0, h));
+  if (c === 0) return `A turbina teljesen takarásban van: ${blockerText(b)} eltakarja. A takarás a talppont felett kb. ${nf(H)} m-ig ér, a lapátvég ${nf(m.tip)} m-en jár.`;
+  if (c === 1) return `A torony és a gondola takarásban van. A lapátokból csak a felső kb. ${nf(Math.round(m.tip - h))} m látszik, amikor épp felfelé állnak. A takarást ${blockerText(b)} adja.`;
+  if (c === 2) return `A gondola és a lapátok látszanak, a torony alsó kb. ${nf(H)} méterét ${blockerText(b)} takarja.`;
+  if (H < 1) return 'A teljes turbina látszik, a talppontjától a lapátvégig.';
+  return `Szinte az egész turbina látszik, csak az alsó kb. ${nf(H)} m van takarásban; ezt ${blockerText(b)} adja.`;
+}
+
+/* ---------- Szemmagasságú kép ---------- */
+const rgba = (r, g, b, a = 255) => ((a << 24) | (b << 16) | (g << 8) | r) >>> 0;
+const FIELDS = [[121, 152, 74], [142, 162, 82], [163, 166, 96], [108, 142, 70], [176, 168, 104], [96, 128, 62]];
+const HAZE = [196, 210, 223], GRASS = [112, 146, 70];
+function shapeH(o, u) {
+  const rel = u - o.off, H = o.h, half = o.w / 2;
+  if (Math.abs(rel) > half) return 0;
+  const crown = (sp, wid) => { const p = ((rel + sp / 2) % sp + sp) % sp - sp / 2; return Math.sqrt(Math.max(0, 1 - (p / (sp * wid)) ** 2)); };
+  const n = (sp, s) => hash(Math.floor((rel + sp / 2) / sp) + 1000, s);
+  switch (o.type) {
+    case 'trees': return H * (0.80 + 0.16 * crown(8, 0.56) + 0.08 * (n(8, 3) - 0.5));
+    case 'forest': return H * (0.84 + 0.12 * crown(6, 0.6) + 0.1 * (n(6, 5) - 0.5));
+    case 'bush': return H * (0.70 + 0.30 * crown(2.4, 0.6) + 0.1 * (n(2.4, 9) - 0.5));
+    case 'house': {
+      let r = rel, hw = half;
+      if (!isFinite(o.w)) { const p = 20; r = ((rel + p / 2) % p + p) % p - p / 2; hw = 6; if (Math.abs(r) > hw) return 0; }
+      const wall = 0.6 * H; return wall + (H - wall) * (1 - Math.abs(r) / hw);
+    }
+    case 'mound': { if (!isFinite(o.w)) return H * (0.94 + 0.06 * Math.sin(rel * 0.045)); const e = half - Math.abs(rel), ramp = Math.max(2, o.w * 0.2); return H * Math.min(1, Math.sin(Math.min(1, e / ramp) * Math.PI / 2)); }
+    default: return H;
+  }
+}
+function obColor(o, u, hrow, col, row) {
+  const rel = u - o.off, n = hash(col, row), H = o.h;
+  const sh = (c, f) => rgba(clamp(c[0] * f, 0, 255) | 0, clamp(c[1] * f, 0, 255) | 0, clamp(c[2] * f, 0, 255) | 0);
+  switch (o.type) {
+    case 'trees': case 'forest': { const base = o.type === 'trees' ? [56, 96, 42] : [42, 80, 36]; const f = 0.72 + 0.28 * clamp(hrow / H, 0, 1) + (n - 0.5) * 0.3; return sh(base, f); }
+    case 'bush': return sh([92, 132, 54], 0.78 + 0.22 * clamp(hrow / H, 0, 1) + (n - 0.5) * 0.28);
+    case 'house': { const wall = 0.6 * H; if (hrow > wall) return sh([156, 74, 50], 0.9 + (n - 0.5) * 0.12); return sh([228, 216, 192], rel > 0 ? 0.86 : 1); }
+    case 'block': { const fl = ((hrow % 3) + 3) % 3, cu = ((rel % 3.6) + 3.6) % 3.6; if (hrow > 0.8 && hrow < H - 0.6 && fl > 1.0 && fl < 2.3 && cu > 1.0 && cu < 2.8) return rgba(78, 92, 108); return sh([206, 202, 192], 0.96 + (n - 0.5) * 0.06); }
+    case 'fence': { const seam = ((rel % 2.5) + 2.5) % 2.5 < 0.12; return sh([156, 146, 130], seam ? 0.7 : 0.95 + (n - 0.5) * 0.1); }
+    default: return sh([128, 140, 74], 0.85 + 0.15 * clamp(hrow / H, 0, 1) + (n - 0.5) * 0.25);
+  }
+}
+function drawTurbine(ctx, t, yOfH, ppm, cx, ghost, lw) {
+  const m = model(), R = m.R;
+  const hx = cx, hy = yOfH(m.hub), by = yOfH(0);
+  const w = v => Math.max(v * ppm, ghost ? 0.4 : 0.55 * lw);
+  ctx.beginPath();
+  ctx.moveTo(hx - w(3.5), by); ctx.lineTo(hx + w(3.5), by); ctx.lineTo(hx + w(2), hy); ctx.lineTo(hx - w(2), hy); ctx.closePath();
+  const rpx = R * ppm;
+  for (const a of [-90, 30, 150]) {
+    const r = a * RAD, ux = Math.cos(r), uy = Math.sin(r), nx = -uy, ny = ux;
+    const st = [[0.03, 1.6], [0.22, 2.3], [0.6, 1.3], [1.0, 0.3]];
+    const P = st.map(([f, hw]) => [hx + ux * rpx * f, hy + uy * rpx * f, w(hw)]);
+    ctx.moveTo(P[0][0] + nx * P[0][2], P[0][1] + ny * P[0][2]);
+    for (const p of P) ctx.lineTo(p[0] + nx * p[2], p[1] + ny * p[2]);
+    for (let i = P.length - 1; i >= 0; i--) ctx.lineTo(P[i][0] - nx * P[i][2], P[i][1] - ny * P[i][2]);
+    ctx.closePath();
+  }
+  ctx.rect(hx - w(2.4), hy - w(2.2), w(4.8), w(4.4));
+  if (ghost) {
+    ctx.setLineDash([4 * lw, 3 * lw]); ctx.lineWidth = 1.6 * lw; ctx.strokeStyle = 'rgba(20,30,25,.55)'; ctx.stroke();
+    ctx.lineWidth = 0.8 * lw; ctx.strokeStyle = 'rgba(255,255,255,.95)'; ctx.stroke(); ctx.setLineDash([]);
+  } else {
+    ctx.fillStyle = '#f4f5f2'; ctx.fill('nonzero'); ctx.lineWidth = 0.7 * lw; ctx.strokeStyle = '#6b746f'; ctx.stroke();
+    ctx.beginPath(); ctx.arc(hx, hy, Math.max(2.6 * ppm, 0.8 * lw), 0, 2 * Math.PI); ctx.fillStyle = '#e6e8e4'; ctx.fill(); ctx.stroke();
+  }
+}
+const COMPASS = ['É', 'ÉK', 'K', 'DK', 'D', 'DNy', 'Ny', 'ÉNy'];
+function panoBBox() {
+  const V = state.viewer, sel = AN[state.sel];
+  const maxD = Math.max(0, ...AN.map(a => a.D || 0));
+  const dMax = clamp(maxD * 1.4 + 3000, 6000, 26000);
+  const az0 = (sel ? sel.az : 0) + state.pan * RAD, half = state.fov * RAD / 2 + 0.05;
+  const fr = frame(V.lat, V.lon), pts = [V];
+  for (let i = 0; i <= 6; i++) { const a = az0 - half + i * half / 3; const [lat, lon] = fr.toLL(Math.sin(a) * dMax, Math.cos(a) * dMax); pts.push({ lat, lon }); }
+  return { bb: bboxAround(pts, 400), dMax };
+}
+function renderPano(q = 1) {
+  const cv = $('pano'), cssW = cv.clientWidth || cv.parentElement.clientWidth || 640;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2) * q;
+  const W = clamp(Math.round(cssW * dpr), 240, 1600), H = Math.round(W * (cssW < 560 ? 0.75 : 0.5625));
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  const ctx = cv.getContext('2d'), lw = W / cssW;
+  const ei = eyeInfo(), { fr, eyeZ, start } = ei, m = model();
+  if (isNaN(ei.g)) { ctx.fillStyle = '#cddbe6'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = '#17221d'; ctx.font = `${14 * lw}px Barlow, sans-serif`; ctx.fillText('Nincs domborzati adat ehhez a ponthoz.', 16 * lw, 30 * lw); return; }
+  const sel = AN[state.sel] && AN[state.sel].ok ? AN[state.sel] : AN.find(a => a.ok);
+  const axisAz = sel ? sel.az : 0, az0 = axisAz + state.pan * RAD;
+  const fov = state.fov * RAD, k = W / state.fov, span = H / k;
+  let c = sel ? sel.aTip * 0.45 : 1;
+  if (sel && sel.aTip > c + span * 0.4) c = sel.aTip - span * 0.4;
+  if (sel && sel.aBase < c - span * 0.45) c = Math.max(sel.aBase + span * 0.4, sel.aTip - span * 0.4);
+  const yOfDeg = a => H / 2 - (a - c) * k, degOfY = y => c + (H / 2 - y) / k;
+  const { dMax } = panoBBox();
+  const img = ctx.createImageData(W, H), buf = new Uint32Array(img.data.buffer);
+  for (let y = 0; y < H; y++) {
+    const t = clamp(degOfY(y) / 22, 0, 1), col = rgba(214 - 90 * t | 0, 226 - 60 * t | 0, 236 - 20 * t | 0);
+    buf.fill(col, y * W, y * W + W);
+  }
+  const winter = state.season === 'winter';
+  const ovl = winter ? new Uint8ClampedArray(W * H * 4) : null;
+  const vis = AN.map((a, i) => ({ a, i })).filter(({ a }) => a.ok && Math.abs(wrapPi(a.az - az0)) < fov / 2 + Math.atan(m.R / a.D) + 0.02);
+  vis.forEach(v => { v.clip = new Float32Array(W).fill(-1); });
+  const obs = state.obstacles.filter(o => o.h > 0);
+  const hits = [];
+  for (let col = 0; col < W; col++) {
+    const az = az0 + ((col + 0.5) / W - 0.5) * fov, sx = Math.sin(az), sy = Math.cos(az);
+    const dl = wrapPi(az - axisAz), cosd = Math.cos(dl), tand = Math.tan(dl);
+    hits.length = 0;
+    if (Math.abs(dl) < 1.45) for (const o of obs) { const u = o.dist * tand; if (Math.abs(u - o.off) <= o.w / 2) hits.push({ r: o.dist / cosd, o, u }); }
+    hits.sort((p, q2) => p.r - q2.r);
+    let hi = 0, ybuf = H, d = start, lastVis = 0, zPrev = NaN;
+    const doHit = h => {
+      const r = h.r, g = fr.elev(sx * r, sy * r); if (g !== g) return;
+      const hh = shapeH(h.o, h.u); if (hh <= 0) return;
+      const top = g + hh - drop(r);
+      let yt = Math.floor(yOfDeg(Math.atan2(top - eyeZ, r) / RAD)); if (yt < 0) yt = 0;
+      if (yt >= ybuf) return;
+      const gz = g - drop(r);
+      if (winter && OB[h.o.type].leafy) {
+        const base = h.o.type === 'bush' ? [118, 104, 84] : [104, 92, 80];
+        for (let row = yt; row < ybuf; row++) {
+          const n = hash((col >> 1) * 3 + (h.u | 0), row >> 1), al = (h.o.type === 'bush' ? 0.36 : 0.22) + 0.22 * n * n;
+          const i4 = (row * W + col) * 4, a0 = ovl[i4 + 3] / 255;
+          if (a0 === 0) { ovl[i4] = base[0]; ovl[i4 + 1] = base[1]; ovl[i4 + 2] = base[2]; ovl[i4 + 3] = al * 255; }
+          else ovl[i4 + 3] = (a0 + al * (1 - a0)) * 255;
+        }
+        return;
+      }
+      for (let row = yt; row < ybuf; row++) {
+        const hrow = eyeZ + r * Math.tan(degOfY(row + 0.5) * RAD) - gz;
+        buf[row * W + col] = obColor(h.o, h.u, hrow, col, row);
+      }
+      ybuf = yt;
+    };
+    while (d < dMax && ybuf > 0) {
+      while (hi < hits.length && hits[hi].r <= d) doHit(hits[hi++]);
+      for (const v of vis) if (v.clip[col] < 0 && d >= v.a.D) v.clip[col] = ybuf;
+      const x = sx * d, y = sy * d, z = fr.elev(x, y);
+      if (z !== z) break;
+      const za = z - drop(d);
+      let yi = Math.floor(yOfDeg(Math.atan2(za - eyeZ, d) / RAD));
+      if (yi < ybuf) {
+        if (yi < 0) yi = 0;
+        if (d - lastVis > 120 && ybuf < H) { const i = ybuf * W + col, p = buf[i]; buf[i] = rgba((p & 255) * 0.72, (p >> 8 & 255) * 0.72, (p >> 16 & 255) * 0.72); }
+        const slope = zPrev === zPrev ? (za - zPrev) / Math.max(d * 0.006, 0.5) : 0;
+        const f0 = FIELDS[Math.floor(hash(Math.floor((x + 3000 * sy) / 140), Math.floor((y + 50) / 95)) * FIELDS.length)];
+        const near = clamp((d - 120) / 300, 0, 1), fld = [GRASS[0] + (f0[0] - GRASS[0]) * near, GRASS[1] + (f0[1] - GRASS[1]) * near, GRASS[2] + (f0[2] - GRASS[2]) * near];
+        const shade = clamp(0.86 + slope * 2.2, 0.62, 1.18), fog = 1 - Math.exp(-d / 17000);
+        const r0 = fld[0] * shade * (1 - fog) + HAZE[0] * fog, g0 = fld[1] * shade * (1 - fog) + HAZE[1] * fog, b0 = fld[2] * shade * (1 - fog) + HAZE[2] * fog;
+        const jit = d < 400 ? 18 : 5;
+        for (let row = yi; row < ybuf; row++) { const j = (hash(col, row) - 0.5) * jit; buf[row * W + col] = rgba(clamp(r0 + j, 0, 255), clamp(g0 + j, 0, 255), clamp(b0 + j * 0.6, 0, 255)); }
+        ybuf = yi; lastVis = d;
+      }
+      zPrev = za;
+      d += Math.max(0.5, d * 0.006);
+    }
+    for (const v of vis) if (v.clip[col] < 0) v.clip[col] = Math.max(0, ybuf);
+  }
+  ctx.putImageData(img, 0, 0);
+  // turbinák: hátulról előre
+  vis.sort((p, q2) => q2.a.D - p.a.D);
+  const tLabels = [];
+  for (const v of vis) {
+    const a = v.a, cx = W / 2 + wrapPi(a.az - az0) / RAD * k, ppm = k / RAD / a.D;
+    const yOfH = h => yOfDeg(Math.atan2(a.baseApp + h - eyeZ, a.D) / RAD);
+    if (state.ghost) drawTurbine(ctx, a, yOfH, ppm, cx, true, lw);
+    const x0 = Math.max(0, Math.floor(cx - m.R * ppm - 6 * lw)), x1 = Math.min(W - 1, Math.ceil(cx + m.R * ppm + 6 * lw));
+    ctx.save(); ctx.beginPath(); ctx.moveTo(x0, -1);
+    for (let col = x0; col <= x1; col++) { ctx.lineTo(col, v.clip[col]); ctx.lineTo(col + 1, v.clip[col]); }
+    ctx.lineTo(x1 + 1, -1); ctx.closePath(); ctx.clip();
+    drawTurbine(ctx, a, yOfH, ppm, cx, false, lw); ctx.restore();
+    tLabels.push({ x: cx, y: yOfH(m.tip), i: v.i, D: a.D });
+  }
+  if (ovl) { const oc = document.createElement('canvas'); oc.width = W; oc.height = H; oc.getContext('2d').putImageData(new ImageData(ovl, W, H), 0, 0); ctx.drawImage(oc, 0, 0); }
+  // szemmagasság vonala
+  const y0 = yOfDeg(0);
+  ctx.setLineDash([6 * lw, 5 * lw]); ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = lw;
+  ctx.beginPath(); ctx.moveTo(34 * lw, y0); ctx.lineTo(W, y0); ctx.stroke(); ctx.setLineDash([]);
+  // fokbeosztás
+  const font = s => `500 ${s * lw}px "IBM Plex Mono", ui-monospace, monospace`;
+  const steps = [0.5, 1, 2, 5, 10]; const st = steps.find(s => s * k / lw >= 26) || 10;
+  ctx.font = font(10); ctx.textBaseline = 'middle';
+  const halo = (txt, x, y, align = 'left') => { ctx.textAlign = align; ctx.lineWidth = 3 * lw; ctx.strokeStyle = 'rgba(20,30,25,.55)'; ctx.strokeText(txt, x, y); ctx.fillStyle = '#fff'; ctx.fillText(txt, x, y); };
+  for (let a = Math.ceil(degOfY(H) / st) * st; a <= degOfY(0); a += st) {
+    const y = yOfDeg(a); if (y < 22 * lw || y > H - 6 * lw) continue;
+    ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fillRect(0, y - 0.5 * lw, 7 * lw, lw);
+    halo((Math.abs(a) < 1e-9 ? '0' : nf(a, st < 1 ? 1 : 0)) + '°', 10 * lw, y);
+  }
+  // égtájak
+  ctx.textBaseline = 'top';
+  const aStep = state.fov > 30 ? 10 : 5;
+  const azD0 = az0 / RAD - state.fov / 2;
+  for (let a = Math.ceil(azD0 / aStep) * aStep; a <= azD0 + state.fov; a += aStep) {
+    const x = (a - azD0) * k, an = ((a % 360) + 360) % 360;
+    ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fillRect(x - 0.5 * lw, 0, lw, (an % 45 === 0 ? 9 : 5) * lw);
+    if (x < 50 * lw || x > W - 24 * lw) continue;
+    halo(an % 45 === 0 ? COMPASS[an / 45] : an + '°', x, 11 * lw, 'center');
+  }
+  // turbinacímkék
+  ctx.textBaseline = 'bottom';
+  for (const L of tLabels) {
+    const ly = Math.max(L.y - 6 * lw, 40 * lw);
+    halo(`T${L.i + 1} · ${km(L.D)}`, L.x, ly, 'center');
+  }
+  if (!vis.length && sel) { ctx.textBaseline = 'top'; halo('A turbina most nincs a képben. Dupla kattintással visszaáll.', W / 2, 30 * lw, 'center'); }
+}
+
+/* ---------- Oldalnézet ---------- */
+function niceStep(range, target) { const raw = range / target, p = 10 ** Math.floor(Math.log10(raw)); for (const s of [1, 2, 2.5, 5, 10]) if (s * p >= raw) return s * p; return 10 * p; }
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+function renderProfile() {
+  const svg = $('prof'), a = AN[state.sel];
+  if (!a || !a.ok || !a.prof.length) { svg.innerHTML = `<text x="20" y="40" font-size="15">Nincs adat a metszethez.</text>`; $('exNote').textContent = ''; return; }
+  const m = model(), Wv = Math.round(clamp(svg.clientWidth || 700, 300, 1200)), Hv = Math.round(clamp(Wv * 0.42, 230, 340)), L = 52, Rm = 118, T = 22, B = 30;
+  svg.setAttribute('viewBox', `0 0 ${Wv} ${Hv}`);
+  const { h: hid, b: blk } = hiddenFor(a);
+  const Dp = a.prof[a.prof.length - 1][0];
+  let zmin = Math.min(a.eyeZ - EYE, ...a.prof.map(p => p[1])), zmax = Math.max(a.eyeZ, a.baseApp + m.tip, ...a.prof.map(p => p[1]), ...a.obs.map(o => o.top));
+  const pad = (zmax - zmin) * 0.08; zmin -= pad; zmax += pad * 0.6;
+  const sx = (Wv - L - Rm) / Dp, sy = (Hv - T - B) / (zmax - zmin);
+  const X = d => L + d * sx, Y = z => Hv - B - (z - zmin) * sy;
+  const ex = sy / sx;
+  $('exNote').textContent = ex > 1.5 ? `Függőleges nagyítás: ×${nf(ex, ex < 10 ? 1 : 0)}` : 'Valódi méretarány';
+  let s = '';
+  // rács
+  const ys = niceStep(zmax - zmin, 5);
+  for (let z = Math.ceil(zmin / ys) * ys; z <= zmax; z += ys) s += `<line x1="${L}" x2="${Wv - Rm}" y1="${Y(z)}" y2="${Y(z)}" stroke="var(--line)" stroke-width="1"/><text x="${L - 6}" y="${Y(z) + 4}" font-size="11" text-anchor="end">${nf(z)} m</text>`;
+  const xs = niceStep(Dp, 6);
+  for (let d = 0; d <= Dp; d += xs) s += `<text x="${X(d)}" y="${Hv - B + 18}" font-size="11" text-anchor="middle">${d === 0 ? '0' : km(d)}</text>`;
+  // árnyék a takaró pont mögött
+  const ta = Math.tan(blk.a), zl = d => a.eyeZ + d * ta;
+  if (blk.kind !== 'none') s += `<polygon points="${X(blk.d)},${Y(zl(blk.d))} ${X(Dp)},${Y(zl(Dp))} ${X(Dp)},${Y(zmin)} ${X(blk.d)},${Y(zmin)}" fill="var(--shadow)" fill-opacity=".13"/>`;
+  // terep
+  let p = `M${X(a.prof[0][0])},${Y(zmin)}`; for (const [d, z] of a.prof) p += ` L${X(d).toFixed(1)},${Y(z).toFixed(1)}`; p += ` L${X(Dp)},${Y(zmin)} Z`;
+  s += `<path d="${p}" fill="var(--terrain)" stroke="var(--terrain-edge)" stroke-width="1.2"/>`;
+  // takarások
+  let lastX = -1e9, lvl = 0;
+  a.obs.slice().sort((p1, p2) => p1.o.dist - p2.o.dist).forEach(ob => {
+    const col = OB[ob.o.type].col, x = X(ob.o.dist), w = Math.max(3, Math.min(10, ob.o.type === 'forest' ? 30 * sx : 4));
+    s += `<rect x="${x - w / 2}" y="${Y(ob.top)}" width="${w}" height="${Math.max(1.5, Y(ob.g) - Y(ob.top))}" fill="${col}" ${state.season === 'winter' && OB[ob.o.type].leafy ? 'fill-opacity=".45"' : ''}/>`;
+    lvl = x - lastX < 80 ? lvl + 1 : 0; lastX = x;
+    const ly = Y(ob.top) - 8 - lvl * 14;
+    s += `<line x1="${x}" x2="${x}" y1="${ly + 3}" y2="${Y(ob.top) - 1}" stroke="${col}" stroke-width="1" opacity=".6"/><text x="${x + 3}" y="${ly}" font-size="11">${OB[ob.o.type].name.toLowerCase()} ${nf(ob.o.h, ob.o.h % 1 ? 1 : 0)} m</text>`;
+  });
+  // rálátás a lapátvégre
+  const tipZ = a.baseApp + m.tip, tipVis = hid < m.tip;
+  s += `<line x1="${X(0)}" y1="${Y(a.eyeZ)}" x2="${X(a.D)}" y2="${Y(tipZ)}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="${tipVis ? '0' : '2 3'}" opacity=".8"/>`;
+  // kritikus vonal
+  if (blk.kind !== 'none') s += `<line x1="${X(0)}" y1="${Y(a.eyeZ)}" x2="${X(Dp)}" y2="${Y(zl(Dp))}" stroke="var(--shadow)" stroke-width="1.8" stroke-dasharray="7 4"/>`;
+  // turbina
+  const xT = X(a.D), yb = Y(a.baseApp), yh = Y(a.baseApp + m.hub), hidC = clamp(hid, 0, m.tip);
+  s += `<line x1="${xT}" y1="${yb}" x2="${xT}" y2="${yh}" stroke="var(--muted)" stroke-width="3" opacity=".45"/>`;
+  s += `<line x1="${xT}" y1="${Y(a.baseApp + m.low)}" x2="${xT}" y2="${Y(tipZ)}" stroke="var(--muted)" stroke-width="2" opacity=".45"/>`;
+  if (hidC < m.hub) s += `<line x1="${xT}" y1="${Y(a.baseApp + hidC)}" x2="${xT}" y2="${yh}" stroke="var(--ink)" stroke-width="3"/>`;
+  if (hidC < m.tip) s += `<line x1="${xT}" y1="${Y(a.baseApp + Math.max(hidC, m.low))}" x2="${xT}" y2="${Y(tipZ)}" stroke="var(--ink)" stroke-width="2"/>`;
+  s += `<circle cx="${xT}" cy="${yh}" r="3.2" fill="var(--card)" stroke="var(--ink)" stroke-width="1.4"/>`;
+  const lab = [{ y: Y(tipZ), t: `lapátvég ${nf(m.tip)} m`, st: '' }, { y: yh, t: `agy ${nf(m.hub)} m`, st: '' }];
+  if (blk.kind !== 'none' && hid > 0) {
+    const yHd = Y(a.baseApp + Math.min(hid, m.tip * 1.15));
+    s += `<line x1="${xT - 8}" x2="${xT + 8}" y1="${yHd}" y2="${yHd}" stroke="var(--shadow)" stroke-width="2"/>`;
+    lab.push({ y: yHd, t: hid >= m.tip ? 'teljesen takarva' : `takarva ${nf(Math.round(hid))} m-ig`, st: 'fill:var(--shadow);font-weight:600' });
+  }
+  lab.sort((p1, p2) => p1.y - p2.y);
+  for (let i = 1; i < lab.length; i++) if (lab[i].y - lab[i - 1].y < 15) lab[i].y = lab[i - 1].y + 15;
+  for (const l of lab) s += `<text x="${xT + 9}" y="${clamp(l.y, T, Hv - 4) + 4}" font-size="12" style="${l.st}">${l.t}</text>`;
+  // takaró pont
+  if (blk.kind === 'terrain') s += `<circle cx="${X(blk.d)}" cy="${Y(blk.z)}" r="4" fill="var(--shadow)"/><text x="${clamp(X(blk.d), L + 40, xT - 50)}" y="${Y(blk.z) - 10}" font-size="12" text-anchor="middle" style="fill:var(--shadow);font-weight:600">takaró hajlat</text>`;
+  // néző
+  s += `<circle cx="${X(0)}" cy="${Y(a.eyeZ)}" r="4" fill="var(--accent)"/><text x="${X(0) + 2}" y="${Y(a.eyeZ) + 19}" font-size="12" style="fill:var(--accent);font-weight:600">szem</text>`;
+  svg.innerHTML = s;
+}
+
+/* ---------- Eredmény ---------- */
+function renderResults() {
+  const a = AN[state.sel], m = model(), box = $('verdict');
+  if (!a) { box.innerHTML = '<p class="hint">Tegyél le egy turbinát a térképre.</p>'; $('tblWrap').innerHTML = ''; return; }
+  if (!a.ok) { box.innerHTML = `<p class="hint">${a.D < 60 ? 'A nézőpont túl közel van a turbinához.' : 'A domborzati adat még töltődik, vagy ezen a helyen nem érhető el.'}</p>`; }
+  else {
+    const { h, b } = hiddenFor(a), c = classify(h);
+    const occ = isFinite(b.a) ? Math.max(b.a / RAD, a.aBase) : a.aBase;
+    const visDeg = Math.max(0, a.aTip - occ);
+    const cmp = visDeg <= 0 ? '' : visDeg < 0.5 ? `Ez kisebb, mint a telihold (0,5°).` : visDeg < 1.6 ? `Ez nagyjából kisujjnyi kinyújtott karral.` : visDeg < 4 ? `Ez nagyjából ${nf(visDeg / 2, 1)} hüvelykujjnyi kinyújtott karral.` : `Ez kinyújtott karral kb. ${nf(visDeg / 10, 1)} ököl magasság.`;
+    const sum = a.hidS, win = a.hidW;
+    box.innerHTML = `
+      <span class="pill"><i style="background:${VCOL[c]}"></i>T${state.sel + 1}: ${VLABEL[c]}</span>
+      <p class="main">${verdictText(h, b)}</p>
+      <div class="facts">
+        <div class="fact"><span>Távolság</span><b>${km(a.D)}</b></div>
+        <div class="fact"><span>Takarva a talptól</span><b>${h <= 0 ? '0 m' : h >= m.tip ? 'teljesen' : nf(Math.round(h)) + ' m-ig'}</b></div>
+        <div class="fact"><span>Lapátvég szöge</span><b>${nf(a.aTip, 1)}°</b></div>
+        <div class="fact"><span>Látható rész</span><b>${nf(visDeg, 1)}°</b></div>
+        <div class="fact"><span>Talajszint nálad</span><b>${nf(a.zV)} m</b></div>
+        <div class="fact"><span>Talajszint a turbinánál</span><b>${nf(a.zT)} m</b></div>
+      </div>
+      <p class="small">${visDeg > 0 ? `A turbinából függőlegesen ${nf(visDeg, 1)}° látszik. ${cmp} ` : ''}A magasságok tengerszint feletti értékek. A Föld görbülete ezen a távolságon ${nf(drop(a.D), 1)} m-rel süllyeszti a turbina talppontját.</p>
+      <div class="season">
+        <div style="${state.season === 'summer' ? 'border-color:var(--accent)' : ''}"><b>Nyáron, lombos fákkal</b>${sum <= 0 ? 'nincs takarás' : sum >= m.tip ? 'teljesen takarva' : `takarva ${nf(Math.round(sum))} m-ig`} · ${VLABEL[classify(sum)].toLowerCase()}</div>
+        <div style="${state.season === 'winter' ? 'border-color:var(--accent)' : ''}"><b>Télen, lombtalan fák mögül</b>${win <= 0 ? 'nincs szilárd takarás' : win >= m.tip ? 'teljesen takarva' : `takarva ${nf(Math.round(win))} m-ig`} · ${VLABEL[classify(win)].toLowerCase()}${win < sum - 1 ? ', a fák ágai között átsejlik' : ''}</div>
+      </div>`;
+  }
+  if (AN.length > 1) {
+    let t = '<table><thead><tr><th>Turbina</th><th>Távolság</th><th>Takarva</th><th>Mi látszik</th><th></th></tr></thead><tbody>';
+    AN.forEach((x, i) => {
+      if (!x.ok) { t += `<tr><td>T${i + 1}</td><td colspan="3" class="hint">nincs adat</td><td></td></tr>`; return; }
+      const { h } = hiddenFor(x), c = classify(h);
+      t += `<tr class="${i === state.sel ? 'sel' : ''}"><td><b>T${i + 1}</b></td><td class="num">${km(x.D)}</td><td class="num">${h <= 0 ? '–' : h >= m.tip ? 'teljesen' : nf(Math.round(h)) + ' m-ig'}</td><td><span class="dot" style="background:${VCOL[c]}"></span>${VLABEL[c]}</td><td>${i === state.sel ? '' : `<button class="linkbtn" data-sel="${i}">Erre nézz</button>`}<button class="linkbtn" data-del="${i}" aria-label="T${i + 1} törlése">Törlés</button></td></tr>`;
+    });
+    $('tblWrap').innerHTML = t + '</tbody></table>';
+  } else if (AN.length === 1) $('tblWrap').innerHTML = `<p class="small">Több turbinát is letehetsz: válaszd a térkép felett az „Új turbina” módot. <button class="linkbtn" data-del="0">T1 törlése</button></p>`;
+  else $('tblWrap').innerHTML = '';
+}
+
+/* ---------- Térkép ---------- */
+const map = L.map('map', { zoomControl: true, attributionControl: true });
+const base = {
+  'Domborzati': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17, subdomains: 'abc', attribution: '© OpenStreetMap, SRTM · © OpenTopoMap (CC-BY-SA)' }),
+  'Utcatérkép': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap közreműködők' }),
+  'Műhold': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Esri, Maxar, Earthstar Geographics' })
+};
+base['Domborzati'].addTo(map);
+L.control.layers(base, null, { position: 'topright' }).addTo(map);
+L.control.scale({ imperial: false }).addTo(map);
+const eyeIcon = L.divIcon({ className: '', iconSize: [30, 30], iconAnchor: [15, 15], html: '<div class="pin eye"><svg width="18" height="12" viewBox="0 0 18 12" aria-hidden="true"><path d="M1 6c2.2-3.4 4.9-5 8-5s5.8 1.6 8 5c-2.2 3.4-4.9 5-8 5S3.2 9.4 1 6z" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="9" cy="6" r="2.4" fill="#fff"/></svg></div>' });
+const turbIcon = (i, sel) => L.divIcon({ className: '', iconSize: [34, 48], iconAnchor: [17, 40], html: `<div class="tpin${sel ? ' sel' : ''}"><svg width="34" height="36" viewBox="0 0 34 36" aria-hidden="true"><g stroke="#17221d" stroke-width="1.3" fill="#fff"><path d="M16 13 L15 35 L19 35 L18 13 Z"/><path d="M17 12 L15.6 1.5 L18.4 1.5 Z"/><path d="M17 12 L26.8 17.8 L25.4 20.2 Z"/><path d="M17 12 L7.2 17.8 L8.6 20.2 Z"/><circle cx="17" cy="12" r="2.2"/></g></svg><b>T${i + 1}</b></div>` });
+let viewerMk = null, turbMks = [], losLine = null, blockMk = null, obLayer = L.layerGroup().addTo(map), vsLayer = null;
+let clickMode = 'view';
+function buildMarkers() {
+  if (!viewerMk) {
+    viewerMk = L.marker([state.viewer.lat, state.viewer.lon], { icon: eyeIcon, draggable: true, title: 'Nézőpont', zIndexOffset: 1000, keyboard: true }).addTo(map);
+    viewerMk.on('drag', e => { const p = e.target.getLatLng(); state.viewer = { lat: p.lat, lon: p.lng }; refresh(); });
+    viewerMk.on('dragend', () => update());
+  } else viewerMk.setLatLng([state.viewer.lat, state.viewer.lon]);
+  turbMks.forEach(mk => mk.remove()); turbMks = [];
+  state.turbines.forEach((t, i) => {
+    const mk = L.marker([t.lat, t.lon], { icon: turbIcon(i, i === state.sel), draggable: true, title: `T${i + 1} turbina`, keyboard: true }).addTo(map);
+    mk.on('drag', e => { const p = e.target.getLatLng(); state.turbines[i] = { lat: p.lat, lon: p.lng }; clearViewshed(true); refresh(); });
+    mk.on('dragend', () => update());
+    mk.bindPopup(() => { const el = document.createElement('div'); el.innerHTML = `<b>T${i + 1} turbina</b><div class="popbtns"><button type="button" data-a="sel">Erre nézz</button><button type="button" data-a="del">Törlés</button></div>`; el.addEventListener('click', ev => { const a = ev.target.dataset.a; if (a === 'sel') selectTurbine(i); if (a === 'del') delTurbine(i); map.closePopup(); }); return el; });
+    turbMks.push(mk);
+  });
+}
+function renderMapOverlays() {
+  const a = AN[state.sel], t = state.turbines[state.sel];
+  if (losLine) { losLine.remove(); losLine = null; }
+  if (blockMk) { blockMk.remove(); blockMk = null; }
+  obLayer.clearLayers();
+  if (!t) return;
+  const col = a && a.ok ? getComputedStyle(document.documentElement).getPropertyValue(['--v0', '--v1', '--v2', '--v3'][classify(hiddenFor(a).h)]).trim() : '#555';
+  losLine = L.polyline([[state.viewer.lat, state.viewer.lon], [t.lat, t.lon]], { color: col || '#d6336c', weight: 3, dashArray: '8 6', opacity: 0.95, interactive: false }).addTo(map);
+  if (!a || !a.ok) return;
+  const fr = frame(state.viewer.lat, state.viewer.lon), sx = Math.sin(a.az), sy = Math.cos(a.az);
+  const b = hiddenFor(a).b;
+  if (b.kind === 'terrain') {
+    blockMk = L.circleMarker(fr.toLL(sx * b.d, sy * b.d), { radius: 6, color: '#fff', weight: 2, fillColor: '#d6453a', fillOpacity: 1 }).bindTooltip(`Takaró hajlat, ${km(b.d)}-re`, { direction: 'top' }).addTo(map);
+  }
+  for (const o of state.obstacles) {
+    if (o.dist > a.D) continue;
+    const half = Math.min(o.w / 2, 250), c0 = o.off - half, c1 = o.off + half;
+    const P = u => fr.toLL(sx * o.dist + sy * u, sy * o.dist - sx * u);
+    L.polyline([P(c0), P(c1)], { color: OB[o.type].col, weight: 5, opacity: 0.9, interactive: false }).addTo(obLayer);
+  }
+}
+map.on('click', e => {
+  const p = { lat: e.latlng.lat, lon: e.latlng.lng };
+  state.isExample = false;
+  if (clickMode === 'view') { state.viewer = p; state.pan = 0; buildMarkers(); }
+  else { state.turbines.push(p); state.sel = state.turbines.length - 1; state.pan = 0; clearViewshed(true); buildMarkers(); }
+  update();
+});
+function setMode(m) {
+  clickMode = m; $('modeView').setAttribute('aria-pressed', m === 'view'); $('modeTurb').setAttribute('aria-pressed', m === 'turb');
+  $('mapHint').textContent = m === 'view' ? 'Kattints a térképre: a nézőpont oda kerül.' : 'Kattints a térképre: oda kerül egy új turbina.';
+}
+$('modeView').onclick = () => setMode('view');
+$('modeTurb').onclick = () => setMode('turb');
+function selectTurbine(i) { state.sel = i; state.pan = 0; buildMarkers(); update(); }
+function delTurbine(i) { state.turbines.splice(i, 1); state.sel = clamp(state.sel >= i ? state.sel - 1 : state.sel, 0, Math.max(0, state.turbines.length - 1)); clearViewshed(true); buildMarkers(); update(); }
+document.addEventListener('click', e => {
+  const s = e.target.closest('[data-sel]'), d = e.target.closest('[data-del]');
+  if (s) selectTurbine(+s.dataset.sel); if (d) delTurbine(+d.dataset.del);
+});
+
+/* keresés */
+$('searchForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const q = $('q').value.trim(), box = $('qres'); if (!q) return;
+  box.hidden = false; box.innerHTML = '<button type="button" disabled>Keresés…</button>';
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=6&accept-language=hu&q=${encodeURIComponent(q)}`);
+    const js = await r.json();
+    if (!js.length) { box.innerHTML = '<button type="button" disabled>Nincs találat. Próbáld a település nevével.</button>'; return; }
+    box.innerHTML = js.map((x, i) => `<button type="button" data-i="${i}">${esc(x.display_name)}</button>`).join('');
+    box.onclick = ev => { const b = ev.target.closest('button[data-i]'); if (!b) return; const x = js[+b.dataset.i]; map.setView([+x.lat, +x.lon], 13); box.hidden = true; };
+  } catch (err) { box.innerHTML = '<button type="button" disabled>A keresés most nem érhető el. Mozgasd a térképet kézzel.</button>'; }
+});
+document.addEventListener('click', e => { if (!e.target.closest('#searchForm')) $('qres').hidden = true; });
+
+/* ---------- Láthatósági térkép ---------- */
+function clearViewshed(stale) {
+  if (vsLayer) { vsLayer.remove(); vsLayer = null; $('vsStatus').textContent = stale ? 'A turbinák változtak, számold újra.' : ''; }
+  $('vsClear').hidden = true;
+}
+$('vsClear').onclick = () => clearViewshed(false);
+$('vsBtn').onclick = async () => {
+  if (!state.turbines.length) { $('vsStatus').textContent = 'Előbb tegyél le egy turbinát.'; return; }
+  const Rm = +$('vsR').value, btn = $('vsBtn'), st = $('vsStatus');
+  btn.disabled = true; st.textContent = 'Domborzat betöltése…';
+  const bb = bboxAround(state.turbines, Rm + 500);
+  await ensureTiles(bb);
+  st.textContent = 'Számolás…'; await new Promise(r => setTimeout(r, 30));
+  const m = model(), ds = Rm <= 10000 ? 20 : 30, NS = Math.ceil(Rm / ds), NR = Math.min(4096, Math.ceil(2 * Math.PI * Rm / ds));
+  const lv = [m.tip, m.hub, m.low];
+  const rays = [];
+  let t0 = performance.now();
+  for (const t of state.turbines) {
+    const fr = frame(t.lat, t.lon), zT = fr.elev(0, 0), out = new Uint8Array(NR * (NS + 1));
+    if (!isNaN(zT)) {
+      const c1 = zT + lv[0], c2 = zT + lv[1], c3 = zT + lv[2];
+      for (let r = 0; r < NR; r++) {
+        const az = r / NR * 2 * Math.PI, sx = Math.sin(az), sy = Math.cos(az);
+        let m1 = -Infinity, m2 = -Infinity, m3 = -Infinity;
+        for (let j = 1; j <= NS; j++) {
+          const s = j * ds, z0 = fr.elev(sx * s, sy * s); if (z0 !== z0) break;
+          const z = z0 - drop(s), e = z + EYE;
+          let code = 0;
+          if ((e - c3) / s >= m3) code = 3; else if ((e - c2) / s >= m2) code = 2; else if ((e - c1) / s >= m1) code = 1;
+          out[r * (NS + 1) + j] = code;
+          const q1 = (z - c1) / s, q2 = (z - c2) / s, q3 = (z - c3) / s;
+          if (q1 > m1) m1 = q1; if (q2 > m2) m2 = q2; if (q3 > m3) m3 = q3;
+        }
+        if (performance.now() - t0 > 60) { st.textContent = `Számolás… ${Math.round((rays.length + r / NR) / state.turbines.length * 100)}%`; await new Promise(res => setTimeout(res, 0)); t0 = performance.now(); }
+      }
+    }
+    rays.push({ fr, out });
+  }
+  const pyN = my(bb.n), pyS = my(bb.s), pxW = mx(bb.w), pxE = mx(bb.e);
+  const IW = clamp(Math.round((pxE - pxW) * 1.5), 300, 1400), IH = clamp(Math.round(IW * (pyS - pyN) / (pxE - pxW)), 300, 1600);
+  const cv = document.createElement('canvas'); cv.width = IW; cv.height = IH;
+  const g = cv.getContext('2d'), im = g.createImageData(IW, IH), b32 = new Uint32Array(im.data.buffer);
+  const css = getComputedStyle(document.documentElement);
+  const hex = v => { const h = css.getPropertyValue(v).trim(); const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+  const PAL = [0, ...['--v1', '--v2', '--v3'].map(v => { const [r, gg, b] = hex(v); return rgba(r, gg, b, 150); })];
+  for (let y = 0; y < IH; y++) {
+    const lat = latOfMy(pyN + (y + 0.5) / IH * (pyS - pyN));
+    for (let x = 0; x < IW; x++) {
+      const lon = (pxW + (x + 0.5) / IW * (pxE - pxW)) / WORLD * 360 - 180;
+      let best = 0;
+      for (const R of rays) {
+        const [ex_, ey_] = R.fr.fromLL(lat, lon), rr = Math.hypot(ex_, ey_);
+        if (rr > Rm || rr < ds) continue;
+        let az = Math.atan2(ex_, ey_); if (az < 0) az += 2 * Math.PI;
+        const ri = Math.round(az / (2 * Math.PI) * NR) % NR, j = Math.round(rr / ds);
+        const c = R.out[ri * (NS + 1) + j]; if (c > best) best = c; if (best === 3) break;
+      }
+      b32[y * IW + x] = PAL[best];
+    }
+  }
+  g.putImageData(im, 0, 0);
+  if (vsLayer) vsLayer.remove();
+  vsLayer = L.imageOverlay(cv.toDataURL(), [[bb.s, bb.w], [bb.n, bb.e]], { opacity: 0.85, interactive: false }).addTo(map);
+  map.fitBounds([[bb.s, bb.w], [bb.n, bb.e]]);
+  btn.disabled = false; $('vsClear').hidden = false;
+  st.textContent = `Kész: ${Rm / 1000} km sugarú körben, ${model().tip} m-es lapátvéggel.`;
+};
+
+/* ---------- Beállítások UI ---------- */
+const sel = $('model');
+for (const [k, v] of Object.entries(MODELS)) { const o = document.createElement('option'); o.value = k; o.textContent = v.name; sel.appendChild(o); }
+sel.onchange = () => { state.model = sel.value; syncControls(); clearViewshed(true); update(); };
+$('cHub').oninput = $('cRot').oninput = () => { state.custom = { hub: clamp(+$('cHub').value || 0, 30, 260), rotor: clamp(+$('cRot').value || 0, 20, 260) }; refresh(); };
+$('floor').oninput = () => { state.floor = +$('floor').value; syncControls(); refresh(); };
+document.querySelectorAll('#floorSeg button').forEach(b => b.onclick = () => { state.floor = +b.dataset.f; syncControls(); update(); });
+$('sSummer').onclick = () => { state.season = 'summer'; syncControls(); update(); };
+$('sWinter').onclick = () => { state.season = 'winter'; syncControls(); update(); };
+document.querySelectorAll('[data-fov]').forEach(b => b.onclick = () => { state.fov = +b.dataset.fov; syncControls(); update(); });
+$('ghost').onchange = () => { state.ghost = $('ghost').checked; renderPano(); saveHash(); };
+const LOGD = v => Math.round(2 * Math.pow(1500, v / 1000));
+const ILOGD = d => Math.round(Math.log(d / 2) / Math.log(1500) * 1000);
+const WIDTHS = [2, 5, 8, 10, 12, 15, 20, 30, 40, 60, 80, 100, 150, 200, 300, 400, 600, 800, 1000, Infinity];
+function renderObstacles() {
+  const box = $('obs');
+  if (!state.obstacles.length) { box.innerHTML = '<p class="empty">Nincs takarás megadva: most csak a domborzat takar. Adj hozzá elemet az alábbi gombokkal.</p>'; return; }
+  box.innerHTML = state.obstacles.map(o => {
+    const d = OB[o.type], wi = WIDTHS.indexOf(o.w) >= 0 ? WIDTHS.indexOf(o.w) : WIDTHS.findIndex(w => w >= o.w);
+    return `<div class="ob" data-id="${o.id}">
+      <div class="ob-head"><span class="sw" style="background:${d.col}"></span><b>${d.name}</b><button type="button" data-rm="${o.id}" aria-label="${d.name} törlése">×</button></div>
+      <div class="ob-grid">
+        <label>Távolság tőled<span class="rng"><input type="range" data-k="dist" min="0" max="1000" step="1" value="${ILOGD(o.dist)}"><output>${km(o.dist)}</output></span></label>
+        <label>Magasság<span class="rng"><input type="range" data-k="h" min="0" max="${d.hmax}" step="${d.hmax <= 6 ? 0.25 : 0.5}" value="${o.h}"><output>${nf(o.h, o.h % 1 ? 1 : 0)} m</output></span></label>
+        <label>Szélesség<span class="rng"><input type="range" data-k="w" min="0" max="${WIDTHS.length - 1}" step="1" value="${wi}"><output>${isFinite(o.w) ? km(o.w) : 'végig'}</output></span></label>
+        <label>Oldalirányú eltolás<span class="rng"><input type="range" data-k="off" min="-300" max="300" step="1" value="${o.off}"><output>${o.off === 0 ? 'középen' : (o.off > 0 ? 'jobbra ' : 'balra ') + km(Math.abs(o.off))}</output></span></label>
+      </div></div>`;
+  }).join('');
+}
+$('obs').addEventListener('input', e => {
+  const inp = e.target.closest('input[data-k]'); if (!inp) return;
+  const id = +inp.closest('.ob').dataset.id, o = state.obstacles.find(x => x.id === id), k = inp.dataset.k, v = +inp.value, out = inp.nextElementSibling;
+  if (k === 'dist') { o.dist = LOGD(v); out.textContent = km(o.dist); }
+  if (k === 'h') { o.h = v; out.textContent = nf(v, v % 1 ? 1 : 0) + ' m'; }
+  if (k === 'w') { o.w = WIDTHS[v]; out.textContent = isFinite(o.w) ? km(o.w) : 'végig'; }
+  if (k === 'off') { o.off = v; out.textContent = v === 0 ? 'középen' : (v > 0 ? 'jobbra ' : 'balra ') + km(Math.abs(v)); }
+  refresh();
+});
+$('obs').addEventListener('click', e => { const b = e.target.closest('[data-rm]'); if (!b) return; state.obstacles = state.obstacles.filter(o => o.id !== +b.dataset.rm); renderObstacles(); update(); });
+$('addrow').innerHTML = OB_ORDER.map(k => `<button class="btn" type="button" data-add="${k}">+ ${OB[k].name}</button>`).join('');
+$('addrow').addEventListener('click', e => { const b = e.target.closest('[data-add]'); if (!b) return; const d = OB[b.dataset.add]; state.obstacles.push({ id: uid++, type: b.dataset.add, dist: d.d, h: d.h, w: d.w, off: 0 }); state.obstacles.sort((p, q2) => p.dist - q2.dist); renderObstacles(); update(); });
+function syncControls() {
+  sel.value = state.model; $('customBox').hidden = state.model !== 'custom';
+  $('cHub').value = state.custom.hub; $('cRot').value = state.custom.rotor;
+  const m = model(); $('modelNote').textContent = state.model === 'custom' ? `Lapátvég ${nf(m.tip)} m.` : MODELS[state.model].note;
+  $('floor').value = state.floor;
+  $('floorO').textContent = state.floor === 0 ? 'talajszint' : state.floor < 0 ? `${nf(-state.floor, 1)} m mély árok` : `+${nf(state.floor, state.floor % 1 ? 1 : 0)} m`;
+  document.querySelectorAll('#floorSeg button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.f === state.floor));
+  $('sSummer').setAttribute('aria-pressed', state.season === 'summer'); $('sWinter').setAttribute('aria-pressed', state.season === 'winter');
+  document.querySelectorAll('[data-fov]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.fov === state.fov));
+  $('ghost').checked = state.ghost;
+}
+
+/* ---------- Kép húzása ---------- */
+(() => {
+  const cv = $('pano'); let x0 = null, p0 = 0;
+  cv.addEventListener('pointerdown', e => { x0 = e.clientX; p0 = state.pan; cv.setPointerCapture(e.pointerId); cv.classList.add('drag'); });
+  cv.addEventListener('pointermove', e => {
+    if (x0 === null) return;
+    state.pan = p0 - (e.clientX - x0) / cv.clientWidth * state.fov;
+    cancelAnimationFrame(dragRaf); dragRaf = requestAnimationFrame(() => renderPano(0.5));
+  });
+  const end = () => { if (x0 === null) return; x0 = null; cv.classList.remove('drag'); update(); };
+  cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+  cv.addEventListener('dblclick', () => { state.pan = 0; update(); });
+})();
+let dragRaf = 0;
+
+/* ---------- Frissítés ---------- */
+let gen = 0, rafId = 0, fullTimer = 0;
+function recalc() { const ei = eyeInfo(); AN = state.turbines.map(t => analyze(t, ei)); if (state.sel >= AN.length) state.sel = Math.max(0, AN.length - 1); renderResults(); renderProfile(); renderMapOverlays(); }
+function refresh() {
+  cancelAnimationFrame(rafId);
+  rafId = requestAnimationFrame(() => { recalc(); renderPano(0.5); });
+  clearTimeout(fullTimer); fullTimer = setTimeout(update, 260);
+}
+async function update() {
+  const my_ = ++gen; clearTimeout(fullTimer);
+  const pts = [state.viewer, ...state.turbines];
+  const bb1 = bboxAround(pts, 600);
+  if (pendingTiles(bb1)) $('busy').hidden = false;
+  await ensureTiles(bb1);
+  if (my_ !== gen) return;
+  recalc();
+  const { bb } = panoBBox();
+  if (pendingTiles(bb)) { $('busy').hidden = false; renderPano(0.5); await ensureTiles(bb); if (my_ !== gen) return; recalc(); }
+  renderPano(1);
+  $('busy').hidden = true;
+  saveHash();
+}
+
+/* ---------- Megosztható link ---------- */
+function saveHash() {
+  const r5 = v => Math.round(v * 1e5) / 1e5;
+  const s = { v: [r5(state.viewer.lat), r5(state.viewer.lon)], t: state.turbines.map(t => [r5(t.lat), r5(t.lon)]), i: state.sel, m: state.model, c: [state.custom.hub, state.custom.rotor], f: state.floor, s: state.season === 'winter' ? 1 : 0, o: state.obstacles.map(o => [o.type, o.dist, o.h, isFinite(o.w) ? o.w : -1, o.off]), a: state.fov, p: Math.round(state.pan * 10) / 10, g: state.ghost ? 1 : 0 };
+  try { history.replaceState(null, '', '#' + btoa(JSON.stringify(s)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')); } catch (e) { /* nem kötelező */ }
+}
+function loadHash() {
+  const h = location.hash.slice(1); if (!h) return false;
+  try {
+    const s = JSON.parse(atob(h.replace(/-/g, '+').replace(/_/g, '/')));
+    state.viewer = { lat: s.v[0], lon: s.v[1] }; state.turbines = s.t.map(([lat, lon]) => ({ lat, lon })); state.sel = s.i || 0;
+    if (MODELS[s.m]) state.model = s.m; if (s.c) state.custom = { hub: s.c[0], rotor: s.c[1] };
+    state.floor = +s.f || 0; state.season = s.s ? 'winter' : 'summer';
+    state.obstacles = (s.o || []).filter(o => OB[o[0]]).map(o => ({ id: uid++, type: o[0], dist: o[1], h: o[2], w: o[3] < 0 ? Infinity : o[3], off: o[4] || 0 }));
+    state.fov = s.a || 40; state.pan = s.p || 0; state.ghost = s.g !== 0; state.isExample = false;
+    return true;
+  } catch (e) { return false; }
+}
+$('copyLink').onclick = async () => {
+  saveHash();
+  try { await navigator.clipboard.writeText(location.href); $('copyMsg').textContent = 'A link a vágólapon van.'; }
+  catch (e) { $('copyMsg').textContent = 'Másold ki a böngésző címsorából: a link tartalmazza a beállításokat.'; }
+};
+
+/* ---------- Indítás ---------- */
+loadHash();
+syncControls(); renderObstacles(); buildMarkers();
+map.fitBounds(L.latLngBounds([[state.viewer.lat, state.viewer.lon], ...state.turbines.map(t => [t.lat, t.lon])]).pad(0.35));
+let rsT = 0; window.addEventListener('resize', () => { clearTimeout(rsT); rsT = setTimeout(() => { renderPano(1); renderProfile(); }, 150); });
+update();
+</script>
+</body>
+</html>
