@@ -1,7 +1,12 @@
 # Szélerőmű-rálátás
 
 Magyarázó kalkulátor arról, hogy honnan és mennyire látszik egy nagy szélturbina.
-Egyetlen HTML oldal (`index.html`), telepítés nélkül fut a böngészőben.
+Két változat, mindkettő egyetlen HTML fájl, telepítés nélkül fut a böngészőben:
+
+- **`alap.html` – alapváltozat**: sík terep, térkép nélkül. Megadható a turbina távolsága, agymagassága és rotorátmérője, a szemmagasság fix 1,7 m. Bokor, épület, fák és domb tehető elé, a helyük és a magasságuk csúszkával állítható. Megmutatja a szemmagasságú képet, az oldalnézetet és hogy mennyi takarásban van. Internet nélkül is működik (csak a betűtípusok töltődnek hálózatról).
+- **`index.html` – térképes változat**: valós domborzattal, a lent leírt funkciókkal.
+
+## Térképes változat
 
 ## Mit tud
 
