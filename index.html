@@ -1029,7 +1029,7 @@ h_takart = z_szem + D · tan(α_max) − z_talppont</div>
 </section>
 
 <footer class="wrap">
-  <p>Térkép: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> közreműködők, <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> (CC-BY-SA). Domborzat: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">AWS Terrain Tiles</a> (SRTM és más források). Településnevek: GeoNames (CC BY 4.0). Műholdkép: Copernicus Sentinel-2 (2023–2024, 10 m-es felbontás). Levél-, kéreg- és fűfotók: ez-tree (MIT, © Daniel Greenheck), égbolt-fény: Poly Haven (CC0). A számítás tájékoztató jellegű, nem helyettesíti a hivatalos látványtervet. <button class="linkbtn" type="button" id="copyLink">Link másolása ehhez a beállításhoz</button> <span id="copyMsg"></span></p>
+  <p>Térkép: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> közreműködők, <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> (CC-BY-SA). Domborzat: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">AWS Terrain Tiles</a> (SRTM és más források). Településnevek: GeoNames (CC BY 4.0). Műholdkép: Copernicus Sentinel-2 (2023–2024, 10 m-es felbontás); a webes kiadásban légifotó: Esri, Maxar, Earthstar Geographics (Powered by Esri). Levél-, kéreg- és fűfotók: ez-tree (MIT, © Daniel Greenheck), égbolt-fény: Poly Haven (CC0). A számítás tájékoztató jellegű, nem helyettesíti a hivatalos látványtervet. <button class="linkbtn" type="button" id="copyLink">Link másolása ehhez a beállításhoz</button> <span id="copyMsg"></span></p>
 </footer>
 
 <script>
@@ -1140,6 +1140,7 @@ window.RealView = (function () {
     return new T.ShaderMaterial({
       uniforms: {
         sat: { value: null }, hasSat: { value: 0 }, grass: { value: null }, hasGrass: { value: 0 }, fields: { value: tex.fields },
+        sat2: { value: null }, hasSat2: { value: 0 }, box2: { value: new T.Vector4() },
         sunDir: { value: new T.Vector3() }, fogCol: { value: lin(0xc8d5e0) }, fogDen: { value: 1 / 21000 },
         skyAmb: { value: lin(0xa9bfdb) }, gndAmb: { value: lin(0x6e6a55) }, sunCol: { value: lin(0xfff1d8).multiplyScalar(1.9) }
       },
@@ -1147,7 +1148,7 @@ window.RealView = (function () {
         varying vec3 vN; varying vec3 vW; varying vec2 vUv;
         void main(){ vN = normal; vW = position; vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }`,
       fragmentShader: `
-        uniform sampler2D sat, grass, fields; uniform float hasSat, hasGrass, fogDen; uniform vec3 sunDir, fogCol, skyAmb, gndAmb, sunCol;
+        uniform sampler2D sat, grass, fields, sat2; uniform float hasSat, hasGrass, hasSat2, fogDen; uniform vec3 sunDir, fogCol, skyAmb, gndAmb, sunCol; uniform vec4 box2;
         varying vec3 vN; varying vec3 vW; varying vec2 vUv;
         vec3 L(vec3 c){ return pow(c, vec3(2.2)); }
         void main(){
@@ -1155,9 +1156,15 @@ window.RealView = (function () {
           vec3 base = hasSat > .5 ? L(texture2D(sat, vUv).rgb) * 1.45 : L(texture2D(fields, vW.xz / 4200.).rgb);
           vec3 g1 = hasGrass > .5 ? L(texture2D(grass, vW.xz / 3.2).rgb) : vec3(.12,.17,.06);
           vec3 g2 = hasGrass > .5 ? L(texture2D(grass, vW.xz / 29.).rgb) : vec3(.12,.17,.06);
-          float near = 1. - smoothstep(15., 260., dist);
+          float near = 1. - smoothstep(15., 260., dist), grassMix = .75;
+          // légifotó a nézőpont körüli négyzeten (box2: nyugat, dél, kelet, észak, helyi m), a szélén lágy átmenettel
+          if (hasSat2 > .5) {
+            vec2 q = vec2((vW.x - box2.x) / (box2.z - box2.x), (-vW.z - box2.y) / (box2.w - box2.y));
+            float e = smoothstep(0., .08, min(min(q.x, 1. - q.x), min(q.y, 1. - q.y)));
+            if (e > 0.) { base = mix(base, L(texture2D(sat2, q).rgb) * 1.08, e); grassMix = mix(.75, .3, e); }
+          }
           vec3 grassCol = g1 * (1. + 2.6 * g2);
-          base = mix(base, mix(base * 1.15, grassCol, .75), near);
+          base = mix(base, mix(base * 1.15, grassCol, grassMix), near);
           vec3 N = normalize(vN);
           float diff = max(dot(N, sunDir), 0.);
           vec3 col = base * (diff * sunCol + mix(gndAmb, skyAmb, N.y * .5 + .5) * .95);
@@ -1497,7 +1504,7 @@ window.RealView = (function () {
     mats.blob.map = canvasTex(128, 128, g => { const gr = g.createRadialGradient(64, 64, 4, 64, 64, 62); gr.addColorStop(0, 'rgba(20,28,14,.5)'); gr.addColorStop(1, 'rgba(20,28,14,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); });
     const objGroup = new T.Group(), turbGroup = new T.Group(), ghostGroup = new T.Group(), bldGroup = new T.Group();
     scene.add(objGroup, bldGroup, turbGroup, ghostGroup);
-    let bKey = '', hlId = null;
+    let bKey = '', hlId = null, nKey = '';
     let tKey = '', oKey = '', trKey = '', turbs = [], raf = 0, satKey = '', lastObs = null;
     const t0 = performance.now();
     // a forgatás csak akkor rajzol, ha a kép látszik (telefonon kíméli az akkut)
@@ -1525,6 +1532,15 @@ window.RealView = (function () {
         }
         tMat.uniforms.hasSat.value = sat ? 1 : 0;
         scene.add(terrain);
+      },
+      // közeli légifotó a terepen: canvas (észak felül) és a lefedett négyzet helyi méterben [nyugat, dél, kelet, észak]; null: nincs
+      setNearSat(canvas, box, key) {
+        if (key === nKey) return; nKey = key;
+        if (tMat.uniforms.sat2.value) { tMat.uniforms.sat2.value.dispose(); tMat.uniforms.sat2.value = null; }
+        tMat.uniforms.hasSat2.value = canvas ? 1 : 0;
+        if (!canvas) return;
+        const t = new T.CanvasTexture(canvas); t.anisotropy = 8; t.minFilter = T.LinearMipmapLinearFilter;
+        tMat.uniforms.sat2.value = t; tMat.uniforms.box2.value.set(box[0], box[1], box[2], box[3]);
       },
       setTurbines(list, key) {
         if (key === trKey) return;
@@ -1761,6 +1777,10 @@ const DEM_Z = LOCAL ? LOCAL.demZ || 11 : 12, TS = 256, WORLD = TS * 2 ** DEM_Z;
 // régiós kiadás (pl. Ják 30 km-es körzete): a beépített adat csak a kör (+6 km) területét fedi
 const REGION = LOCAL && LOCAL.region ? LOCAL.region : null;
 const SAT_LEVELS = LOCAL ? [9, 12, 13, 14].filter(z => LOCAL['s' + z]) : [];
+// nagy felbontású légifotó (Esri World Imagery, kb. 30–50 cm) a webes kiadásban, ha a build megkapta az API-kulcsot
+const ESRI_KEY = LOCAL && LOCAL.esriKey ? LOCAL.esriKey : null;
+const ESRI_URL = 'https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?token=' + encodeURIComponent(ESRI_KEY || '');
+const ESRI_ATTR = 'Légifotó: Esri, Maxar, Earthstar Geographics és a GIS User Community · Powered by Esri';
 const tiles = new Map();
 let demFail = 0, demOk = 0, demOutside = false;
 const failedAt = new Map();
@@ -2041,6 +2061,36 @@ function panoBBox() {
 let RV;
 // műholdkép-textúra a látott ékre (beépített Sentinel-2 blokkokból)
 const satTexCache = { key: '', val: null, pending: '' };
+// légifotó (z17, kb. 0,8 m/px) a nézőpont körüli kb. 2×2 km-es négyzetre a 3D terephez; amíg töltődik: null
+const aerialCache = { key: '', val: null, pending: '' };
+function aerialNear(fr) {
+  if (!ESRI_KEY) return null;
+  const V = state.viewer, key = `${V.lat.toFixed(5)},${V.lon.toFixed(5)}`;
+  if (aerialCache.key === key) return aerialCache.val;
+  if (aerialCache.pending === key) return null;
+  aerialCache.pending = key;
+  const Z = 17, n = 2 ** Z, R = 1000, merc = lat => { const s2 = Math.sin(lat * RAD); return 0.5 - Math.log((1 + s2) / (1 - s2)) / (4 * Math.PI); };
+  const [laS] = fr.toLL(0, -R), [laN] = fr.toLL(0, R), [, loW] = fr.toLL(-R, 0), [, loE] = fr.toLL(R, 0);
+  const tx0 = Math.floor((loW + 180) / 360 * n), tx1 = Math.floor((loE + 180) / 360 * n), ty0 = Math.floor(merc(laN) * n), ty1 = Math.floor(merc(laS) * n);
+  const cv = document.createElement('canvas'); cv.width = (tx1 - tx0 + 1) * 256; cv.height = (ty1 - ty0 + 1) * 256;
+  const g = cv.getContext('2d'), jobs = [];
+  for (let x = tx0; x <= tx1; x++) for (let y = ty0; y <= ty1; y++) jobs.push(new Promise(res => {
+    const img = new Image(); img.crossOrigin = 'anonymous';
+    img.onload = () => { g.drawImage(img, (x - tx0) * 256, (y - ty0) * 256); res(true); }; img.onerror = () => res(false);
+    img.src = ESRI_URL.replace('{z}', Z).replace('{x}', x).replace('{y}', y);
+  }));
+  Promise.all(jobs).then(ok => {
+    if (aerialCache.pending !== key) return;
+    // a mozaik sarkai helyi méterben (2 km-en a Mercator-vetület lineárisnak vehető)
+    const lonOf = X => X / n * 360 - 180, latOf = Y => Math.atan(Math.sinh(Math.PI * (1 - 2 * Y / n))) / RAD;
+    const [xW] = fr.fromLL(V.lat, lonOf(tx0)), [xE] = fr.fromLL(V.lat, lonOf(tx1 + 1)), [, yN] = fr.fromLL(latOf(ty0), V.lon), [, yS] = fr.fromLL(latOf(ty1 + 1), V.lon);
+    // ha a csempék több mint ötöde hiányzik (pl. érvénytelen kulcs), nem használja
+    aerialCache.val = ok.filter(Boolean).length >= ok.length * 0.8 ? { canvas: cv, box: [xW, yS, xE, yN], key } : null;
+    aerialCache.key = key; aerialCache.pending = '';
+    renderPano(1);
+  });
+  return null;
+}
 function satTexture(fr, az, half, dMax) {
   if (!SAT_LEVELS.length) return null;
   const pts = [[0, 0]]; for (let i = 0; i <= 8; i++) { const a = az - half + 2 * half * i / 8; pts.push([Math.sin(a) * dMax, Math.cos(a) * dMax]); }
@@ -2087,6 +2137,7 @@ function renderReal() {
   const step = 5 * RAD, cAz = Math.round(az0 / step) * step, half = state.fov * RAD / 2 + 14 * RAD;
   const gY = (x, y) => { const z = fr.elev(x, y), d = Math.hypot(x, y); return (z === z ? z : ei.g) - drop(d) - eyeZ; };
   const sat = satTexture(fr, cAz, half, dMax);
+  const na = aerialNear(fr); RV.setNearSat(na ? na.canvas : null, na ? na.box : null, na ? na.key : '');
   const vk = `${state.viewer.lat.toFixed(6)},${state.viewer.lon.toFixed(6)},${state.floor}`;
   RV.setTerrain(`${vk}|${cAz.toFixed(3)}|${state.fov}|${Math.round(dMax)}|${demOk}`, cAz, half, dMax, (x, y, r) => { const z = fr.elev(x, y); return z === z ? z - drop(r) - eyeZ : NaN; }, sat);
   const tl = AN.map(a => a.ok ? { x: a.D * Math.sin(a.az), y: a.D * Math.cos(a.az), baseY: a.baseApp - eyeZ, hub: m.hub, rotor: m.R * 2 } : null).filter(Boolean);
@@ -2401,7 +2452,7 @@ function renderTurbList() {
 }
 
 /* ---------- Térkép ---------- */
-const MAXZ = REGION ? 18 : 16;
+const MAXZ = ESRI_KEY ? 19 : REGION ? 18 : 16;
 const map = L.map('map', REGION ? { minZoom: 10, maxZoom: MAXZ, maxBounds: (() => { const dl = (REGION.km + 12) / 111.2, dn = (REGION.km + 12) / (111.32 * Math.cos(REGION.lat * RAD)); return [[REGION.lat - dl, REGION.lon - dn], [REGION.lat + dl, REGION.lon + dn]]; })() }
   : LOCAL ? { minZoom: 7, maxZoom: 16, maxBounds: [[45.2, 15.4], [49.1, 23.6]] } : {});
 /* Saját domborzat-árnyékolás az AWS domborzati csempékből: akkor is működik, ha a térképszolgáltatók nem érhetők el. */
@@ -2639,7 +2690,9 @@ const SAT_ATTR = 'Műholdkép: Copernicus Sentinel-2 (2023–2024), módosított
 const BASES = LOCAL ? [
   ['Domborzat', new ShadeLayer({ maxZoom: MAXZ, attribution: REGION ? 'Domborzat: AWS Terrain Tiles (SRTM, Ausztriában 10 m-es DGM) · Településnevek: Overture Maps (ODbL)' : 'Domborzat: AWS Terrain Tiles (SRTM) · Településnevek: GeoNames (CC BY 4.0)' })],
   ['Műhold + domborzat', L.layerGroup([new SatLayer({ maxZoom: MAXZ, attribution: SAT_ATTR }), grayShade()])],
-  ['Műhold', new SatLayer({ maxZoom: MAXZ, attribution: SAT_ATTR })]
+  ['Műhold', new SatLayer({ maxZoom: MAXZ, attribution: SAT_ATTR })],
+  ...(ESRI_KEY ? [['Légifotó', L.tileLayer(ESRI_URL, { maxZoom: MAXZ, maxNativeZoom: 19, attribution: ESRI_ATTR })],
+                  ['Légifotó + domborzat', L.layerGroup([L.tileLayer(ESRI_URL, { maxZoom: MAXZ, maxNativeZoom: 19, attribution: ESRI_ATTR }), grayShade()])]] : [])
 ] : [
   ['Topográfiai', L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Térkép: Esri, HERE, Garmin, © OpenStreetMap, USGS' })],
   ['OpenTopoMap', L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17, subdomains: 'abc', attribution: '© OpenStreetMap, SRTM · © OpenTopoMap (CC-BY-SA)' })],
@@ -2649,7 +2702,7 @@ const BASES = LOCAL ? [
   ['Csak domborzat', new ShadeLayer({ maxZoom: 18, attribution: 'Domborzat: AWS Terrain Tiles' })]
 ];
 const base = Object.fromEntries(BASES);
-let activeBase = (REGION ? BASES.find(b => b[0] === 'Műhold + domborzat') : BASES[0])[1], baseFails = new Set();
+let activeBase = (ESRI_KEY ? BASES.find(b => b[0] === 'Légifotó') : REGION ? BASES.find(b => b[0] === 'Műhold + domborzat') : BASES[0])[1], baseFails = new Set();
 const WARN = {};
 function warn(msg, kind = 'map') { WARN[kind] = msg; const t = Object.values(WARN).filter(Boolean), el = $('netStatus'); el.hidden = !t.length; el.innerHTML = t.join('<br>'); }
 BASES.forEach(([name, layer], i) => {
@@ -2660,7 +2713,8 @@ BASES.forEach(([name, layer], i) => {
     bad++;
     if (layer !== activeBase || ok > 0 || bad < 4 || baseFails.has(name)) return;
     baseFails.add(name);
-    const next = BASES.find(([n, l]) => !baseFails.has(n) && !(l instanceof L.LayerGroup));
+    // beépített adatnál a műholdképes réteg (helyi adat, mindig betölt), egyébként a következő működő réteg
+    const next = (LOCAL && BASES.find(([n]) => n === 'Műhold + domborzat')) || BASES.find(([n, l]) => !baseFails.has(n) && !(l instanceof L.LayerGroup));
     if (!next) { warn('Egyik térképréteg sem töltődik be. Ellenőrizd az internetkapcsolatot. Ha a Claude alkalmazásban nyitottad meg, töltsd le a fájlt, és nyisd meg Chrome-ban vagy Edge-ben.'); return; }
     map.removeLayer(layer); next[1].addTo(map);
     warn(`A(z) „${name}” térkép nem töltődött be, átváltottam erre: „${next[0]}”. A jobb felső sarokban másik réteget is választhatsz.`);

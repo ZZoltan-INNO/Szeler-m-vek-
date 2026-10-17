@@ -8,6 +8,7 @@ Használat:
       index.html + alap.html + dem/ + assets/, Facebook-előnézettel (og:*), megosztható linkkel.
       A --base a végleges cím; nélküle az előnézeti kép relatív útvonalú.
   --bld=<mappa>: a valós épületek (tools/build_buildings.py) külön mappából (b12_*.png, bld_index.json).
+  --esri-key=<kulcs>: (csak --web) nagy felbontású Esri légifotó a térképen és a 3D terepen a nézőpont 1 km-es körzetében.
 A <dem_mappa> lehet a tools/build_region.py kimenete is (régiós kiadás: demZ, z12, z8, region).
 A <dem_mappa> a tools/build_dem.py kimenete (z11_*.png, z8_*.png, index.json, telepulesek.json),
 a <muhold_mappa> a tools/build_sat.py, a tools/build_sat13.py és a tools/build_buildings.py kimenete
@@ -19,6 +20,7 @@ args = [a for a in sys.argv[1:] if not a.startswith('--')]
 web = '--web' in sys.argv
 base = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--base=')), '')
 bld = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--bld=')), None)
+esri = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--esri-key=')), None)
 if base and not base.endswith('/'):
     base += '/'
 src, out = args[0], args[1]
@@ -58,6 +60,8 @@ assert n == 1
 local = {'base': 'dem/', **idx}   # z11 + z8 (országos) vagy demZ + z12 + z8 + region (régiós)
 if web:
     local['web'] = True
+    if esri:   # Esri World Imagery légifotó (Location Platform API-kulcs; az Esri-felületen a weboldal címére korlátozva)
+        local['esriKey'] = esri
 if sat:
     local.update(json.load(open(os.path.join(sat, 'sat_index.json'))))
 bdir = bld or sat

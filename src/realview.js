@@ -96,6 +96,7 @@ window.RealView = (function () {
     return new T.ShaderMaterial({
       uniforms: {
         sat: { value: null }, hasSat: { value: 0 }, grass: { value: null }, hasGrass: { value: 0 }, fields: { value: tex.fields },
+        sat2: { value: null }, hasSat2: { value: 0 }, box2: { value: new T.Vector4() },
         sunDir: { value: new T.Vector3() }, fogCol: { value: lin(0xc8d5e0) }, fogDen: { value: 1 / 21000 },
         skyAmb: { value: lin(0xa9bfdb) }, gndAmb: { value: lin(0x6e6a55) }, sunCol: { value: lin(0xfff1d8).multiplyScalar(1.9) }
       },
@@ -103,7 +104,7 @@ window.RealView = (function () {
         varying vec3 vN; varying vec3 vW; varying vec2 vUv;
         void main(){ vN = normal; vW = position; vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }`,
       fragmentShader: `
-        uniform sampler2D sat, grass, fields; uniform float hasSat, hasGrass, fogDen; uniform vec3 sunDir, fogCol, skyAmb, gndAmb, sunCol;
+        uniform sampler2D sat, grass, fields, sat2; uniform float hasSat, hasGrass, hasSat2, fogDen; uniform vec3 sunDir, fogCol, skyAmb, gndAmb, sunCol; uniform vec4 box2;
         varying vec3 vN; varying vec3 vW; varying vec2 vUv;
         vec3 L(vec3 c){ return pow(c, vec3(2.2)); }
         void main(){
@@ -111,9 +112,15 @@ window.RealView = (function () {
           vec3 base = hasSat > .5 ? L(texture2D(sat, vUv).rgb) * 1.45 : L(texture2D(fields, vW.xz / 4200.).rgb);
           vec3 g1 = hasGrass > .5 ? L(texture2D(grass, vW.xz / 3.2).rgb) : vec3(.12,.17,.06);
           vec3 g2 = hasGrass > .5 ? L(texture2D(grass, vW.xz / 29.).rgb) : vec3(.12,.17,.06);
-          float near = 1. - smoothstep(15., 260., dist);
+          float near = 1. - smoothstep(15., 260., dist), grassMix = .75;
+          // légifotó a nézőpont körüli négyzeten (box2: nyugat, dél, kelet, észak, helyi m), a szélén lágy átmenettel
+          if (hasSat2 > .5) {
+            vec2 q = vec2((vW.x - box2.x) / (box2.z - box2.x), (-vW.z - box2.y) / (box2.w - box2.y));
+            float e = smoothstep(0., .08, min(min(q.x, 1. - q.x), min(q.y, 1. - q.y)));
+            if (e > 0.) { base = mix(base, L(texture2D(sat2, q).rgb) * 1.08, e); grassMix = mix(.75, .3, e); }
+          }
           vec3 grassCol = g1 * (1. + 2.6 * g2);
-          base = mix(base, mix(base * 1.15, grassCol, .75), near);
+          base = mix(base, mix(base * 1.15, grassCol, grassMix), near);
           vec3 N = normalize(vN);
           float diff = max(dot(N, sunDir), 0.);
           vec3 col = base * (diff * sunCol + mix(gndAmb, skyAmb, N.y * .5 + .5) * .95);
@@ -453,7 +460,7 @@ window.RealView = (function () {
     mats.blob.map = canvasTex(128, 128, g => { const gr = g.createRadialGradient(64, 64, 4, 64, 64, 62); gr.addColorStop(0, 'rgba(20,28,14,.5)'); gr.addColorStop(1, 'rgba(20,28,14,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); });
     const objGroup = new T.Group(), turbGroup = new T.Group(), ghostGroup = new T.Group(), bldGroup = new T.Group();
     scene.add(objGroup, bldGroup, turbGroup, ghostGroup);
-    let bKey = '', hlId = null;
+    let bKey = '', hlId = null, nKey = '';
     let tKey = '', oKey = '', trKey = '', turbs = [], raf = 0, satKey = '', lastObs = null;
     const t0 = performance.now();
     // a forgatás csak akkor rajzol, ha a kép látszik (telefonon kíméli az akkut)
@@ -481,6 +488,15 @@ window.RealView = (function () {
         }
         tMat.uniforms.hasSat.value = sat ? 1 : 0;
         scene.add(terrain);
+      },
+      // közeli légifotó a terepen: canvas (észak felül) és a lefedett négyzet helyi méterben [nyugat, dél, kelet, észak]; null: nincs
+      setNearSat(canvas, box, key) {
+        if (key === nKey) return; nKey = key;
+        if (tMat.uniforms.sat2.value) { tMat.uniforms.sat2.value.dispose(); tMat.uniforms.sat2.value = null; }
+        tMat.uniforms.hasSat2.value = canvas ? 1 : 0;
+        if (!canvas) return;
+        const t = new T.CanvasTexture(canvas); t.anisotropy = 8; t.minFilter = T.LinearMipmapLinearFilter;
+        tMat.uniforms.sat2.value = t; tMat.uniforms.box2.value.set(box[0], box[1], box[2], box[3]);
       },
       setTurbines(list, key) {
         if (key === trKey) return;

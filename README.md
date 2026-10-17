@@ -43,6 +43,11 @@ A legegyszerűbb a Netlify Drop (https://app.netlify.com/drop): ingyenes fiókka
 Ugyanez működik Cloudflare Pages vagy GitHub Pages alatt is. A webes kiadás Facebook-előnézetet (`assets/og.jpg`) és
 „Megosztás” gombot kap; a link a címsorban (#…) hordozza a nézőpontot, a turbinákat és a takarásokat.
 A `--base` a végleges címmel abszolút útvonalat ad az előnézeti képnek (a Facebook ezt szereti).
+A `--esri-key=<kulcs>` nagy felbontású légifotót (Esri World Imagery, kb. 30–50 cm) kapcsol be a webes kiadásban:
+„Légifotó” alaptérkép 19-es nagyításig, és a 3D terepen a nézőpont kb. 2×2 km-es környezetében. A kulcs ingyenes
+(ArcGIS Location Platform, „Basemaps” jogosultság), és az Esri felületén a weboldal címére kell korlátozni.
+Érvénytelen kulcsnál az oldal magától a beépített Sentinel-2 képre vált. A claude.ai artifact külső képet nem tölthet be,
+ott a Sentinel-2 marad.
 
 ## Térképes változat
 
