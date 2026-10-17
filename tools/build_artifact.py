@@ -9,7 +9,7 @@ Használat:
       A --base a végleges cím; nélküle az előnézeti kép relatív útvonalú.
   --bld=<mappa>: a valós épületek (tools/build_buildings.py) külön mappából (b12_*.png, bld_index.json).
   --villages=<fájl>: települések lakott területének határa (tools/build_villages.py), a térképen és a turbinák távolságához.
-  --forest=<mappa>: fás területek (tools/build_forest.py: f14_*.png, forest_index.json).
+  --forest=<mappa>: fák és erdők (tools/build_canopy.py: c14_*.png, t14_*.png, canopy_index.json).
   --esri-key=<kulcs>: (csak --web) nagy felbontású Esri légifotó a térképen és a 3D terepen a nézőpont 1 km-es körzetében.
 A <dem_mappa> lehet a tools/build_region.py kimenete is (régiós kiadás: demZ, z12, z8, region).
 A <dem_mappa> a tools/build_dem.py kimenete (z11_*.png, z8_*.png, index.json, telepulesek.json),
@@ -70,8 +70,8 @@ if sat:
     local.update(json.load(open(os.path.join(sat, 'sat_index.json'))))
 if villages:   # lakott területek határa (tools/build_villages.py), kicsi: a lapba ágyazva
     local['villages'] = json.load(open(villages))
-if forest:   # fás területek (tools/build_forest.py)
-    local.update(json.load(open(os.path.join(forest, 'forest_index.json'))))
+if forest:   # fák és erdők (tools/build_canopy.py)
+    local.update(json.load(open(os.path.join(forest, 'canopy_index.json'))))
 bdir = bld or sat
 if bdir and os.path.exists(os.path.join(bdir, 'bld_index.json')):   # valós épületek (tools/build_buildings.py)
     local.update(json.load(open(os.path.join(bdir, 'bld_index.json'))))
@@ -104,7 +104,7 @@ if sat:
             shutil.copy(os.path.join(sat, f), os.path.join(out, 'dem', f))
 if forest:
     for f in os.listdir(forest):
-        if f.startswith('f14_') and f.endswith('.png'):
+        if f.startswith(('c14_', 't14_')) and f.endswith('.png'):
             shutil.copy(os.path.join(forest, f), os.path.join(out, 'dem', f))
 if bdir:
     for f in os.listdir(bdir):

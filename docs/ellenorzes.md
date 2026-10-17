@@ -44,25 +44,53 @@ a képpont-kerekítésen belül (±2 m); közeli távolságokon (0,3–1 km) kis
 helyes összefüggés az arkusz-tangens, nem az 1/távolság (a mért értékek ott is a várttal egyeznek, lásd 3.).
 A képernyő méretétől a szögek nem függnek: ugyanaz a jelenet 1300 és 400 px szélesen ugyanakkora szögben látszik.
 
-## Erdők: a 3D kép és a számítás ugyanazt a takarást mutatja-e
+## Fák és erdők: a 3D kép és a számítás ugyanazt a takarást mutatja-e
 
-A 3D nézet és a takarásszámítás ugyanabból a determinisztikus koronarácsból dolgozik (`forestCrown` az
-`index.html`-ben): a nézőpont körüli gyűrűkben, rögzített szögosztással, a WorldCover-térkép alapján kerül
-egy-egy korona a fás képpontokra, és a számítás a látóvonal mentén pontosan ezeket a koronákat metszi.
-Ellenőrzés: Ják környéki erdők és erdőszélek mögé tett turbinákkal, nyáron és télen; a 3D képen mért
-takarási vonal (a pirosan áttűnő rész határa) vs. a számolt takart magasság.
+Adat: a Meta / WRI lombkorona-magasság térképe (kb. 1 m-es rács), ebből `tools/build_canopy.py` összefüggő erdőket
+(6,5 m-es rács, mért átlagos famagasság) és egyes fákat (hely, magasság, koronasugár) készít. A 3D nézet és a
+takarásszámítás ugyanazokat a koronákat használja (`forestCrown`, `treeItem`, `crownShape`, `crownHeight` az
+`index.html`-ben; a 3D motor csak kirajzolja a megadott alakot). Ellenőrzés: Ják környéki fák, erdők és erdőszélek
+mögé tett turbinákkal, nyáron és télen; a 3D képen mért takarási vonal (a pirosan áttűnő rész határa) vs. a
+számolt takart magasság.
 
 | Eset | Számítás | 3D kép |
 |---|---|---|
-| nyár, erdőszél/fasor 611 m-re, turbina 1,6 km | 56,6 m | 56,9 m |
-| nyár, erdő 351 m-re, turbina 1,6 km | 123,9 m | 124,2 m |
-| nyár, erdő 272 m-re, turbina 1,6 km | 121,7 m | 122,1 m |
-| tél, erdő 144 m-re, turbina 1,2 km | 139,6 m | 138,0 m |
-| tél, erdő 299 m-re, turbina 1,6 km | 129,9 m | 129,6 m |
-| tél, erdő 351 m-re, turbina 1,6 km | 123,9 m | 124,2 m |
+| nyár, erdő (25 m magas) 377 m-re, turbina 1,2 km | 81,4 m | 81,2 m |
+| nyár, erdőszél (17 m) 144 m-re, turbina 1,2 km | 131,3 m | 129,2 m |
+| nyár, egyes fa (5 m) 101 m-re, turbina 2,4 km | 72,9 m | 67,9 m |
+| nyár, egyes fa (7 m) 400 m-re, turbina 2,8 km | 43,0 m | 42,5 m |
+| nyár, egyes fa (9 m) 157 m-re, turbina 3,2 km | 115,5 m | 113,7 m |
+| tél, erdő (25 m) 377 m-re, turbina 1,2 km | 81,4 m | 81,2 m |
+| tél, erdő (21 m) 716 m-re, turbina 1,2 km | 45,0 m | 45,3 m |
+| tél, erdő (22 m) 389 m-re, turbina 1,2 km | 70,2 m | 70,9 m |
 
-Legnagyobb eltérés 1,6 m (kb. egy képpont). Az épületeknél ugyanez a próba (nyereg- és kontytetős házak
-100–140 m-re) ≤ 2,1 m eltérést ad, és a képre kattintva a szerkesztő mindig az ott látszó házzal nyílik.
+A 3D képen a határ az a legalsó sor, ahol a torony középső öt képpontoszlopából legalább három látszik (egy-egy
+levélrés nem számít). Az erdőknél és a gömbkoronás fáknál az eltérés legfeljebb 2 m. A közeli, levélcsokros fáknál
+a korona széle ritkás: ott a számítás a csokrok peremének kb. felénél–kétharmadánál húzza meg a takarás határát, a
+kép ettől néhány méterrel (a fánál néhány centiméterrel) eltérhet. A tesztből kimaradnak a súroló esetek, ahol a
+korona széle épp a torony tengelyén megy át (ott a turbinát 1–2 m-rel oldalra tolva teljesen más a takarás, és a
+torony egyik fele látszik, a másik nem).
+
+Javítva a próba során: (1) a 3D gömbkorona csomóssága 20%-ról 5%-ra csökkent, mert a peremen a számítás teljes
+ellipszoidja és a behúzott 3D felület között nagy volt a különbség; (2) a házak ereszkinyúlása eddig laposabban
+indult, mint a tetősík, így az eresz közelében a 3D tető legfeljebb 0,2 m-rel magasabb volt a számításnál (134 m-es
+háznál, 2,75 km-es turbinánál ez 2,3 m-t jelentett); most a kinyúlás a tetősík meghosszabbítása.
+
+## Utak: a nézőpont az úton szabadon áll
+
+Utak: OpenStreetMap (Overture transportation). A kocsiutak (autópálya … lakóutca) mentén az úttest fele + 3 m-en belül
+nincs fa (a lombkorona-térképből törölve, mielőtt a fákat kiemeli) és épület; a földutakon, járdákon, bejárókon
+(service) magán az úton nincs fa. Az épületeknél `tools/clear_roads_buildings.py` a belelógó oldalt vágja vissza:
+a régió 201 081 épületéből 17 801 rövidült (többnyire néhány tized métert), 1 692 maradt el (3 m-nél keskenyebb
+vagy 12 m²-nél kisebb maradt volna). A „service” utakat szándékosan nem vettük a kocsiutak közé: ezek gyakran a
+házak mellett futó bejárók, és 3 m-es sávjuk sok valós házat megcsonkított volna (így 26 042 rövidült volna).
+
+## Házak: kémény, gerinccserép, eresz
+
+A lakóház méretű, magastetős épületeken egy kémény áll a gerincen (0,55 m széles, 0,7 m-rel a gerinc fölé nyúlik);
+ez a számításban is szerepel (`bldHit`), így a 3D kép és a számítás itt is egyezik. A gerinccserép teteje pontosan
+a gerincmagasság, az eresz az ereszmagasság alatt van, ezek a takarást nem változtatják. A ház-próba (nyereg- és
+kontytetős házak 270–530 m-re) a kéményekkel: 11/11 rendben, legnagyobb eltérés 0,9 m.
 
 ## Lakott terület határa és a turbinák távolsága
 
