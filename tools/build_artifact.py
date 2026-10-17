@@ -37,4 +37,10 @@ if sat:
     for f in os.listdir(sat):
         if f.endswith('.jpg'):
             shutil.copy(os.path.join(sat, f), os.path.join(out, 'dem', f))
+# fotó-textúrák és égbolt-fény a 3D nézethez
+adir = os.path.join(os.path.dirname(__file__), '..', 'assets')
+os.makedirs(os.path.join(out, 'assets'), exist_ok=True)
+for f in os.listdir(adir):
+    if f.endswith(('.png', '.jpg')):
+        shutil.copy(os.path.join(adir, f), os.path.join(out, 'assets', f))
 print('kész:', out, len(os.listdir(os.path.join(out, 'dem'))), 'adatfájl')

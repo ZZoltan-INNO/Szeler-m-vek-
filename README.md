@@ -32,6 +32,7 @@ Településnevek: GeoNames (CC BY 4.0) az `all-the-cities` (MIT) és a `countrie
 - **Nézőpont**: talajszint, árok alja, emelet, magasabb emelet (csúszkával −3…+40 m).
 - **Évszak**: nyáron a lombos fák takarnak, télen áttetszők.
 - **Eredmény**: a turbina talppontjától számított takart magasság, mi látszik (semmi / csak a lapátvég / gondola és lapátok / szinte minden), mi a takaró elem, mekkora szögben látszik a gép.
+- **Fotórealisztikus 3D nézet** (three.js, `src/realview.js`, mindkét változatban): valós fotó-textúrák az `assets/` mappában. Levél- és kéregfotók, fű: ez-tree (MIT, © Daniel Greenheck). Égbolt-fény: Poly Haven „Quarry 01” HDRI (CC0), RGBE-bájtokként PNG-be csomagolva (`tools/hdr2png.py`), mert az artifact nem szolgál ki `.hdr` fájlt. Terep: Sentinel-2 műholdkép. A turbina takart része pirosan áttűnik.
 - **Oldalnézet**: terepmetszet a rálátás határvonalával.
 - **Láthatósági térkép**: 5–20 km sugarú körben kiszínezi, honnan látszik a lapátvég, a gondola vagy a teljes rotor (csak domborzattal számolva).
 - **Megosztható link**: a beállítások a címsorban tárolódnak.
