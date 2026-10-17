@@ -21,6 +21,18 @@ python3 tools/build_artifact.py <munkamappa>/out <kimenet> [alapváltozat_url]
 
 Településnevek: GeoNames (CC BY 4.0) az `all-the-cities` (MIT) és a `countries-states-cities-service` (MIT) npm-csomagokon keresztül.
 
+### Közzététel weboldalként (pl. Facebook-csoportba)
+
+```
+python3 tools/build_artifact.py --web [--base=https://VÉGLEGES-CÍM/] <munkamappa>/out <kimenet> <muhold_mappa>
+```
+
+A `<kimenet>` mappa (index.html, alap.html, dem/, assets/, kb. 80 MB) bármilyen statikus tárhelyre feltölthető.
+A legegyszerűbb a Netlify Drop (https://app.netlify.com/drop): ingyenes fiókkal be kell húzni a mappát vagy a ZIP-et.
+Ugyanez működik Cloudflare Pages vagy GitHub Pages alatt is. A webes kiadás Facebook-előnézetet (`assets/og.jpg`) és
+„Megosztás” gombot kap; a link a címsorban (#…) hordozza a nézőpontot, a turbinákat és a takarásokat.
+A `--base` a végleges címmel abszolút útvonalat ad az előnézeti képnek (a Facebook ezt szereti).
+
 ## Térképes változat
 
 ## Mit tud

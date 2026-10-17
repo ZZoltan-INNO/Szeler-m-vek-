@@ -1,33 +1,79 @@
-"""Az index.html-ből internet nélkül működő változatot készít (claude.ai artifacthoz).
+"""Az index.html-ből internet nélkül működő változatot készít (beépített domborzattal és műholdképpel).
 
-Használat: python3 tools/build_artifact.py <dem_mappa> <kimeneti_mappa> [alapváltozat_url] [muhold_mappa]
+Használat:
+  python3 tools/build_artifact.py <dem_mappa> <kimeneti_mappa> [alapváltozat_url] [muhold_mappa]
+      claude.ai artifacthoz (a dokumentumvázat az artifact adja)
+  python3 tools/build_artifact.py --web [--base=https://valami.netlify.app/] <dem_mappa> <kimeneti_mappa> [muhold_mappa]
+      önálló weboldal bármilyen statikus tárhelyre (Netlify, GitHub Pages, Cloudflare Pages):
+      index.html + alap.html + dem/ + assets/, Facebook-előnézettel (og:*), megosztható linkkel.
+      A --base a végleges cím; nélküle az előnézeti kép relatív útvonalú.
 A <dem_mappa> a tools/build_dem.py kimenete (z11_*.png, z8_*.png, index.json, telepulesek.json),
 a <muhold_mappa> a tools/build_sat.py kimenete (s12_*.jpg, s9_*.jpg, sat_index.json).
 """
 import json, re, shutil, sys, os
 
-src, out = sys.argv[1], sys.argv[2]
-alap_url = sys.argv[3] if len(sys.argv) > 3 else 'alap.html'
-sat = sys.argv[4] if len(sys.argv) > 4 else None
-s = open(os.path.join(os.path.dirname(__file__), '..', 'index.html'), encoding='utf-8').read()
+args = [a for a in sys.argv[1:] if not a.startswith('--')]
+web = '--web' in sys.argv
+base = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--base=')), '')
+if base and not base.endswith('/'):
+    base += '/'
+src, out = args[0], args[1]
+if web:
+    alap_url, sat = 'alap.html', (args[2] if len(args) > 2 else None)
+else:
+    alap_url = args[2] if len(args) > 2 else 'alap.html'
+    sat = args[3] if len(args) > 3 else None
+root = os.path.join(os.path.dirname(__file__), '..')
+s = open(os.path.join(root, 'index.html'), encoding='utf-8').read()
 idx = json.load(open(os.path.join(src, 'index.json')))
+
+SKELETON = ['<!DOCTYPE html>\n', '<html lang="hu">\n', '<head>\n', '<meta charset="utf-8">\n',
+            '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n',
+            '</head>\n', '<body>\n', '</body>\n', '</html>\n']
+ICON = ('<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E'
+        '%3Cg stroke=%22%231d5fa6%22 stroke-width=%222.6%22 stroke-linecap=%22round%22%3E%3Cpath d=%22M16 14v16%22/%3E'
+        '%3Cpath d=%22M16 14V3M16 14l9.5 5.5M16 14l-9.5 5.5%22/%3E%3C/g%3E%3C/svg%3E">\n')
+
+
+def social(html, title, desc, page):
+    """Facebook/Messenger-előnézet (Open Graph) és ikon a <title> után."""
+    tags = (f'<meta property="og:type" content="website">\n<meta property="og:locale" content="hu_HU">\n'
+            f'<meta property="og:title" content="{title}">\n<meta property="og:description" content="{desc}">\n'
+            f'<meta property="og:image" content="{base}assets/og.jpg">\n<meta property="og:image:width" content="1200">\n'
+            f'<meta property="og:image:height" content="630">\n'
+            + (f'<meta property="og:url" content="{base}{page}">\n' if base else '')
+            + '<meta name="twitter:card" content="summary_large_image">\n' + ICON)
+    i = html.index('</title>\n') + len('</title>\n')
+    return html[:i] + tags + html[i:]
+
 
 # Leaflet a megengedett CDN-ről (kisebb oldal), a saját kód maradjon beágyazva
 s, n = re.subn(r'<script>\n/\* @preserve\n \* Leaflet 1\.9\.4.*?</script>\n',
                '<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>\n', s, flags=re.S)
 assert n == 1
 local = {'base': 'dem/', 'z11': idx['z11'], 'z8': idx['z8']}
+if web:
+    local['web'] = True
 if sat:
     local.update(json.load(open(os.path.join(sat, 'sat_index.json'))))
 s = s.replace('<script>\n"use strict";', '<script>window.LOCAL_DATA = ' + json.dumps(local, separators=(',', ':')) + ';</script>\n<script>\n"use strict";', 1)
-s = s.replace('href="alap.html"', f'href="{alap_url}" target="_blank" rel="noopener"')
-# az artifact maga adja a dokumentumvázat
-for t in ['<!DOCTYPE html>\n', '<html lang="hu">\n', '<head>\n', '<meta charset="utf-8">\n',
-          '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n',
-          '</head>\n', '<body>\n', '</body>\n', '</html>\n']:
-    assert s.count(t) == 1, t
-    s = s.replace(t, '')
-s = s.replace('<title>Szélerőmű-rálátás</title>', '<title>Szélerőmű-rálátás</title>\n<meta name="claude:viewport-fit-sides" content="cover">', 1)
+if web:
+    s = social(s, 'Honnan látszik a szélerőmű?',
+               'Tedd le a 250 m magas turbinát a valós domborzati térképre, válaszd ki, honnan nézed, add hozzá a fákat, házakat, '
+               'és nézd meg 3D-ben, mennyi látszik belőle.', '')
+    a = open(os.path.join(root, 'alap.html'), encoding='utf-8').read()
+    a = social(a, 'Mennyi látszik a szélturbinából?',
+               'Egyszerű kalkulátor: távolság, turbinamagasság, előtte bokor, épület, fasor vagy domb, és 3D-ben látod, mennyit takarnak.',
+               'alap.html')
+    os.makedirs(out, exist_ok=True)
+    open(os.path.join(out, 'alap.html'), 'w', encoding='utf-8').write(a)
+else:
+    s = s.replace('href="alap.html"', f'href="{alap_url}" target="_blank" rel="noopener"')
+    # az artifact maga adja a dokumentumvázat
+    for t in SKELETON:
+        assert s.count(t) == 1, t
+        s = s.replace(t, '')
+    s = s.replace('<title>Szélerőmű-rálátás</title>', '<title>Szélerőmű-rálátás</title>\n<meta name="claude:viewport-fit-sides" content="cover">', 1)
 os.makedirs(os.path.join(out, 'dem'), exist_ok=True)
 open(os.path.join(out, 'index.html'), 'w', encoding='utf-8').write(s)
 for f in os.listdir(src):
@@ -37,10 +83,10 @@ if sat:
     for f in os.listdir(sat):
         if f.endswith('.jpg'):
             shutil.copy(os.path.join(sat, f), os.path.join(out, 'dem', f))
-# fotó-textúrák és égbolt-fény a 3D nézethez
-adir = os.path.join(os.path.dirname(__file__), '..', 'assets')
+# fotó-textúrák és égbolt-fény a 3D nézethez (+ az előnézeti kép)
+adir = os.path.join(root, 'assets')
 os.makedirs(os.path.join(out, 'assets'), exist_ok=True)
 for f in os.listdir(adir):
-    if f.endswith(('.png', '.jpg')):
+    if f.endswith(('.png', '.jpg')) or (web and f.startswith('LICENSE')):
         shutil.copy(os.path.join(adir, f), os.path.join(out, 'assets', f))
-print('kész:', out, len(os.listdir(os.path.join(out, 'dem'))), 'adatfájl')
+print('kész:', out, len(os.listdir(os.path.join(out, 'dem'))), 'adatfájl', '(weboldal)' if web else '(artifact)')

@@ -738,6 +738,7 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .btn{font:600 .88rem/1 var(--body);border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:8px;padding:9px 12px;cursor:pointer;white-space:nowrap}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .btn:disabled{opacity:.55;cursor:progress}
+.share-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
 .btn.warn{border-color:var(--shadow);color:var(--shadow)}
 .turbs{display:grid;gap:6px}
 .tb{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:4px 10px;border:1px solid var(--line);border-radius:8px;padding:8px 6px 8px 12px;background:var(--paper)}
@@ -967,6 +968,7 @@ footer a{color:var(--accent)}
         <label class="check"><input type="checkbox" id="spin" checked> Forgó lapátok</label></span>
       </div>
       <p class="small">A kép úgy készül, mint egy fénykép: a bal szélen lévő fokbeosztás a valódi emelkedési szögeket mutatja. Kinyújtott karral a kisujjad kb. 1°, a hüvelykujjad kb. 2° széles, az öklöd kb. 10° magas. A telihold 0,5°. A fák törzsei között alul átláthatsz, a számítás viszont a fasort a koronája magasságáig tömörnek veszi.</p>
+      <div class="share-row"><button class="btn" type="button" id="shareBtn">Megosztás: link ehhez a nézethez</button><span class="hint" id="shareMsg" role="status"></span></div>
       <div class="verdict" id="verdict" aria-live="polite"></div>
       <div class="tbl-wrap" id="tblWrap"></div>
     </section>
@@ -2737,11 +2739,18 @@ function loadHash() {
     return true;
   } catch (e) { return false; }
 }
-$('copyLink').onclick = async () => {
+// a link a címsorban (#…) hordozza a nézőpontot, a turbinákat és a takarásokat
+async function shareLink(msg) {
   saveHash();
-  try { await navigator.clipboard.writeText(location.href); $('copyMsg').textContent = 'A link a vágólapon van.'; }
-  catch (e) { $('copyMsg').textContent = 'Másold ki a böngésző címsorából: a link tartalmazza a beállításokat.'; }
-};
+  if (navigator.share && matchMedia('(pointer: coarse)').matches) {
+    try { await navigator.share({ title: document.title, text: 'Honnan látszik a szélerőmű? Az én nézőpontom:', url: location.href }); msg.textContent = ''; return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  try { await navigator.clipboard.writeText(location.href); msg.textContent = 'A link a vágólapon van, beillesztheted a bejegyzésbe vagy a hozzászólásba.'; }
+  catch (e) { msg.textContent = 'Másold ki a böngésző címsorából: a link tartalmazza a beállításokat.'; }
+}
+$('copyLink').onclick = () => shareLink($('copyMsg'));
+$('shareBtn').onclick = () => shareLink($('shareMsg'));
 
 /* ---------- Alaphelyzet (két koppintással, hogy véletlenül ne vesszen el semmi) ---------- */
 $('resetBtn').onclick = () => {
@@ -2758,7 +2767,8 @@ $('resetBtn').onclick = () => {
 };
 
 /* ---------- Indítás ---------- */
-if (LOCAL) { $('copyLink').hidden = true; $('vsR').querySelector('option[value="20000"]').remove(); }
+if (LOCAL && !LOCAL.web) { $('copyLink').hidden = true; $('shareBtn').parentElement.hidden = true; }
+if (LOCAL) { $('vsR').querySelector('option[value="20000"]').remove(); }
 loadHash();
 syncControls(); renderObstacles(); buildMarkers();
 map.fitBounds(L.latLngBounds([[state.viewer.lat, state.viewer.lon], ...state.turbines.map(t => [t.lat, t.lon])]).pad(0.35));
