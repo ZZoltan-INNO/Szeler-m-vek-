@@ -797,6 +797,9 @@ tr.sel td{background:var(--soft)}
 .custom input{width:7em}
 .obs{display:grid;gap:10px}
 .ob{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:6px;background:var(--paper)}
+.ob.new{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+#map.placing{cursor:crosshair}
+#map.placing .leaflet-grab{cursor:crosshair}
 .ob-head{display:flex;align-items:center;gap:8px}
 .ob-head b{font-family:var(--display);font-size:1.02rem;flex:1}
 .ob-head .sw{width:12px;height:12px;border-radius:3px}
@@ -921,7 +924,7 @@ footer a{color:var(--accent)}
       </div>
       <div class="field">
         <span class="flabel">Előtte álló takarások</span>
-        <p class="small">A takarások a térképen vannak. A piros pöttyel mozgatod őket, a fehér végpontokkal nyújtod és forgatod a sorokat. Újat a térkép feletti „Takarás” móddal a térképre koppintva, vagy az alábbi gombokkal a rálátás vonalára tehetsz.</p>
+        <p class="small"><b>Új takarás:</b> válaszd ki alább, mit teszel le, majd koppints a térképre oda, ahol áll. Utána a kártyáján a csúszkákkal finomhangolhatod. A térképen a piros pöttyel mozgatod, a fehér végpontokkal nyújtod és forgatod a sorokat.</p>
         <div class="obs" id="obs"></div>
         <div class="addrow" id="addrow" role="group" aria-label="Takarás hozzáadása"></div>
       </div>
@@ -1805,16 +1808,30 @@ map.on('click', e => {
   if (clickMode === 'view') { state.viewer = p; state.pan = 0; buildMarkers(); }
   else if (clickMode === 'ob') {
     const type = $('obType').value, V = state.viewer, c0 = Math.cos(V.lat * RAD), az = Math.atan2((p.lon - V.lon) * c0, p.lat - V.lat);
-    state.obstacles.push({ id: uid++, type, h: OB[type].h, w: OB[type].w, rot: az + Math.PI / 2, lat: p.lat, lon: p.lon });
+    const id = uid++;
+    state.obstacles.push({ id, type, h: OB[type].h, w: OB[type].w, rot: az + Math.PI / 2, lat: p.lat, lon: p.lon });
     renderObstacles(); setMode('view');
+    const card = document.querySelector(`.ob[data-id="${id}"]`); if (card) card.classList.add('new');
+    $('mapHint').innerHTML = `<b>${OB[type].name} lerakva.</b> <button type="button" class="linkbtn" id="goCard">Finomhangolás a csúszkákkal ↓</button>`;
+    $('goCard').onclick = () => { const c = document.querySelector(`.ob[data-id="${id}"]`); if (c) { c.scrollIntoView({ behavior: 'smooth', block: 'center' }); c.querySelector('input')?.focus({ preventScroll: true }); } };
   } else { state.turbines.push(p); state.sel = state.turbines.length - 1; state.pan = 0; clearViewshed(true); buildMarkers(); }
   update();
 });
 function setMode(m) {
   clickMode = m; $('modeView').setAttribute('aria-pressed', m === 'view'); $('modeTurb').setAttribute('aria-pressed', m === 'turb'); $('modeOb').setAttribute('aria-pressed', m === 'ob');
   $('obType').hidden = m !== 'ob';
-  $('mapHint').textContent = m === 'view' ? 'Kattints a térképre: a nézőpont oda kerül.' : m === 'turb' ? 'Kattints a térképre: oda kerül egy új turbina.' : 'Kattints a térképre: oda kerül a kiválasztott takarás, merőlegesen rád.';
+  if (m === 'ob') {
+    $('mapHint').innerHTML = `<b>Koppints a térképre:</b> oda kerül a(z) ${OB[$('obType').value].name.toLowerCase()}. <button type="button" class="linkbtn" id="placeCancel">Mégse</button>`;
+    $('placeCancel').onclick = () => setMode('view');
+  } else $('mapHint').textContent = m === 'view' ? 'Kattints a térképre: a nézőpont oda kerül.' : 'Kattints a térképre: oda kerül egy új turbina.';
+  $('map').classList.toggle('placing', m !== 'view');
 }
+function startPlace(type) {
+  $('obType').value = type; setMode('ob');
+  document.querySelectorAll('.ob.new').forEach(c => c.classList.remove('new'));
+  $('c-map').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+$('obType').onchange = () => setMode('ob');
 $('modeOb').onclick = () => setMode('ob');
 $('obType').innerHTML = OB_ORDER.map(k => `<option value="${k}">${OB[k].name}</option>`).join('');
 $('obType').value = 'trees';
@@ -1960,7 +1977,7 @@ function renderObstacles() {
   const box = $('obs');
   if (!obDragging) buildObHandles();
   drawObstacles();
-  if (!state.obstacles.length) { box.innerHTML = '<p class="empty">Nincs takarás megadva: most csak a domborzat takar. Adj hozzá elemet az alábbi gombokkal, vagy a térkép feletti „Takarás” móddal.</p>'; return; }
+  if (!state.obstacles.length) { box.innerHTML = '<p class="empty">Nincs takarás megadva: most csak a domborzat takar. Válassz alább egy elemet, és koppints a térképre.</p>'; return; }
   box.innerHTML = state.obstacles.map(o => {
     const d = OB[o.type], wi = WIDTHS.findIndex(w => w >= o.w), pd = obPolar(o).d, lin = LINEAR(o.type);
     return `<div class="ob" data-id="${o.id}">
@@ -1995,11 +2012,7 @@ $('obs').addEventListener('input', e => {
 });
 $('obs').addEventListener('click', e => { const b = e.target.closest('[data-rm]'); if (!b) return; state.obstacles = state.obstacles.filter(o => o.id !== +b.dataset.rm); renderObstacles(); update(); });
 $('addrow').innerHTML = OB_ORDER.map(k => `<button class="btn" type="button" data-add="${k}">+ ${OB[k].name}</button>`).join('');
-$('addrow').addEventListener('click', e => {
-  const b = e.target.closest('[data-add]'); if (!b) return; const t = b.dataset.add, d = OB[t];
-  state.obstacles.push(fromLOS({ id: uid++, type: t, dist: d.d, h: d.h, w: d.w, off: 0 }));
-  renderObstacles(); update();
-});
+$('addrow').addEventListener('click', e => { const b = e.target.closest('[data-add]'); if (b) startPlace(b.dataset.add); });
 function syncControls() {
   sel.value = state.model; $('customBox').hidden = state.model !== 'custom';
   $('cHub').value = state.custom.hub; $('cRot').value = state.custom.rotor;
