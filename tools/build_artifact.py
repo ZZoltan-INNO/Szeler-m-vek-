@@ -8,7 +8,7 @@ Használat:
       index.html + alap.html + dem/ + assets/, Facebook-előnézettel (og:*), megosztható linkkel.
       A --base a végleges cím; nélküle az előnézeti kép relatív útvonalú.
 A <dem_mappa> a tools/build_dem.py kimenete (z11_*.png, z8_*.png, index.json, telepulesek.json),
-a <muhold_mappa> a tools/build_sat.py kimenete (s12_*.jpg, s9_*.jpg, sat_index.json).
+a <muhold_mappa> a tools/build_sat.py és a tools/build_sat13.py kimenete (s13_*.webp, s12_*.jpg, s9_*.jpg, sat_index.json).
 """
 import json, re, shutil, sys, os
 
@@ -81,7 +81,7 @@ for f in os.listdir(src):
         shutil.copy(os.path.join(src, f), os.path.join(out, 'dem', f))
 if sat:
     for f in os.listdir(sat):
-        if f.endswith('.jpg'):
+        if f.endswith(('.jpg', '.webp')) and not f.endswith('.part.webp'):
             shutil.copy(os.path.join(sat, f), os.path.join(out, 'dem', f))
 # fotó-textúrák és égbolt-fény a 3D nézethez (+ az előnézeti kép)
 adir = os.path.join(root, 'assets')

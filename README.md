@@ -9,14 +9,16 @@ Két változat, mindkettő egyetlen HTML fájl, telepítés nélkül fut a böng
 ### Beépített adatokkal (claude.ai artifact)
 
 A térképes változat internet nélküli kiadása, amely telefonon, a Claude alkalmazásban is működik:
-a magyarországi domborzat (kb. 50 m-es rács) és kb. 1100 településnév az oldal mellett van.
-Háttértérkép (utak, folyók) nincs benne, a térkép árnyékolt domborzat településnevekkel.
+a magyarországi domborzat (kb. 50 m-es rács), a Sentinel-2 műholdkép (nagyításkor kb. 13 m/px, a 10 m-es
+eredeti felbontásból) és kb. 1100 településnév az oldal mellett van. Háttértérkép (utak, folyók) nincs benne.
 
 Előállítás:
 
 ```
 python3 tools/build_dem.py <munkamappa> <telepulesek.json>     # domborzati blokkok
-python3 tools/build_artifact.py <munkamappa>/out <kimenet> [alapváltozat_url]
+python3 tools/build_sat.py <sat_mappa> <munkamappa>/out/index.json  # műholdkép z12 + z9 (20 m-es szintről)
+python3 tools/build_sat13.py <sat_mappa> 8                          # éles műholdkép z13 (10 m-es eredetiből)
+python3 tools/build_artifact.py <munkamappa>/out <kimenet> [alapváltozat_url] <sat_mappa>/out
 ```
 
 Településnevek: GeoNames (CC BY 4.0) az `all-the-cities` (MIT) és a `countries-states-cities-service` (MIT) npm-csomagokon keresztül.
