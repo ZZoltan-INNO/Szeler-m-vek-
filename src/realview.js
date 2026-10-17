@@ -204,7 +204,9 @@ window.RealView = (function () {
     const sp = bush ? 1.6 : forest ? 6.5 : 7.5, rows = forest ? Math.max(1, Math.round((o.depth || 40) / 7)) : 1;
     const ph = o.phase || 0, k0 = Math.ceil((-o.len / 2 - ph) / sp), k1 = Math.floor((o.len / 2 - ph) / sp);
     const nx = o.ey, ny = -o.ex, trees = [];
-    for (let r = 0; r < rows; r++) for (let kk = k0; kk <= k1 && trees.length < 2500; kk++) {
+    // megadott fahelyek (pl. a fás területek közeli fái): mind pontosan o.h magasak
+    if (o.trees) o.trees.forEach((q, c) => trees.push({ x: q.x, y: q.y, g: groundY(q.x, q.y), h: o.h, seed: o.seed * 31 + c * 7.7, dist: Math.hypot(q.x, q.y) }));
+    else for (let r = 0; r < rows; r++) for (let kk = k0; kk <= k1 && trees.length < 2500; kk++) {
       const c = trees.length, onLos = kk === 0 && r === 0;
       const s = ph + (kk + (r % 2) * 0.5) * sp + (onLos ? 0 : (rnd(c * 1.3 + o.seed) - 0.5) * sp * 0.4), off = (r - (rows - 1) / 2) * 7 + (onLos ? 0 : (rnd(c * 2.9 + o.seed) - 0.5) * 2);
       const x = o.x0 + o.ex * s + nx * off, y = o.y0 + o.ey * s + ny * off;
@@ -360,6 +362,38 @@ window.RealView = (function () {
     });
     return grp;
   }
+  /* ---------- Fás területek: instanced koronák (közel: törzs + korona, távolabb: a talajig záródó lombtömb) ---------- */
+  // lombtömb: függőleges oldal a talajtól a magasság 55%-áig, felül lekerekítve; teteje pontosan 1 (= famagasság)
+  const canopyGeo = new T.LatheGeometry([[0, 0], [1, 0], [1, 0.55], [0.92, 0.74], [0.68, 0.9], [0.32, 0.985], [0, 1]].map(([x, y]) => new T.Vector2(x, y)), 9);
+  const crownGeo = (() => { const g = new T.SphereGeometry(1, 16, 12), p = g.attributes.position; for (let i = 0; i < p.count; i++) { const f = 0.9 + rnd(i * 1.7) * 0.1; p.setXYZ(i, p.getX(i) * f, p.getY(i) * f, p.getZ(i) * f); } g.computeVertexNormals(); return g; })();
+  const FORC = [0x4f6d33, 0x587a38, 0x46632e, 0x62803f, 0x3f5a2a], BAREC = [0x7a6c5c, 0x6e6152, 0x837464];
+  // fák: [{ x, y, s, f, seed, kind: 'photo' | 'crown' | 'canopy', solid }] — a lap forestCrown() függvénye adja;
+  // az alakok egyeznek a takarás számításában használt koronákkal (crownHeight)
+  function forestTrees(list, groundY, H, winter, mats) {
+    const grp = new T.Group(), m = new T.Matrix4(), q = new T.Quaternion(), c = new T.Color(), pal = winter ? BAREC : FORC;
+    const photo = list.filter(t => t.kind === 'photo');
+    if (photo.length) grp.add(rowTrees({ kind: 'trees', trees: photo, h: H, seed: 17 }, groundY, mats, winter, 12000));
+    for (const solid of [true, false]) {
+      const mat = !winter ? mats.forest : solid ? mats.bare : mats.bareThin;
+      const cs = list.filter(t => t.kind === 'crown' && t.solid === solid), fs = list.filter(t => t.kind === 'canopy' && t.solid === solid);
+      if (fs.length) {
+        const im = new T.InstancedMesh(canopyGeo, mat, fs.length);
+        fs.forEach((t, i) => { const r = t.s * 0.62 * (0.95 + t.seed * 0.1); m.compose(new T.Vector3(t.x, groundY(t.x, t.y) - 0.5, -t.y), q.setFromAxisAngle(Y, t.seed * 6.28), new T.Vector3(r, H + 0.5, r)); im.setMatrixAt(i, m); c.set(pal[Math.floor(t.seed * 997) % pal.length]).convertSRGBToLinear(); im.setColorAt(i, c); });
+        im.frustumCulled = false; grp.add(im);
+      }
+      if (cs.length) {
+        const cr = new T.InstancedMesh(crownGeo, mat, cs.length), tr = new T.InstancedMesh(unitCyl, mats.bark, cs.length);
+        cs.forEach((t, i) => {
+          const g = groundY(t.x, t.y), rx = 3.6 + t.seed * 1.4, ry = H * 0.36;
+          m.compose(new T.Vector3(t.x, g + H - ry, -t.y), q.setFromAxisAngle(Y, t.seed * 6.28), new T.Vector3(rx, ry, rx)); cr.setMatrixAt(i, m);
+          c.set(pal[Math.floor(t.seed * 997) % pal.length]).convertSRGBToLinear(); cr.setColorAt(i, c);
+          m.compose(new T.Vector3(t.x, g - 0.3, -t.y), q.identity(), new T.Vector3(0.28, H - 2 * ry + 1.5, 0.28)); tr.setMatrixAt(i, m);
+        });
+        cr.frustumCulled = tr.frustumCulled = false; grp.add(cr, tr);
+      }
+    }
+    return grp;
+  }
   function building(o, groundY, mats) {
     const grp = new T.Group(), g = o.kind === 'hill' ? 0 : groundY(o.x0, o.y0);
     if (o.kind === 'house') {
@@ -453,14 +487,18 @@ window.RealView = (function () {
       windows: windowTex(),
       ghost: new T.MeshBasicMaterial({ color: lin(0xff4f42), transparent: true, opacity: 0.58, depthWrite: false, depthFunc: T.GreaterDepth, fog: false })
     };
+    // fás területek anyagai: foltos lomb (nyár), lombtalan ágtömeg (tél; a szél és a fasorok áttetszők, nem takarnak)
+    mats.forest = new T.MeshStandardMaterial({ map: mats.core.map, roughness: 1, envMapIntensity: 0.4 });
+    mats.bare = new T.MeshStandardMaterial({ map: mats.core.map, color: 0xb8aea4, roughness: 1, envMapIntensity: 0.3 });
+    mats.bareThin = new T.MeshStandardMaterial({ map: mats.core.map, color: 0xb8aea4, roughness: 1, transparent: true, opacity: 0.35, depthWrite: false });
     // valós épületek anyagai (méterarányos UV-vel)
     mats.bWall = metricUV(new T.MeshStandardMaterial({ map: facadeTex(), roughness: 0.92 }), false);
     mats.bGable = metricUV(new T.MeshStandardMaterial({ map: plasterTex(), roughness: 0.92 }), false);
     mats.bRoof = metricUV(new T.MeshStandardMaterial({ map: roofTexNeutral(), roughness: 0.75 }), true);
     mats.blob.map = canvasTex(128, 128, g => { const gr = g.createRadialGradient(64, 64, 4, 64, 64, 62); gr.addColorStop(0, 'rgba(20,28,14,.5)'); gr.addColorStop(1, 'rgba(20,28,14,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); });
-    const objGroup = new T.Group(), turbGroup = new T.Group(), ghostGroup = new T.Group(), bldGroup = new T.Group();
-    scene.add(objGroup, bldGroup, turbGroup, ghostGroup);
-    let bKey = '', hlId = null, nKey = '';
+    const objGroup = new T.Group(), turbGroup = new T.Group(), ghostGroup = new T.Group(), bldGroup = new T.Group(), forGroup = new T.Group();
+    scene.add(objGroup, bldGroup, forGroup, turbGroup, ghostGroup);
+    let bKey = '', hlId = null, nKey = '', fKey = '';
     let tKey = '', oKey = '', trKey = '', turbs = [], raf = 0, satKey = '', lastObs = null;
     const t0 = performance.now();
     // a forgatás csak akkor rajzol, ha a kép látszik (telefonon kíméli az akkut)
@@ -530,6 +568,13 @@ window.RealView = (function () {
         bldGroup.add(realBuildings(list, groundY, mats));
         const h = hlId; hlId = null; api.highlightBuilding(h);
       },
+      // fás területek: [{ x, y (helyi m), s (rácstáv, m), f (1: szél/fasor, 2: erdő belseje), seed }], H: átlagos famagasság
+      setForest(list, key, groundY, H, winter) {
+        if (key === fKey) return; fKey = key;
+        forGroup.traverse(o => { if (o.isInstancedMesh) o.dispose(); });
+        forGroup.clear();
+        if (list.length) forGroup.add(forestTrees(list, groundY, H, winter, mats));
+      },
       // a képre kattintva: melyik valós épületet találja (CSS-képpont a kép bal felső sarkától), vagy null
       pickBuilding(x, y, w, h) {
         const rc = new T.Raycaster(); rc.setFromCamera(new T.Vector2(x / w * 2 - 1, 1 - y / h * 2), cam);
@@ -557,7 +602,7 @@ window.RealView = (function () {
       // 1. táj és takarások, 2. a turbinák takart része áttűnve, 3. a turbinák
       render() {
         renderer.autoClear = false; renderer.clear();
-        const gv = ghostGroup.visible, vis = v => { objGroup.visible = bldGroup.visible = sky.visible = v; if (terrain) terrain.visible = v; };
+        const gv = ghostGroup.visible, vis = v => { objGroup.visible = bldGroup.visible = forGroup.visible = sky.visible = v; if (terrain) terrain.visible = v; };
         turbGroup.visible = false; ghostGroup.visible = false;
         renderer.render(scene, cam);
         vis(false);
@@ -649,7 +694,22 @@ window.RealView = (function () {
       pending++;
       tl.load(base + file, t => { if (srgb) t.encoding = T.sRGBEncoding; if (rep) t.wrapS = t.wrapT = T.RepeatWrapping; t.anisotropy = 8; apply(t); loaded(); }, undefined, () => { fb(); loaded(); });
     };
-    loadTex('level_tolgy.png', true, false, t => { mats.leaf.map = t; mats.leaf.needsUpdate = true; });
+    loadTex('level_tolgy.png', true, false, t => {
+      mats.leaf.map = t; mats.leaf.needsUpdate = true;
+      // távoli lombtömb: a levélfotóból összerakott, tömör (lyukmentes) lombminta
+      if (t.image && t.image.width) {
+        const cv = document.createElement('canvas'); cv.width = cv.height = 512; const g = cv.getContext('2d');
+        g.fillStyle = '#34502a'; g.fillRect(0, 0, 512, 512);
+        for (let k = 0; k < 90; k++) {
+          const s = 70 + rnd(k + 300) * 70, x = rnd(k + 100) * 512, y = rnd(k + 200) * 512;
+          g.save(); g.translate(x, y); g.rotate(rnd(k + 400) * 6.28); g.globalAlpha = 0.75 + rnd(k) * 0.25;
+          for (const [dx, dy] of [[0, 0], [-512, 0], [512, 0], [0, -512], [0, 512]]) g.drawImage(t.image, dx - s / 2, dy - s / 2, s, s);
+          g.restore();
+        }
+        const ct = new T.CanvasTexture(cv); ct.encoding = T.sRGBEncoding; ct.wrapS = ct.wrapT = T.RepeatWrapping; ct.repeat.set(5, 2); ct.anisotropy = 8;
+        mats.forest.map = ct; mats.forest.color = lin(0xd6dccb); mats.forest.needsUpdate = true;
+      }
+    });
     loadTex('level_koris.png', true, false, t => { mats.bushLeaf.map = t; mats.bushLeaf.needsUpdate = true; });
     loadTex('kereg_tolgy.jpg', true, true, t => { t.repeat.set(1, 3); mats.bark.map = t; mats.bark.needsUpdate = true; });
     loadTex('kereg_tolgy_normal.jpg', false, true, t => { t.repeat.set(1, 3); mats.bark.normalMap = t; mats.bark.needsUpdate = true; });

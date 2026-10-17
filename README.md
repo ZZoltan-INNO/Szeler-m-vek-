@@ -9,13 +9,20 @@ Két változat, mindkettő egyetlen HTML fájl, telepítés nélkül fut a böng
 ### Beépített adatokkal: Ják és 30 km-es környéke
 
 A térképes változat internet nélküli kiadása (claude.ai artifact és a Facebookra szánt weboldal) egy kör
-alakú régió adatait tartalmazza, jelenleg Ják 30 km-es környékét (kb. 28 MB):
+alakú régió adatait tartalmazza, jelenleg Ják 30 km-es környékét (kb. 33 MB):
 
 - **domborzat:** AWS Terrain Tiles z12 (kb. 26 m/px; Ausztriában 10 m-es forrásból),
 - **műholdkép:** Copernicus Sentinel-2, 2023–2024 nyara, a 10 m-es eredetiből z14 (kb. 6,5 m/px) és z12,
 - **valós épületek:** Overture Maps (OpenStreetMap + Microsoft ML Buildings, ODbL), kb. 200 ezer épület a
   magyar és az osztrák oldalon: elforgatott téglalap alaprajz, becsült gerincmagasság, nyeregtető. A 3D
   nézetben megjelennek, és a takarás számításában is szerepelnek (a nézőpontot tartalmazó saját ház kivételével),
+- **fás területek:** ESA WorldCover 2021 (10 m, CC BY 4.0) „fás terület” osztálya: erdő, erdőszél, fasor.
+  A 3D nézetben lombkoronaként jelennek meg, állítható átlagos famagassággal (alapból 18 m), és a takarás
+  számításában is szerepelnek. A 3D kép és a számítás ugyanazokat a fákat használja (közös, determinisztikus
+  koronarács a nézőpont körül), így a takarási vonaluk építésből egyezik. Télen csak az erdő belseje tömör,
+  a széle és a fasor lombtalanul átlátszik,
+- **lakott terület határa** (Ják, Nárai): az épületekből számolt összefüggő beépítés körvonala (nem a hivatalos
+  belterületi határ). A térképen szaggatott narancs vonal; minden turbina mellett látszik a határtól mért távolsága,
 - **településnevek:** Overture Maps divisions (ODbL), az osztrák falvakkal együtt.
 
 Előállítás (a régió közepe és sugara paraméter):
@@ -26,7 +33,10 @@ python3 tools/build_sat.py <sat_mappa> <index.json>                             
 python3 tools/build_sat13.py <sat_mappa> 8 --zoom=12 --region=47.1425,16.5815,30 --out=<munka>/sat
 python3 tools/build_sat13.py <sat_mappa> 8 --zoom=14 --region=47.1425,16.5815,30 --out=<munka>/sat
 python3 tools/build_buildings.py <munka>/bld <sorcsoportok.json> 12 --region=47.1425,16.5815,30
-python3 tools/build_artifact.py --bld=<munka>/bld <munka>/dem/out <kimenet> [alapváltozat_url] <munka>/sat
+python3 tools/build_forest.py <munka>/forest 47.1425 16.5815 30                      # fás területek
+python3 tools/build_villages.py <munka>/bld <munka>/dem/out/telepulesek.json <munka>/villages.json Ják Nárai
+python3 tools/build_artifact.py --bld=<munka>/bld --forest=<munka>/forest --villages=<munka>/villages.json \
+    <munka>/dem/out <kimenet> [alapváltozat_url] <munka>/sat
 ```
 
 A sorcsoport-listát (az Overture-épületfájlok érintett részei) a `tools/overture_io.py` segédfüggvényeivel
@@ -35,10 +45,11 @@ lehet összeállítani; a szkriptek a fájloknak csak a szükséges részét olv
 ### Közzététel weboldalként (pl. Facebook-csoportba)
 
 ```
-python3 tools/build_artifact.py --web [--base=https://VÉGLEGES-CÍM/] --bld=<munka>/bld <munka>/dem/out <kimenet> <munka>/sat
+python3 tools/build_artifact.py --web [--base=https://VÉGLEGES-CÍM/] --bld=<munka>/bld --forest=<munka>/forest \
+    --villages=<munka>/villages.json [--esri-key=<kulcs>] <munka>/dem/out <kimenet> <munka>/sat
 ```
 
-A `<kimenet>` mappa (index.html, alap.html, dem/, assets/, kb. 28 MB) bármilyen statikus tárhelyre feltölthető.
+A `<kimenet>` mappa (index.html, alap.html, dem/, assets/, kb. 33 MB) bármilyen statikus tárhelyre feltölthető.
 A legegyszerűbb a Netlify Drop (https://app.netlify.com/drop): ingyenes fiókkal be kell húzni a mappát vagy a ZIP-et.
 Ugyanez működik Cloudflare Pages vagy GitHub Pages alatt is. A webes kiadás Facebook-előnézetet (`assets/og.jpg`) és
 „Megosztás” gombot kap; a link a címsorban (#…) hordozza a nézőpontot, a turbinákat és a takarásokat.
@@ -76,6 +87,7 @@ Internetkapcsolat kell hozzá: a térképcsempék, a domborzati adat és a Leafl
 
 - A domborzati modell kb. 25–30 m felbontású: kis árkokat, töltéseket, egyes fákat nem lát, ezeket kézzel kell megadni.
 - Erdős területen a modell részben a lombkorona magasságát méri.
+- A fás területek 10 m-es felbontásúak, a famagasság egy átlagérték: egy-egy magányos fa vagy keskeny bokorsor hiányozhat, ezeket kézzel lehet hozzáadni.
 - A számítás tájékoztató jellegű, nem helyettesíti a hivatalos látványtervet.
 
 A kiinduló specifikáció: [`docs/szeleromu-lathatosag-spec.md`](docs/szeleromu-lathatosag-spec.md).

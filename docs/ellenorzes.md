@@ -43,3 +43,31 @@ Arányosság: a képmagasság × távolság ÷ fókusztávolság szorzat kis sz�
 a képpont-kerekítésen belül (±2 m); közeli távolságokon (0,3–1 km) kisebb, mert ott már nem kicsi a szög, és a
 helyes összefüggés az arkusz-tangens, nem az 1/távolság (a mért értékek ott is a várttal egyeznek, lásd 3.).
 A képernyő méretétől a szögek nem függnek: ugyanaz a jelenet 1300 és 400 px szélesen ugyanakkora szögben látszik.
+
+## Erdők: a 3D kép és a számítás ugyanazt a takarást mutatja-e
+
+A 3D nézet és a takarásszámítás ugyanabból a determinisztikus koronarácsból dolgozik (`forestCrown` az
+`index.html`-ben): a nézőpont körüli gyűrűkben, rögzített szögosztással, a WorldCover-térkép alapján kerül
+egy-egy korona a fás képpontokra, és a számítás a látóvonal mentén pontosan ezeket a koronákat metszi.
+Ellenőrzés: Ják környéki erdők és erdőszélek mögé tett turbinákkal, nyáron és télen; a 3D képen mért
+takarási vonal (a pirosan áttűnő rész határa) vs. a számolt takart magasság.
+
+| Eset | Számítás | 3D kép |
+|---|---|---|
+| nyár, erdőszél/fasor 611 m-re, turbina 1,6 km | 56,6 m | 56,9 m |
+| nyár, erdő 351 m-re, turbina 1,6 km | 123,9 m | 124,2 m |
+| nyár, erdő 272 m-re, turbina 1,6 km | 121,7 m | 122,1 m |
+| tél, erdő 144 m-re, turbina 1,2 km | 139,6 m | 138,0 m |
+| tél, erdő 299 m-re, turbina 1,6 km | 129,9 m | 129,6 m |
+| tél, erdő 351 m-re, turbina 1,6 km | 123,9 m | 124,2 m |
+
+Legnagyobb eltérés 1,6 m (kb. egy képpont). Az épületeknél ugyanez a próba (nyereg- és kontytetős házak
+100–140 m-re) ≤ 2,1 m eltérést ad, és a képre kattintva a szerkesztő mindig az ott látszó házzal nyílik.
+
+## Lakott terület határa és a turbinák távolsága
+
+A határ az épületekből számolt összefüggő beépítés (`tools/build_villages.py`): Ják kb. 1,76 km², Nárai kb. 0,95 km²
+(két részből). A turbina távolsága a sokszög legközelebbi élétől (helyi síkkoordinátákban); független
+ellenőrzésként a csúcspontokig mért legkisebb távolsággal összevetve (pl. 47,1660 / 16,5850-nél Ják 1125 m,
+Nárai 2780 m). A címke a turbina húzásakor frissül, a turbinalistában is megjelenik. Alaphelyzetben nincs
+turbina és kézi takarás; az Alaphelyzet gomb a fejlécben van. 400 és 1300 px szélesen: 14/14 rendben.

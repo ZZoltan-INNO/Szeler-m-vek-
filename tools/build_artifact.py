@@ -8,6 +8,8 @@ Használat:
       index.html + alap.html + dem/ + assets/, Facebook-előnézettel (og:*), megosztható linkkel.
       A --base a végleges cím; nélküle az előnézeti kép relatív útvonalú.
   --bld=<mappa>: a valós épületek (tools/build_buildings.py) külön mappából (b12_*.png, bld_index.json).
+  --villages=<fájl>: települések lakott területének határa (tools/build_villages.py), a térképen és a turbinák távolságához.
+  --forest=<mappa>: fás területek (tools/build_forest.py: f14_*.png, forest_index.json).
   --esri-key=<kulcs>: (csak --web) nagy felbontású Esri légifotó a térképen és a 3D terepen a nézőpont 1 km-es körzetében.
 A <dem_mappa> lehet a tools/build_region.py kimenete is (régiós kiadás: demZ, z12, z8, region).
 A <dem_mappa> a tools/build_dem.py kimenete (z11_*.png, z8_*.png, index.json, telepulesek.json),
@@ -21,6 +23,8 @@ web = '--web' in sys.argv
 base = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--base=')), '')
 bld = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--bld=')), None)
 esri = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--esri-key=')), None)
+forest = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--forest=')), None)
+villages = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--villages=')), None)
 if base and not base.endswith('/'):
     base += '/'
 src, out = args[0], args[1]
@@ -64,6 +68,10 @@ if web:
         local['esriKey'] = esri
 if sat:
     local.update(json.load(open(os.path.join(sat, 'sat_index.json'))))
+if villages:   # lakott területek határa (tools/build_villages.py), kicsi: a lapba ágyazva
+    local['villages'] = json.load(open(villages))
+if forest:   # fás területek (tools/build_forest.py)
+    local.update(json.load(open(os.path.join(forest, 'forest_index.json'))))
 bdir = bld or sat
 if bdir and os.path.exists(os.path.join(bdir, 'bld_index.json')):   # valós épületek (tools/build_buildings.py)
     local.update(json.load(open(os.path.join(bdir, 'bld_index.json'))))
@@ -94,6 +102,10 @@ if sat:
     for f in os.listdir(sat):
         if f.endswith(('.jpg', '.webp')) and not f.endswith('.part.webp'):
             shutil.copy(os.path.join(sat, f), os.path.join(out, 'dem', f))
+if forest:
+    for f in os.listdir(forest):
+        if f.startswith('f14_') and f.endswith('.png'):
+            shutil.copy(os.path.join(forest, f), os.path.join(out, 'dem', f))
 if bdir:
     for f in os.listdir(bdir):
         if f.startswith('b12_') and f.endswith('.png'):
