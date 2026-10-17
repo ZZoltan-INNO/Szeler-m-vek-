@@ -6,30 +6,39 @@ Két változat, mindkettő egyetlen HTML fájl, telepítés nélkül fut a böng
 - **`alap.html` – alapváltozat**: sík terep, térkép nélkül. Megadható a turbina távolsága, agymagassága és rotorátmérője, a szemmagasság fix 1,7 m. Bokor, épület, fák és domb tehető elé, a helyük és a magasságuk csúszkával állítható. Megmutatja a szemmagasságú képet, az oldalnézetet és hogy mennyi takarásban van. Internet nélkül is működik (csak a betűtípusok töltődnek hálózatról).
 - **`index.html` – térképes változat**: valós domborzattal, a lent leírt funkciókkal. Internetről tölti a térképet és a domborzatot.
 
-### Beépített adatokkal (claude.ai artifact)
+### Beépített adatokkal: Ják és 30 km-es környéke
 
-A térképes változat internet nélküli kiadása, amely telefonon, a Claude alkalmazásban is működik:
-a magyarországi domborzat (kb. 50 m-es rács), a Sentinel-2 műholdkép (nagyításkor kb. 13 m/px, a 10 m-es
-eredeti felbontásból) és kb. 1100 településnév az oldal mellett van. Háttértérkép (utak, folyók) nincs benne.
+A térképes változat internet nélküli kiadása (claude.ai artifact és a Facebookra szánt weboldal) egy kör
+alakú régió adatait tartalmazza, jelenleg Ják 30 km-es környékét (kb. 28 MB):
 
-Előállítás:
+- **domborzat:** AWS Terrain Tiles z12 (kb. 26 m/px; Ausztriában 10 m-es forrásból),
+- **műholdkép:** Copernicus Sentinel-2, 2023–2024 nyara, a 10 m-es eredetiből z14 (kb. 6,5 m/px) és z12,
+- **valós épületek:** Overture Maps (OpenStreetMap + Microsoft ML Buildings, ODbL), kb. 200 ezer épület a
+  magyar és az osztrák oldalon: elforgatott téglalap alaprajz, becsült gerincmagasság, nyeregtető. A 3D
+  nézetben megjelennek, és a takarás számításában is szerepelnek (a nézőpontot tartalmazó saját ház kivételével),
+- **településnevek:** Overture Maps divisions (ODbL), az osztrák falvakkal együtt.
+
+Előállítás (a régió közepe és sugara paraméter):
 
 ```
-python3 tools/build_dem.py <munkamappa> <telepulesek.json>     # domborzati blokkok
-python3 tools/build_sat.py <sat_mappa> <munkamappa>/out/index.json  # műholdkép z12 + z9 (20 m-es szintről)
-python3 tools/build_sat13.py <sat_mappa> 8                          # éles műholdkép z13 (10 m-es eredetiből)
-python3 tools/build_artifact.py <munkamappa>/out <kimenet> [alapváltozat_url] <sat_mappa>/out
+python3 tools/build_region.py <munka>/dem 47.1425 16.5815 30                          # domborzat + településnevek
+python3 tools/build_sat.py <sat_mappa> <index.json>                                    # felvételek kiválasztása (selected.json)
+python3 tools/build_sat13.py <sat_mappa> 8 --zoom=12 --region=47.1425,16.5815,30 --out=<munka>/sat
+python3 tools/build_sat13.py <sat_mappa> 8 --zoom=14 --region=47.1425,16.5815,30 --out=<munka>/sat
+python3 tools/build_buildings.py <munka>/bld <sorcsoportok.json> 12 --region=47.1425,16.5815,30
+python3 tools/build_artifact.py --bld=<munka>/bld <munka>/dem/out <kimenet> [alapváltozat_url] <munka>/sat
 ```
 
-Településnevek: GeoNames (CC BY 4.0) az `all-the-cities` (MIT) és a `countries-states-cities-service` (MIT) npm-csomagokon keresztül.
+A sorcsoport-listát (az Overture-épületfájlok érintett részei) a `tools/overture_io.py` segédfüggvényeivel
+lehet összeállítani; a szkriptek a fájloknak csak a szükséges részét olvassák (HTTP range).
 
 ### Közzététel weboldalként (pl. Facebook-csoportba)
 
 ```
-python3 tools/build_artifact.py --web [--base=https://VÉGLEGES-CÍM/] <munkamappa>/out <kimenet> <muhold_mappa>
+python3 tools/build_artifact.py --web [--base=https://VÉGLEGES-CÍM/] --bld=<munka>/bld <munka>/dem/out <kimenet> <munka>/sat
 ```
 
-A `<kimenet>` mappa (index.html, alap.html, dem/, assets/, kb. 80 MB) bármilyen statikus tárhelyre feltölthető.
+A `<kimenet>` mappa (index.html, alap.html, dem/, assets/, kb. 28 MB) bármilyen statikus tárhelyre feltölthető.
 A legegyszerűbb a Netlify Drop (https://app.netlify.com/drop): ingyenes fiókkal be kell húzni a mappát vagy a ZIP-et.
 Ugyanez működik Cloudflare Pages vagy GitHub Pages alatt is. A webes kiadás Facebook-előnézetet (`assets/og.jpg`) és
 „Megosztás” gombot kap; a link a címsorban (#…) hordozza a nézőpontot, a turbinákat és a takarásokat.

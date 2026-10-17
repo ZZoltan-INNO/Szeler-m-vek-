@@ -7,14 +7,18 @@ Használat:
       önálló weboldal bármilyen statikus tárhelyre (Netlify, GitHub Pages, Cloudflare Pages):
       index.html + alap.html + dem/ + assets/, Facebook-előnézettel (og:*), megosztható linkkel.
       A --base a végleges cím; nélküle az előnézeti kép relatív útvonalú.
+  --bld=<mappa>: a valós épületek (tools/build_buildings.py) külön mappából (b12_*.png, bld_index.json).
+A <dem_mappa> lehet a tools/build_region.py kimenete is (régiós kiadás: demZ, z12, z8, region).
 A <dem_mappa> a tools/build_dem.py kimenete (z11_*.png, z8_*.png, index.json, telepulesek.json),
-a <muhold_mappa> a tools/build_sat.py és a tools/build_sat13.py kimenete (s13_*.webp, s12_*.jpg, s9_*.jpg, sat_index.json).
+a <muhold_mappa> a tools/build_sat.py, a tools/build_sat13.py és a tools/build_buildings.py kimenete
+(s13_*.webp, s12_*.jpg, s9_*.jpg, sat_index.json, b12_*.png, bld_index.json).
 """
 import json, re, shutil, sys, os
 
 args = [a for a in sys.argv[1:] if not a.startswith('--')]
 web = '--web' in sys.argv
 base = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--base=')), '')
+bld = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--bld=')), None)
 if base and not base.endswith('/'):
     base += '/'
 src, out = args[0], args[1]
@@ -51,16 +55,19 @@ def social(html, title, desc, page):
 s, n = re.subn(r'<script>\n/\* @preserve\n \* Leaflet 1\.9\.4.*?</script>\n',
                '<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>\n', s, flags=re.S)
 assert n == 1
-local = {'base': 'dem/', 'z11': idx['z11'], 'z8': idx['z8']}
+local = {'base': 'dem/', **idx}   # z11 + z8 (országos) vagy demZ + z12 + z8 + region (régiós)
 if web:
     local['web'] = True
 if sat:
     local.update(json.load(open(os.path.join(sat, 'sat_index.json'))))
+bdir = bld or sat
+if bdir and os.path.exists(os.path.join(bdir, 'bld_index.json')):   # valós épületek (tools/build_buildings.py)
+    local.update(json.load(open(os.path.join(bdir, 'bld_index.json'))))
 s = s.replace('<script>\n"use strict";', '<script>window.LOCAL_DATA = ' + json.dumps(local, separators=(',', ':')) + ';</script>\n<script>\n"use strict";', 1)
 if web:
-    s = social(s, 'Honnan látszik a szélerőmű?',
-               'Tedd le a 250 m magas turbinát a valós domborzati térképre, válaszd ki, honnan nézed, add hozzá a fákat, házakat, '
-               'és nézd meg 3D-ben, mennyi látszik belőle.', '')
+    s = social(s, 'Honnan látszik a szélerőmű? Ják és környéke',
+               'Húzd a 250 m magas turbinát oda, ahová tervezik, válaszd ki, honnan nézed (akár a házad elől), '
+               'és nézd meg 3D-ben a valós domborzattal és házakkal, mennyi látszik belőle.', '')
     a = open(os.path.join(root, 'alap.html'), encoding='utf-8').read()
     a = social(a, 'Mennyi látszik a szélturbinából?',
                'Egyszerű kalkulátor: távolság, turbinamagasság, előtte bokor, épület, fasor vagy domb, és 3D-ben látod, mennyit takarnak.',
@@ -83,6 +90,10 @@ if sat:
     for f in os.listdir(sat):
         if f.endswith(('.jpg', '.webp')) and not f.endswith('.part.webp'):
             shutil.copy(os.path.join(sat, f), os.path.join(out, 'dem', f))
+if bdir:
+    for f in os.listdir(bdir):
+        if f.startswith('b12_') and f.endswith('.png'):
+            shutil.copy(os.path.join(bdir, f), os.path.join(out, 'dem', f))
 # fotó-textúrák és égbolt-fény a 3D nézethez (+ az előnézeti kép)
 adir = os.path.join(root, 'assets')
 os.makedirs(os.path.join(out, 'assets'), exist_ok=True)

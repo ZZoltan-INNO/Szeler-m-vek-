@@ -264,6 +264,78 @@ window.RealView = (function () {
     inst(cardGeo, bush ? mats.bushLeaf : mats.leaf, cards, (i, c) => { const v = rnd(i * 9.1 + o.seed); c.setRGB(0.5 + v * 0.22, 0.6 + v * 0.18, 0.42 + v * 0.14); });
     return grp;
   }
+  /* ---------- Valós épületek (alaprajz-adatból): instanced falak, nyeregtetők, oromfalak ---------- */
+  // egység-geometriák: x a szélesség, z a hosszabb oldal (gerinc iránya), y felfelé
+  const unitBox = new T.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
+  const unitRoof = (() => {   // két tetősík: (-0.5,0)→(0,1)→(0.5,0), z: -0.5..0.5
+    const g = new T.BufferGeometry(), P = [], U = [];
+    const quad = (a, b, c, d) => { P.push(...a, ...c, ...b, ...a, ...d, ...c); U.push(0, 0, 3, 2, 3, 0, 0, 0, 0, 2, 3, 2); };   // kifelé néző oldal
+    quad([-0.5, 0, 0.5], [-0.5, 0, -0.5], [0, 1, -0.5], [0, 1, 0.5]);
+    quad([0.5, 0, -0.5], [0.5, 0, 0.5], [0, 1, 0.5], [0, 1, -0.5]);
+    g.setAttribute('position', new T.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new T.Float32BufferAttribute(U, 2)); g.computeVertexNormals(); return g;
+  })();
+  const unitGable = (() => {  // a két oromfal háromszöge
+    const g = new T.BufferGeometry(), P = [-0.5, 0, 0.5, 0.5, 0, 0.5, 0, 1, 0.5, 0.5, 0, -0.5, -0.5, 0, -0.5, 0, 1, -0.5];
+    g.setAttribute('position', new T.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new T.Float32BufferAttribute([0, 0, 1, 0, 0.5, 0.6, 0, 0, 1, 0, 0.5, 0.6], 2)); g.computeVertexNormals(); return g;
+  })();
+  // homlokzat: vakolat, 4,2 m-enként egy ablak, emeletenként (3 m) ismétlődve
+  const facadeTex = () => canvasTex(256, 192, (g, w, h) => {
+    g.fillStyle = '#ece4d2'; g.fillRect(0, 0, w, h);
+    for (let k = 0; k < 2500; k++) { g.fillStyle = rnd(k) < 0.5 ? 'rgba(110,95,70,.05)' : 'rgba(255,255,255,.07)'; g.fillRect(rnd(k + 1e4) * w, rnd(k + 2e4) * h, 1 + rnd(k + 3e4) * 2, 1 + rnd(k + 4e4) * 2); }
+    const x0 = 92, ww = 72, y0 = 54, wh = 80;                            // kb. 1,2 × 1,25 m-es ablak, 0,9 m-es parapet
+    g.fillStyle = 'rgba(70,60,45,.18)'; g.fillRect(x0 - 6, y0 + wh, ww + 12, 6);   // párkány árnyéka
+    g.fillStyle = '#f4f1ea'; g.fillRect(x0 - 5, y0 - 5, ww + 10, wh + 10);
+    const gr = g.createLinearGradient(0, y0, 0, y0 + wh); gr.addColorStop(0, '#8ea3b6'); gr.addColorStop(1, '#2e3a46');
+    g.fillStyle = gr; g.fillRect(x0, y0, ww, wh);
+    g.fillStyle = '#f4f1ea'; g.fillRect(x0 + ww / 2 - 2, y0, 4, wh); g.fillRect(x0, y0 + wh * 0.38, ww, 3);
+  }, true);
+  // az instanced épületeken méterarányos UV: a példány méretarányából számolva (nem nyúlik a textúra)
+  const metricUV = (mat, roof) => {
+    mat.onBeforeCompile = sh => {
+      sh.vertexShader = sh.vertexShader.replace('#include <uv_vertex>', `#include <uv_vertex>
+        #ifdef USE_INSTANCING
+          vec3 isc = vec3(length(instanceMatrix[0].xyz), length(instanceMatrix[1].xyz), length(instanceMatrix[2].xyz));
+          ${roof ? 'vUv = vec2(position.z * isc.z / 3.2, (position.y * isc.y + abs(position.x) * isc.x) / 1.6);'
+                 : 'vUv = vec2((position.x * isc.x + position.z * isc.z) / 4.2, position.y * isc.y / 3.0);'}
+        #endif`);
+    };
+    mat.customProgramCacheKey = () => roof ? 'bld-roof' : 'bld-wall';
+    return mat;
+  };
+  const WALLC = [0xf1ebdd, 0xe9e2d2, 0xf3e9c8, 0xe6e6e1, 0xeadcc4, 0xdcd8cc], ROOFC = [0xffffff, 0xf2e2da, 0xe4cfc4, 0xd6c2b8, 0xfff2ea, 0xc9b6ae];   // a cseréptextúra árnyalásai
+  function realBuildings(list, groundY, mats) {
+    const grp = new T.Group(), n = list.length; if (!n) return grp;
+    const ng = list.filter(b => b.gable).length;
+    // ablakos homlokzat a lakóház méretű vagy magas (többszintes) épületeken; csűr, csarnok: sima vakolat
+    const win = b => b.L * b.W < 380 || b.h > 9.5, nw = list.filter(win).length;
+    const walls = new T.InstancedMesh(unitBox, mats.bWall, Math.max(1, nw)), plain = new T.InstancedMesh(unitBox, mats.bGable, Math.max(1, n - nw)), roofs = new T.InstancedMesh(unitRoof, mats.bRoof, Math.max(1, ng)), gables = new T.InstancedMesh(unitGable, mats.bGable, Math.max(1, ng));
+    const blobs = new T.InstancedMesh(blobGeo, mats.blob, n);
+    const m = new T.Matrix4(), q = new T.Quaternion(), c = new T.Color(); let k = 0, kw = 0, kp = 0;
+    list.forEach((b, i) => {
+      // talaj: a sarkoknál a legalacsonyabb pont alá nyúlik a fal, így lejtőn sem lebeg
+      const ex = Math.sin(b.a), ey = Math.cos(b.a), hx = b.L / 2, hw = b.W / 2;
+      const gc = groundY(b.x, b.y);
+      let g0 = gc; for (const [s, u] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) g0 = Math.min(g0, groundY(b.x + ex * hx * s + ey * hw * u, b.y + ey * hx * s - ex * hw * u));
+      const base = g0 - 0.3, eave = gc + b.eave;
+      q.setFromAxisAngle(Y, Math.PI - b.a);
+      m.compose(new T.Vector3(b.x, base, -b.y), q, new T.Vector3(b.W, eave - base, b.L));
+      c.set(WALLC[(b.seed * 7) % WALLC.length]).convertSRGBToLinear();
+      if (win(b)) { walls.setMatrixAt(kw, m); walls.setColorAt(kw++, c); } else { plain.setMatrixAt(kp, m); plain.setColorAt(kp++, c); }
+      m.compose(new T.Vector3(b.x, gc + 0.04, -b.y), q, new T.Vector3(b.W * 1.7 + 4, 1, b.L * 1.4 + 4)); blobs.setMatrixAt(i, m);
+      if (b.gable) {
+        const rh = b.h - b.eave;
+        m.compose(new T.Vector3(b.x, eave - 0.12, -b.y), q, new T.Vector3(b.W + 0.9, rh + 0.12, b.L + 0.6)); roofs.setMatrixAt(k, m);
+        c.set(ROOFC[(b.seed * 13) % ROOFC.length]).convertSRGBToLinear(); roofs.setColorAt(k, c);
+        m.compose(new T.Vector3(b.x, eave, -b.y), q, new T.Vector3(b.W, rh, b.L)); gables.setMatrixAt(k, m);
+        c.set(WALLC[(b.seed * 7) % WALLC.length]).convertSRGBToLinear(); gables.setColorAt(k, c);
+        k++;
+      }
+    });
+    for (const im of [walls, plain, roofs, gables, blobs]) { im.frustumCulled = false; grp.add(im); }
+    if (!ng) { roofs.count = 0; gables.count = 0; }
+    walls.count = nw; plain.count = n - nw;
+    return grp;
+  }
   function building(o, groundY, mats) {
     const grp = new T.Group(), g = o.kind === 'hill' ? 0 : groundY(o.x0, o.y0);
     if (o.kind === 'house') {
@@ -357,9 +429,14 @@ window.RealView = (function () {
       windows: windowTex(),
       ghost: new T.MeshBasicMaterial({ color: lin(0xff4f42), transparent: true, opacity: 0.58, depthWrite: false, depthFunc: T.GreaterDepth, fog: false })
     };
+    // valós épületek anyagai (méterarányos UV-vel)
+    mats.bWall = metricUV(new T.MeshStandardMaterial({ map: facadeTex(), roughness: 0.92 }), false);
+    mats.bGable = metricUV(new T.MeshStandardMaterial({ map: plasterTex(), roughness: 0.92 }), false);
+    mats.bRoof = metricUV(new T.MeshStandardMaterial({ map: roofTex(), roughness: 0.75 }), true);
     mats.blob.map = canvasTex(128, 128, g => { const gr = g.createRadialGradient(64, 64, 4, 64, 64, 62); gr.addColorStop(0, 'rgba(20,28,14,.5)'); gr.addColorStop(1, 'rgba(20,28,14,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); });
-    const objGroup = new T.Group(), turbGroup = new T.Group(), ghostGroup = new T.Group();
-    scene.add(objGroup, turbGroup, ghostGroup);
+    const objGroup = new T.Group(), turbGroup = new T.Group(), ghostGroup = new T.Group(), bldGroup = new T.Group();
+    scene.add(objGroup, bldGroup, turbGroup, ghostGroup);
+    let bKey = '';
     let tKey = '', oKey = '', trKey = '', turbs = [], raf = 0, satKey = '', lastObs = null;
     const t0 = performance.now();
     // a forgatás csak akkor rajzol, ha a kép látszik (telefonon kíméli az akkut)
@@ -412,6 +489,13 @@ window.RealView = (function () {
         objGroup.clear();
         for (const o of list) objGroup.add(o.kind === 'trees' || o.kind === 'forest' || o.kind === 'bush' ? rowTrees(o, groundY, mats, winter, o.kind === 'bush' ? 12000 : 40000) : building(o, groundY, mats));
       },
+      // valós épületek: [{ x, y (helyi m), L, W (m), a (a hosszabb oldal iránya északtól, rad), h (gerinc), eave, gable, seed }]
+      setBuildings(list, key, groundY) {
+        if (key === bKey) return; bKey = key;
+        bldGroup.traverse(o => { if (o.isInstancedMesh) o.dispose(); });
+        bldGroup.clear();
+        bldGroup.add(realBuildings(list, groundY, mats));
+      },
       setView(az, pitch, fovH, w, h) {
         cam.aspect = w / h;
         cam.fov = 2 * Math.atan(Math.tan(fovH * RAD / 2) / cam.aspect) / RAD;
@@ -423,7 +507,7 @@ window.RealView = (function () {
       // 1. táj és takarások, 2. a turbinák takart része áttűnve, 3. a turbinák
       render() {
         renderer.autoClear = false; renderer.clear();
-        const gv = ghostGroup.visible, vis = v => { objGroup.visible = sky.visible = v; if (terrain) terrain.visible = v; };
+        const gv = ghostGroup.visible, vis = v => { objGroup.visible = bldGroup.visible = sky.visible = v; if (terrain) terrain.visible = v; };
         turbGroup.visible = false; ghostGroup.visible = false;
         renderer.render(scene, cam);
         vis(false);
