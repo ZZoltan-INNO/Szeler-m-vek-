@@ -750,6 +750,7 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .tpin{display:flex;flex-direction:column;align-items:center}
 .tpin b{font:600 11px/1 var(--mono);background:#17221d;color:#fff;padding:2px 4px;border-radius:3px;margin-top:-2px}
 .tpin.sel b{background:#d6336c}
+.tlabel span{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font:600 11.5px/1 var(--body);color:#1c2620;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 2px #fff;pointer-events:none}
 .popbtns{display:flex;gap:6px;margin-top:6px}
 .popbtns button{font:600 12px/1 var(--body);padding:6px 8px;border-radius:6px;border:1px solid #c9d1c8;background:#f1f4f0;cursor:pointer}
 
@@ -981,7 +982,7 @@ h_takart = z_szem + D · tan(α_max) − z_talppont</div>
 </section>
 
 <footer class="wrap">
-  <p>Térkép: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> közreműködők, <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> (CC-BY-SA). Domborzat: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">AWS Terrain Tiles</a> (SRTM és más források). A számítás tájékoztató jellegű, nem helyettesíti a hivatalos látványtervet. <button class="linkbtn" type="button" id="copyLink">Link másolása ehhez a beállításhoz</button> <span id="copyMsg"></span></p>
+  <p>Térkép: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> közreműködők, <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> (CC-BY-SA). Domborzat: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">AWS Terrain Tiles</a> (SRTM és más források). Településnevek: GeoNames (CC BY 4.0). A számítás tájékoztató jellegű, nem helyettesíti a hivatalos látványtervet. <button class="linkbtn" type="button" id="copyLink">Link másolása ehhez a beállításhoz</button> <span id="copyMsg"></span></p>
 </footer>
 
 <script>
@@ -1038,14 +1039,52 @@ let AN = [];         // a turbinák elemzése
 function model() { const m = state.model === 'custom' ? { hub: +state.custom.hub, rotor: +state.custom.rotor } : MODELS[state.model]; const R = m.rotor / 2; return { hub: m.hub, R, tip: m.hub + R, low: m.hub - R }; }
 
 /* ---------- Domborzat (AWS Terrain Tiles, terrarium kódolás) ---------- */
-const DEM_Z = 12, TS = 256, WORLD = TS * 2 ** DEM_Z;
+// LOCAL_DATA: beépített magyarországi domborzat és településnevek (internet nélküli, artifact-változat)
+const LOCAL = window.LOCAL_DATA || null;
+const DEM_Z = LOCAL ? 11 : 12, TS = 256, WORLD = TS * 2 ** DEM_Z;
 const tiles = new Map();
-let demFail = 0, demOk = 0;
+let demFail = 0, demOk = 0, demOutside = false;
 const failedAt = new Map();
 const mx = lon => (lon + 180) / 360 * WORLD;
 const my = lat => { const s = Math.sin(lat * RAD); return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * WORLD; };
 const latOfMy = y => Math.atan(Math.sinh(Math.PI * (1 - 2 * y / WORLD))) / RAD;
+/* Helyi adat: 4×4 (z11) vagy 8×8 (z8) csempéből álló PNG-blokkok az oldal mellett */
+const chunkP = new Map();
+function loadChunk(z, cx, cy, c, store) {
+  const key = z + '/' + cx + '/' + cy; if (chunkP.has(key)) return chunkP.get(key);
+  const has = (LOCAL['z' + z] || []).some(([a, b]) => a === cx && b === cy);
+  const p = !has ? Promise.resolve(false) : new Promise(res => {
+    const url = LOCAL.base + `z${z}_${cx}_${cy}.png`, img = new Image(); let tries = 0;
+    img.onload = () => {
+      const N = TS * c, cv = document.createElement('canvas'); cv.width = cv.height = N;
+      const g = cv.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0);
+      const d = g.getImageData(0, 0, N, N).data;
+      for (let i = 0; i < c; i++) for (let j = 0; j < c; j++) {
+        const a = new Float32Array(TS * TS);
+        for (let r = 0; r < TS; r++) { let o = ((j * TS + r) * N + i * TS) * 4; for (let q = 0; q < TS; q++, o += 4) a[r * TS + q] = d[o] * 256 + d[o + 1] + d[o + 2] / 256 - 32768; }
+        store(cx * c + i, cy * c + j, a);
+      }
+      res(true);
+    };
+    img.onerror = () => { if (++tries <= 2) setTimeout(() => { img.src = url + '?r=' + tries; }, 500 * tries); else res(false); };
+    img.src = url;
+  });
+  chunkP.set(key, p); return p;
+}
+function loadLocalTile(tx, ty) {
+  const key = tx * 65536 + ty, have = tiles.get(key);
+  if (have !== undefined) return have instanceof Promise ? have : Promise.resolve();
+  const p = loadChunk(DEM_Z, tx >> 2, ty >> 2, 4, (x, y, a) => { tiles.set(x * 65536 + y, a); demOk++; }).then(() => {
+    lk = -1; const t = tiles.get(key);
+    if (!(t instanceof Float32Array)) { tiles.set(key, null); demFail++; demOutside = true; }
+  });
+  tiles.set(key, p); return p;
+}
+const ovTiles = new Map();   // áttekintő domborzat (z8) a kis nagyítású térképhez
+function ovPix(x, y) { const a = ovTiles.get((x >> 8) * 65536 + (y >> 8)); return a ? a[(y & 255) * 256 + (x & 255)] : NaN; }
+function ovElev(px, py) { px -= 0.5; py -= 0.5; const x0 = Math.floor(px), y0 = Math.floor(py), fx = px - x0, fy = py - y0; return (ovPix(x0, y0) * (1 - fx) + ovPix(x0 + 1, y0) * fx) * (1 - fy) + (ovPix(x0, y0 + 1) * (1 - fx) + ovPix(x0 + 1, y0 + 1) * fx) * fy; }
 function loadTile(tx, ty) {
+  if (LOCAL) return loadLocalTile(tx, ty);
   const key = tx * 65536 + ty, have = tiles.get(key);
   if (have !== undefined && !(have === null && Date.now() - (failedAt.get(key) || 0) > 15000)) return have instanceof Promise ? have : Promise.resolve();
   const p = new Promise(res => {
@@ -1084,7 +1123,7 @@ let lk = -1, la = null;
 // Ha egyetlen domborzati csempe sem tölthető le (nincs internet), sík terepként (0 m) számol.
 // Ha csak néhány hiányzik, azokat nem tölti ki hamis adattal: ott nincs magasság (NaN).
 const FLAT = new Float32Array(TS * TS);
-function tileArr(tx, ty) { const key = tx * 65536 + ty; if (key === lk) return la; lk = key; const a = tiles.get(key); la = a instanceof Float32Array ? a : a === null && demOk === 0 ? FLAT : null; return la; }
+function tileArr(tx, ty) { const key = tx * 65536 + ty; if (key === lk) return la; lk = key; const a = tiles.get(key); la = a instanceof Float32Array ? a : a === null && demOk === 0 && !LOCAL ? FLAT : null; return la; }
 function pix(x, y) { const a = tileArr(x >> 8, y >> 8); return a ? a[(y & 255) * 256 + (x & 255)] : NaN; }
 function elevPx(px, py) {
   px -= 0.5; py -= 0.5;
@@ -1487,7 +1526,7 @@ function renderResults() {
 }
 
 /* ---------- Térkép ---------- */
-const map = L.map('map', { zoomControl: true, attributionControl: true });
+const map = L.map('map', LOCAL ? { minZoom: 7, maxZoom: 16, maxBounds: [[45.2, 15.4], [49.1, 23.6]] } : {});
 /* Saját domborzat-árnyékolás az AWS domborzati csempékből: akkor is működik, ha a térképszolgáltatók nem érhetők el. */
 const shadeCache = new Map();
 function shadeParent(z, x, y) {
@@ -1520,9 +1559,40 @@ function shadeParent(z, x, y) {
   shadeCache.set(key, p); if (shadeCache.size > 300) shadeCache.delete(shadeCache.keys().next().value);
   return p;
 }
+function shadeInto(tile, z, x, y, sample) {
+  // domborzat-árnyékolás egy 256×256-os csempébe; sample(i, j) az (i, j) képpont magassága
+  const N = 258, E = new Float32Array(N * N);
+  for (let r = 0; r < N; r++) for (let q = 0; q < N; q++) E[r * N + q] = sample(q - 1, r - 1);
+  const g = tile.getContext('2d'), im = g.createImageData(256, 256), d = im.data;
+  const lat = latOfMy((y + 0.5) * 256 * 2 ** (DEM_Z - z)), mpp = 156543.03 * Math.cos(lat * RAD) / 2 ** z, az = 315 * RAD, alt = 45 * RAD;
+  for (let r = 0; r < 256; r++) for (let q = 0; q < 256; q++) {
+    const k = (r + 1) * N + q + 1, el = E[k], o = (r * 256 + q) * 4;
+    if (el !== el) { d[o] = 226; d[o + 1] = 229; d[o + 2] = 224; d[o + 3] = 255; continue; }
+    const ex = (E[k + 1] - E[k - 1]) / (2 * mpp) * 3, ey = (E[k + N] - E[k - N]) / (2 * mpp) * 3;
+    const slope = Math.atan(Math.hypot(ex || 0, ey || 0)), asp = Math.atan2(ey || 0, -(ex || 0));
+    let sh = Math.sin(alt) * Math.cos(slope) + Math.cos(alt) * Math.sin(slope) * Math.cos(az - Math.PI / 2 - asp);
+    sh = clamp(0.35 + 0.75 * sh, 0.25, 1.15);
+    const t = clamp((el - 80) / 650, 0, 1), base = el < 1 ? [170, 200, 225] : [196 + 40 * t, 214 + 10 * t - 40 * t * t, 168 - 10 * t];
+    d[o] = clamp(base[0] * sh, 0, 255); d[o + 1] = clamp(base[1] * sh, 0, 255); d[o + 2] = clamp(base[2] * sh, 0, 255); d[o + 3] = 255;
+  }
+  g.putImageData(im, 0, 0);
+}
 const ShadeLayer = L.GridLayer.extend({
   createTile(c, done) {
     const tile = document.createElement('canvas'); tile.width = tile.height = 256;
+    if (LOCAL) {
+      const ov = c.z <= 9, dz = ov ? 8 : DEM_Z, s = 2 ** (dz - c.z), gx0 = c.x * 256 * s, gy0 = c.y * 256 * s;
+      const t0x = Math.floor((gx0 - s) / 256), t1x = Math.floor((gx0 + 257 * s) / 256), t0y = Math.floor((gy0 - s) / 256), t1y = Math.floor((gy0 + 257 * s) / 256);
+      const ps = [];
+      for (let tx = t0x; tx <= t1x; tx++) for (let ty = t0y; ty <= t1y; ty++)
+        ps.push(ov ? loadChunk(8, tx >> 3, ty >> 3, 8, (x, y, a) => ovTiles.set(x * 65536 + y, a)) : loadTile(tx, ty));
+      Promise.all(ps).then(() => {
+        const f = ov ? ovElev : elevPx;
+        shadeInto(tile, c.z, c.x, c.y, (i, j) => f(gx0 + (i + 0.5) * s, gy0 + (j + 0.5) * s));
+        done(null, tile);
+      });
+      return tile;
+    }
     const zz = Math.min(c.z, 14), k = 2 ** (c.z - zz), px = Math.floor(c.x / k), py = Math.floor(c.y / k);
     shadeParent(zz, px, py).then(src => {
       const sz = 256 / k; tile.getContext('2d').drawImage(src, (c.x - px * k) * sz, (c.y - py * k) * sz, sz, sz, 0, 0, 256, 256); done(null, tile);
@@ -1530,7 +1600,7 @@ const ShadeLayer = L.GridLayer.extend({
     return tile;
   }
 });
-const BASES = [
+const BASES = LOCAL ? [['Domborzat', new ShadeLayer({ maxZoom: 16, attribution: 'Domborzat: AWS Terrain Tiles (SRTM) · Településnevek: GeoNames (CC BY 4.0)' })]] : [
   ['Topográfiai', L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Térkép: Esri, HERE, Garmin, © OpenStreetMap, USGS' })],
   ['OpenTopoMap', L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17, subdomains: 'abc', attribution: '© OpenStreetMap, SRTM · © OpenTopoMap (CC-BY-SA)' })],
   ['Utcatérkép', L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap közreműködők' })],
@@ -1556,7 +1626,24 @@ BASES.forEach(([name, layer], i) => {
 });
 map.on('baselayerchange', e => { activeBase = e.layer; });
 activeBase.addTo(map);
-L.control.layers(base, null, { position: 'topright' }).addTo(map);
+if (!LOCAL) L.control.layers(base, null, { position: 'topright' }).addTo(map);
+/* Településnevek (helyi adat) */
+let SETTLE = [];
+const labelLayer = L.layerGroup().addTo(map);
+function drawLabels() {
+  labelLayer.clearLayers(); if (!SETTLE.length) return;
+  const z = map.getZoom(), b = map.getBounds().pad(0.1), minPop = z >= 11 ? 0 : z >= 10 ? 1500 : z >= 9 ? 4000 : z >= 8 ? 15000 : 60000;
+  let n = 0;
+  for (const [name, lat, lon, pop] of SETTLE) {
+    if (pop < minPop || !b.contains([lat, lon])) continue;
+    L.marker([lat, lon], { icon: L.divIcon({ className: 'tlabel', html: `<span>${esc(name)}</span>`, iconSize: null }), interactive: false, keyboard: false }).addTo(labelLayer);
+    if (++n >= 160) break;
+  }
+}
+if (LOCAL) {
+  fetch(LOCAL.base + 'telepulesek.json').then(r => r.json()).then(d => { SETTLE = d; drawLabels(); }).catch(() => {});
+  map.on('moveend', drawLabels);
+}
 L.control.scale({ imperial: false }).addTo(map);
 const eyeIcon = L.divIcon({ className: '', iconSize: [30, 30], iconAnchor: [15, 15], html: '<div class="pin eye"><svg width="18" height="12" viewBox="0 0 18 12" aria-hidden="true"><path d="M1 6c2.2-3.4 4.9-5 8-5s5.8 1.6 8 5c-2.2 3.4-4.9 5-8 5S3.2 9.4 1 6z" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="9" cy="6" r="2.4" fill="#fff"/></svg></div>' });
 const turbIcon = (i, sel) => L.divIcon({ className: '', iconSize: [34, 48], iconAnchor: [17, 40], html: `<div class="tpin${sel ? ' sel' : ''}"><svg width="34" height="36" viewBox="0 0 34 36" aria-hidden="true"><g stroke="#17221d" stroke-width="1.3" fill="#fff"><path d="M16 13 L15 35 L19 35 L18 13 Z"/><path d="M17 12 L15.6 1.5 L18.4 1.5 Z"/><path d="M17 12 L26.8 17.8 L25.4 20.2 Z"/><path d="M17 12 L7.2 17.8 L8.6 20.2 Z"/><circle cx="17" cy="12" r="2.2"/></g></svg><b>T${i + 1}</b></div>` });
@@ -1627,7 +1714,15 @@ function parseCoords(q) {
   const lat = +m[1].replace(',', '.'), lon = +m[2].replace(',', '.');
   return Math.abs(lat) <= 90 && Math.abs(lon) <= 180 ? { lat, lon } : null;
 }
+const fold = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+function localSearch(q) {
+  const f = fold(q);
+  return SETTLE.filter(s => fold(s[0]).includes(f))
+    .sort((a, b) => (fold(b[0]).startsWith(f) - fold(a[0]).startsWith(f)) || b[3] - a[3])
+    .slice(0, 8).map(s => ({ lat: s[1], lon: s[2], name: s[0] }));
+}
 async function geocode(q) {
+  if (LOCAL) return localSearch(q);
   try {
     const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&lat=47.2&lon=19.4`);
     if (r.ok) {
@@ -1648,7 +1743,7 @@ $('searchForm').addEventListener('submit', async e => {
   box.hidden = false; box.innerHTML = '<button type="button" disabled>Keresés…</button>';
   try {
     const res = await geocode(q);
-    if (!res.length) { box.innerHTML = '<button type="button" disabled>Nincs találat. Próbáld a település nevével, vagy írj be koordinátát.</button>'; return; }
+    if (!res.length) { box.innerHTML = `<button type="button" disabled>${LOCAL ? 'Nincs a beépített listában (főleg az 1000 fő feletti települések vannak benne). Keress egy közeli nagyobb települést, vagy írj be koordinátát, pl. 47.13, 16.58.' : 'Nincs találat. Próbáld a település nevével, vagy írj be koordinátát.'}</button>`; return; }
     box.innerHTML = res.map((x, i) => `<button type="button" data-i="${i}">${esc(x.name)}</button>`).join('');
     box.onclick = ev => { const b = ev.target.closest('button[data-i]'); if (!b) return; const x = res[+b.dataset.i]; map.setView([x.lat, x.lon], 14); box.hidden = true; };
   } catch (err) { box.innerHTML = '<button type="button" disabled>A kereső most nem érhető el. Írj be koordinátát (pl. 46.46, 17.85), vagy mozgasd a térképet kézzel.</button>'; }
@@ -1812,7 +1907,8 @@ async function update() {
   renderPano(1);
   $('busy').hidden = true;
   const missing = [...tiles.values()].some(v => v === null);
-  if (missing && demOk === 0) warn('<b>Nincs internetkapcsolat a domborzati adathoz, ezért az oldal most sík terepként számol</b> (a takarások így is működnek). Ha a Claude alkalmazás előnézetében nyitottad meg, az nem enged internetet: töltsd le a fájlt, és nyisd meg Chrome-ban.', 'dem');
+  if (LOCAL) warn(demOutside && AN.some(a => !a.ok) ? 'A kijelölt hely kívül esik a beépített domborzati adaton (Magyarország és kb. 25 km-es környezete), ott nem tudok számolni.' : '', 'dem');
+  else if (missing && demOk === 0) warn('<b>Nincs internetkapcsolat a domborzati adathoz, ezért az oldal most sík terepként számol</b> (a takarások így is működnek). Ha a Claude alkalmazás előnézetében nyitottad meg, az nem enged internetet: töltsd le a fájlt, és nyisd meg Chrome-ban.', 'dem');
   else if (missing) warn('Néhány domborzati csempe nem töltődött be, ezért a terep egy része hiányzik a számításból. Pár másodperc múlva mozdítsd meg a nézőpontot, és újra megpróbálja.', 'dem');
   else warn('', 'dem');
   saveHash();
@@ -1843,6 +1939,7 @@ $('copyLink').onclick = async () => {
 };
 
 /* ---------- Indítás ---------- */
+if (LOCAL) { $('copyLink').hidden = true; $('vsR').querySelector('option[value="20000"]').remove(); }
 loadHash();
 syncControls(); renderObstacles(); buildMarkers();
 map.fitBounds(L.latLngBounds([[state.viewer.lat, state.viewer.lon], ...state.turbines.map(t => [t.lat, t.lon])]).pad(0.35));

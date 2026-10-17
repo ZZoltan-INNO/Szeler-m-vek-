@@ -4,7 +4,22 @@ Magyarázó kalkulátor arról, hogy honnan és mennyire látszik egy nagy szél
 Két változat, mindkettő egyetlen HTML fájl, telepítés nélkül fut a böngészőben:
 
 - **`alap.html` – alapváltozat**: sík terep, térkép nélkül. Megadható a turbina távolsága, agymagassága és rotorátmérője, a szemmagasság fix 1,7 m. Bokor, épület, fák és domb tehető elé, a helyük és a magasságuk csúszkával állítható. Megmutatja a szemmagasságú képet, az oldalnézetet és hogy mennyi takarásban van. Internet nélkül is működik (csak a betűtípusok töltődnek hálózatról).
-- **`index.html` – térképes változat**: valós domborzattal, a lent leírt funkciókkal.
+- **`index.html` – térképes változat**: valós domborzattal, a lent leírt funkciókkal. Internetről tölti a térképet és a domborzatot.
+
+### Beépített adatokkal (claude.ai artifact)
+
+A térképes változat internet nélküli kiadása, amely telefonon, a Claude alkalmazásban is működik:
+a magyarországi domborzat (kb. 50 m-es rács) és kb. 1100 településnév az oldal mellett van.
+Háttértérkép (utak, folyók) nincs benne, a térkép árnyékolt domborzat településnevekkel.
+
+Előállítás:
+
+```
+python3 tools/build_dem.py <munkamappa> <telepulesek.json>     # domborzati blokkok
+python3 tools/build_artifact.py <munkamappa>/out <kimenet> [alapváltozat_url]
+```
+
+Településnevek: GeoNames (CC BY 4.0) az `all-the-cities` (MIT) és a `countries-states-cities-service` (MIT) npm-csomagokon keresztül.
 
 ## Térképes változat
 
