@@ -640,6 +640,220 @@ window.RealView = (function () {
     }
     return grp;
   }
+  /* ---------- Műemlék (a jáki templom és a Szent Jakab-kápolna) a lap által megadott részekből ----------
+     A részek alakja (falmagasság, tetőformák) pontosan a lap magasságmezője; a díszítés (párkányok, frízek, ablakok,
+     a kapuzat) legfeljebb néhány centiméterrel áll ki a falsíkból. */
+  // kváderkő: soronként változó magasságú, egyenként árnyalt kőtömbök; 512 px = 4 m
+  const stoneTex = (base, dark) => canvasTex(512, 512, (g, w, h) => {
+    g.fillStyle = dark; g.fillRect(0, 0, w, h);
+    let y = 0, row = 0;
+    while (y < h) {
+      const ch = 34 + ((rnd(row * 7.1) * 14) | 0); let x = -rnd(row * 3.3) * 60;
+      while (x < w) {
+        const bw = 60 + rnd(row * 31 + x) * 80, v = 0.86 + rnd(row * 13 + x * 0.7) * 0.2, wt = rnd(row * 5 + x * 0.3) > 0.88 ? 0.86 : 1;
+        const c = base.map(k => Math.min(255, k * v * wt) | 0);
+        const gr = g.createLinearGradient(0, y, 0, y + ch); gr.addColorStop(0, `rgb(${c.map(k => Math.min(255, k + 14)).join(',')})`); gr.addColorStop(1, `rgb(${c.map(k => k - 12).join(',')})`);
+        g.fillStyle = gr; g.fillRect(x + 1.5, y + 1.5, bw - 3, ch - 3);
+        for (let k = 0; k < bw * ch / 60; k++) { g.fillStyle = rnd(k + x + row * 99) < 0.5 ? 'rgba(80,70,55,.12)' : 'rgba(255,250,235,.12)'; g.fillRect(x + rnd(k * 1.3 + row) * bw, y + rnd(k * 2.7 + x) * ch, 2, 2); }
+        x += bw;
+      }
+      y += ch; row++;
+    }
+    // esőcsíkok
+    for (let k = 0; k < 30; k++) { const x = rnd(k + 500) * w, gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(70,62,50,0)'); gr.addColorStop(rnd(k + 9), 'rgba(70,62,50,.10)'); gr.addColorStop(1, 'rgba(70,62,50,0)'); g.fillStyle = gr; g.fillRect(x, 0, 3 + rnd(k) * 8, h); }
+  }, true);
+  // román kori ívsoros fríz (konzolos kis ívek a párkány alatt); 512 px = 4 m széles, a sáv teljes magassága
+  const friezeTex = () => canvasTex(512, 64, (g, w, h) => {
+    g.fillStyle = '#d6cab0'; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 8; i++) {
+      const x = i * 64; g.fillStyle = 'rgba(60,50,38,.45)';
+      g.beginPath(); g.moveTo(x + 6, h); g.lineTo(x + 6, 30); g.arc(x + 32, 30, 26, Math.PI, 0); g.lineTo(x + 58, h); g.closePath(); g.fill();
+      g.fillStyle = '#e4d9c0'; g.fillRect(x - 3, 40, 6, 24);
+    }
+    g.fillStyle = '#efe6d2'; g.fillRect(0, 0, w, 6); g.fillStyle = 'rgba(60,50,38,.35)'; g.fillRect(0, 6, w, 3);
+  }, true);
+  // a nyugati kapuzat homlokzata: lépcsőzetes, oszlopos bélletű kapu, timpanon, fölötte apostolszobrok fülkéi és orom;
+  // a kép 5,4 m széles és 15,5 m magas (a kapuépítmény homlokzata az oromcsúcsig)
+  const portalTex = () => canvasTex(512, 1024, (g, w, h) => {
+    const X = m => m / 5.4 * w, Yz = z => h - z / 15.5 * h, sx = w / 5.4, sy = h / 15.5;
+    const st = stoneTex([214, 200, 172], '#a89c86').image;   // 4 × 4 m-es kőminta, méretarányosan ismételve
+    for (let y = 0; y < h; y += 4 * sy) for (let x = 0; x < w; x += 4 * sx) g.drawImage(st, x, y, 4 * sx, 4 * sy);
+    g.save(); g.translate(0, 0);
+    const cx = X(2.7), zs = 5.9;   // az ív indítása
+    // lépcsőzetes béllet: kívülről befelé váltakozó világos oszlopok és árnyékos sávok
+    for (let k = 0; k < 8; k++) {
+      const r = 2.5 - k * 0.24, light = k % 2 === 0;
+      g.fillStyle = light ? `rgb(${226 - k * 6},${214 - k * 6},${188 - k * 6})` : `rgb(${132 - k * 6},${118 - k * 6},${96 - k * 6})`;
+      g.beginPath(); g.moveTo(cx - r * sx, Yz(0.35)); g.lineTo(cx - r * sx, Yz(zs)); g.ellipse(cx, Yz(zs), r * sx, r * sy, 0, Math.PI, 0); g.lineTo(cx + r * sx, Yz(0.35)); g.closePath(); g.fill();
+      if (light) { g.fillStyle = 'rgba(70,58,42,.35)'; for (const sg of [-1, 1]) g.fillRect(cx + sg * r * sx - (sg > 0 ? 3 : 0), Yz(zs), 3, Yz(0.35) - Yz(zs)); }
+    }
+    // ajtó és timpanon
+    g.fillStyle = '#cbbd9e'; g.beginPath(); g.ellipse(cx, Yz(4.5), 0.78 * sx, 0.78 * sy, 0, Math.PI, 0); g.closePath(); g.fill();
+    g.fillStyle = 'rgba(90,78,60,.5)'; g.beginPath(); g.arc(cx, Yz(4.85), 0.22 * sx, 0, 6.3); g.fill();
+    g.fillStyle = '#4b3424'; g.fillRect(cx - 0.78 * sx, Yz(4.5), 1.56 * sx, Yz(0.35) - Yz(4.5));
+    g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(cx - 1, Yz(4.5), 2, Yz(0.35) - Yz(4.5));
+    // lábazat, párkány a kapu fölött
+    g.fillStyle = '#9a8e78'; g.fillRect(0, Yz(0.35), w, h - Yz(0.35));
+    g.fillStyle = '#efe5cf'; g.fillRect(0, Yz(9.95), w, 0.18 * sy); g.fillStyle = 'rgba(60,50,38,.4)'; g.fillRect(0, Yz(9.77), w, 0.1 * sy);
+    // fülkesor apostolszobrokkal
+    for (let i = 0; i < 9; i++) {
+      const x = X(0.35 + i * 0.52), nw = 0.4 * sx;
+      g.fillStyle = '#7d705c'; g.beginPath(); g.moveTo(x, Yz(10.1)); g.lineTo(x, Yz(11.0)); g.ellipse(x + nw / 2, Yz(11.0), nw / 2, nw / 2 * sy / sx, 0, Math.PI, 0); g.lineTo(x + nw, Yz(10.1)); g.closePath(); g.fill();
+      g.fillStyle = '#e6dcc6'; g.beginPath(); g.ellipse(x + nw / 2, Yz(10.55), nw * 0.28, 0.42 * sy, 0, 0, 6.3); g.fill();
+      g.beginPath(); g.arc(x + nw / 2, Yz(11.08), nw * 0.15, 0, 6.3); g.fill();
+    }
+    g.fillStyle = '#efe5cf'; g.fillRect(0, Yz(11.5), w, 0.16 * sy);
+    // orom: középen Krisztus fülkéje, mellette két angyal
+    g.fillStyle = '#7d705c'; g.beginPath(); g.moveTo(X(2.35), Yz(11.8)); g.lineTo(X(2.35), Yz(13.2)); g.ellipse(cx, Yz(13.2), 0.35 * sx, 0.35 * sy, 0, Math.PI, 0); g.lineTo(X(3.05), Yz(11.8)); g.closePath(); g.fill();
+    g.fillStyle = '#e8dec8'; g.beginPath(); g.ellipse(cx, Yz(12.4), 0.2 * sx, 0.55 * sy, 0, 0, 6.3); g.fill(); g.beginPath(); g.arc(cx, Yz(13.15), 0.11 * sx, 0, 6.3); g.fill();
+    for (const sg of [-1, 1]) { g.beginPath(); g.ellipse(cx + sg * 1.0 * sx, Yz(12.2), 0.14 * sx, 0.38 * sy, 0, 0, 6.3); g.fill(); g.beginPath(); g.arc(cx + sg * 1.0 * sx, Yz(12.7), 0.09 * sx, 0, 6.3); g.fill(); }
+    g.restore();
+  }, true);
+  function landmarkMesh(L, Y0, mats) {
+    if (!mats.lm) {
+      const mk = (tex, rep, color, extra) => { if (tex) { tex.wrapS = tex.wrapT = T.RepeatWrapping; tex.anisotropy = 8; } const m = new T.MeshStandardMaterial({ map: tex || null, color: color != null ? color : 0xffffff, roughness: 0.92, side: T.DoubleSide, envMapIntensity: 0.5, ...(extra || {}) }); m.userData.rep = rep; return m; };
+      const stone = stoneTex([214, 201, 174], '#9c907a');
+      mats.lm = {
+        stone: mk(stone, [1 / 4, 1 / 4]), ledge: mk(stone, [1 / 4, 1 / 4], 0xd6cfc2),
+        light: mk(stoneTex([226, 218, 198], '#a99f8c'), [1 / 4, 1 / 4]),
+        spire: mk(stoneTex([222, 188, 153], '#9c8462'), [1 / 2.5, 1 / 2.5]),
+        tiles: mk(roofTexNeutral(), [1 / 3.2, 1 / 1.4], lin(0xa4613f)), chapTiles: mk(roofTexNeutral(), [1 / 3.2, 1 / 1.4], lin(0x8b4513)),
+        frieze: mk(friezeTex(), [1 / 4, 1]), portal: mk(portalTex(), [1, 1]), plaster: mk(plasterTex(), [1 / 3, 1 / 3], 0xf2eee6),
+        win: mk(null, [1, 1], lin(0x2a2420), { roughness: 0.7 }), cross: mk(null, [1, 1], lin(0x6c5a38), { metalness: 0.6, roughness: 0.4 })
+      };
+      mats.lm.portal.map.wrapS = mats.lm.portal.map.wrapT = T.ClampToEdgeWrapping;
+    }
+    const M = mats.lm, buf = new Map(), grp = new T.Group();
+    const P = (s, t, z) => [L.x0 + s * L.u[0] + t * L.v[0], Y0 + z, -(L.y0 + s * L.u[1] + t * L.v[1])];
+    const tri = (m, a, b, c, ua, ub, uc) => { if (!buf.has(m)) buf.set(m, { p: [], uv: [] }); const B = buf.get(m), [ru, rv] = m.userData.rep; B.p.push(...a, ...b, ...c); for (const q of [ua, ub, uc]) B.uv.push(q[0] * ru, q[1] * rv); };
+    const quad = (m, a, b, c, d, ua, ub, uc, ud) => { tri(m, a, b, c, ua, ub, uc); tri(m, a, c, d, ua, uc, ud); };
+    // függőleges fal a templom (s, t) pontjai között, z0 és z1 között (n: kifelé tolás méterben)
+    const wall = (m, s0, t0, s1, t1, z0, z1, n = 0, ns = 0, nt = 0) => {
+      const Lw = Math.hypot(s1 - s0, t1 - t0);
+      quad(m, P(s0 + ns * n, t0 + nt * n, z0), P(s1 + ns * n, t1 + nt * n, z0), P(s1 + ns * n, t1 + nt * n, z1), P(s0 + ns * n, t0 + nt * n, z1), [0, z0], [Lw, z0], [Lw, z1], [0, z1]);
+    };
+    // íves ablak (vagy ikerablak) a fal síkjában: a fal egy pontja (s, t), iránya (ws, wt), kifelé mutató normálisa (ns, nt)
+    const arch = (s, t, ws, wt, ns, nt, z, wdt, hgt) => {
+      const r = wdt / 2, pts = [[-r, 0], [r, 0]];
+      for (let i = 0; i <= 10; i++) { const a = i / 10 * Math.PI; pts.push([r * Math.cos(a), hgt - r + r * Math.sin(a)]); }
+      const at = ([x, y]) => P(s + ws * x + ns * 0.04, t + wt * x + nt * 0.04, z + y), c = at([0, (hgt - r) / 2]);
+      const ring = [[-r, 0], [r, 0], ...pts.slice(2)].concat([[-r, 0]]);
+      const ord = [[r, 0], ...pts.slice(2), [-r, 0]];
+      for (let i = 0; i < ord.length - 1; i++) tri(M.win, c, at(ord[i]), at(ord[i + 1]), [0, 0], [0, 0], [0, 0]);
+      tri(M.win, c, at([-r, 0]), at([r, 0]), [0, 0], [0, 0], [0, 0]);
+      void ring;
+    };
+    const faces = p => [   // [kezdő s, t, záró s, t, a fal iránya, kifelé mutató normális]
+      [p.s0, p.t0, p.s1, p.t0, 1, 0, 0, -1], [p.s1, p.t1, p.s0, p.t1, -1, 0, 0, 1], [p.s0, p.t1, p.s0, p.t0, 0, -1, -1, 0], [p.s1, p.t0, p.s1, p.t1, 0, 1, 1, 0]];
+    const ZB = -4;   // a falak a talaj alá nyúlnak (lejtős terep)
+    for (const p of L.lm.parts) {
+      if (p.k === 'box') {
+        const wm = p.mat === 'sacristy' ? M.light : M.stone, rm = p.mat === 'tower' ? M.spire : p.mat === 'portal' ? M.spire : M.tiles;
+        const sm = (p.s0 + p.s1) / 2, tm = (p.t0 + p.t1) / 2, hz = (s, t) => { let h = p.eave; const hw = (p.t1 - p.t0) / 2, hs = (p.s1 - p.s0) / 2, rh = p.top - p.eave;
+          if (p.roof === 'lean1') h = p.eave + rh * (t - p.t0) / (2 * hw); else if (p.roof === 'lean0') h = p.eave + rh * (p.t1 - t) / (2 * hw); return h; };
+        for (const [s0, t0, s1, t1, ws, wt, ns, nt] of faces(p)) {
+          const z0 = hz(s0, t0), z1 = hz(s1, t1);
+          if (p.mat === 'portal' && ns === -1) {   // a kapuzat homlokzata (ötszög) a kapuzat képével
+            const U = (t, z) => [(t - p.t0) / 5.4, Math.max(0, z) / 15.5];
+            quad(M.portal, P(s0, t0, ZB), P(s1, t1, ZB), P(s1, t1, p.eave), P(s0, t0, p.eave), U(t0, 0), U(t1, 0), U(t1, p.eave), U(t0, p.eave));
+            tri(M.portal, P(s0, t0, p.eave), P(s1, t1, p.eave), P(sm, tm, p.top), U(t0, p.eave), U(t1, p.eave), U(tm, p.top));
+            continue;
+          }
+          const Lw = Math.hypot(s1 - s0, t1 - t0);
+          quad(wm, P(s0, t0, ZB), P(s1, t1, ZB), P(s1, t1, z1), P(s0, t0, z0), [0, ZB], [Lw, ZB], [Lw, z1], [0, z0]);
+          if (p.roof === 'gable' && ns !== 0) tri(wm, P(s0, t0, p.eave), P(s1, t1, p.eave), P(sm, tm, p.top), [0, p.eave], [Lw, p.eave], [Lw / 2, p.top]);
+          // díszítés
+          if (p.mat === 'tower') {
+            for (const zc of [7.5, 13.5, 19]) wall(M.ledge, s0, t0, s1, t1, zc, zc + 0.35, 0.12, ns, nt);
+            wall(M.frieze, s0, t0, s1, t1, 22.9, 23.75, 0.06, ns, nt); wall(M.ledge, s0, t0, s1, t1, 23.75, 24, 0.22, ns, nt);
+            const ms = (s0 + s1) / 2, mt = (t0 + t1) / 2;
+            arch(ms, mt, ws, wt, ns, nt, 9.6, 0.32, 1.6); arch(ms, mt, ws, wt, ns, nt, 15.2, 0.4, 1.9);
+            for (const sg of [-1, 1]) arch(ms + ws * sg * 0.55, mt + wt * sg * 0.55, ws, wt, ns, nt, 20.1, 0.62, 2.1);
+          } else if (p.mat === 'nave' && nt !== 0) {
+            for (let s = 9; s < 28; s += 4) arch(s, nt > 0 ? p.t1 : p.t0, ws, wt, ns, nt, 12.1, 0.7, 1.7);
+            wall(M.frieze, s0, t0, s1, t1, 13.9, 14.5, 0.05, ns, nt);
+          } else if (p.mat === 'nave' && ns === 1) {
+            wall(M.frieze, s0, t0, s1, t1, 13.9, 14.5, 0.05, ns, nt);
+          } else if (p.mat === 'aisle' && ((p.roof === 'lean1' && nt === -1) || (p.roof === 'lean0' && nt === 1))) {
+            for (let s = 9.5; s < 28; s += 4) arch(s, nt > 0 ? p.t1 : p.t0, ws, wt, ns, nt, 3.6, 0.6, 1.7);
+            wall(M.frieze, s0, t0, s1, t1, 7.45, 8, 0.05, ns, nt);
+          } else if (p.mat === 'sacristy') arch((s0 + s1) / 2, (t0 + t1) / 2, ws, wt, ns, nt, 2.6, 0.6, 1.4);
+        }
+        // tető
+        const c = [P(p.s0, p.t0, hz(p.s0, p.t0)), P(p.s1, p.t0, hz(p.s1, p.t0)), P(p.s1, p.t1, hz(p.s1, p.t1)), P(p.s0, p.t1, hz(p.s0, p.t1))];
+        const Ls = p.s1 - p.s0, Lt = p.t1 - p.t0;
+        if (p.roof === 'pyr') {
+          const apex = P(sm, tm, p.top), sl = Math.hypot(Math.max(Ls, Lt) / 2, p.top - p.eave);
+          for (let i = 0; i < 4; i++) { const a = c[i], b = c[(i + 1) % 4], e = i % 2 ? Lt : Ls; tri(rm, a, b, apex, [0, 0], [e, 0], [e / 2, sl]); }
+          if (p.mat === 'tower') {   // kereszt a sisak csúcsán
+            const k = (s0, s1, t0, t1, z0, z1) => { for (const [a0, b0, a1, b1] of [[s0, t0, s1, t0], [s1, t0, s1, t1], [s1, t1, s0, t1], [s0, t1, s0, t0]]) wall(M.cross, a0, b0, a1, b1, z0, z1); };
+            k(sm - 0.06, sm + 0.06, tm - 0.06, tm + 0.06, p.top - 0.2, p.top + 1.6); k(sm - 0.06, sm + 0.06, tm - 0.45, tm + 0.45, p.top + 0.95, p.top + 1.1);
+          }
+        } else if (p.roof === 'gable') {
+          const r0 = P(p.s0, tm, p.top), r1 = P(p.s1, tm, p.top), sl = Math.hypot(Lt / 2, p.top - p.eave);
+          quad(rm, c[0], c[1], r1, r0, [0, 0], [Ls, 0], [Ls, sl], [0, sl]); quad(rm, c[3], c[2], r1, r0, [0, 0], [Ls, 0], [Ls, sl], [0, sl]);
+        } else {
+          const sl = Math.hypot(Lt, p.top - p.eave);
+          quad(rm, c[0], c[1], c[2], c[3], [0, 0], [Ls, 0], [Ls, sl], [0, sl]);
+        }
+        if (p.mat === 'nave') { const rs = P(1.75, tm, 17.6); void rs; arch(1.78, tm, 0, 1, -1, 0, 16.6, 1.3, 1.6); }   // kerek ablak a nyugati oromfalon
+      } else if (p.k === 'apse') {
+        const N = 18, rim = [];
+        for (let i = 0; i <= N; i++) { const a = -Math.PI / 2 + i / N * Math.PI; rim.push([p.sc + p.r * Math.cos(a), p.tc + p.r * Math.sin(a)]); }
+        if (p.sc > p.s0) { wall(M.stone, p.s0, p.tc - p.r, p.sc, p.tc - p.r, ZB, p.eave); wall(M.stone, p.sc, p.tc + p.r, p.s0, p.tc + p.r, ZB, p.eave); }
+        let along = 0;
+        for (let i = 0; i < N; i++) {
+          const [a0, b0] = rim[i], [a1, b1] = rim[i + 1], Lw = Math.hypot(a1 - a0, b1 - b0);
+          quad(M.stone, P(a0, b0, ZB), P(a1, b1, ZB), P(a1, b1, p.eave), P(a0, b0, p.eave), [along, ZB], [along + Lw, ZB], [along + Lw, p.eave], [along, p.eave]);
+          const ns = (a0 + a1) / 2 - p.sc, nt = (b0 + b1) / 2 - p.tc, nl = Math.hypot(ns, nt);
+          wall(M.frieze, a0, b0, a1, b1, p.eave - (p.r > 3 ? 0.7 : 0.45), p.eave, 0.05, ns / nl, nt / nl);
+          if (p.r > 3 && i % 3 === 1) wall(M.ledge, a0 + (a1 - a0) * 0.42, b0 + (b1 - b0) * 0.42, a0 + (a1 - a0) * 0.58, b0 + (b1 - b0) * 0.58, 0.6, p.eave - 0.7, 0.1, ns / nl, nt / nl);   // féloszlopok
+          if (p.r > 3 && (i === 4 || i === 9 || i === 13)) arch((a0 + a1) / 2, (b0 + b1) / 2, (a1 - a0) / Lw, (b1 - b0) / Lw, ns / nl, nt / nl, 5.2, 0.7, 2.0);
+          along += Lw;
+        }
+        // tető: az egyenes szakaszon kétoldalt lejt, a félkörön félkúp
+        const ap = P(p.sc, p.tc, p.top), sl = Math.hypot(p.r, p.top - p.eave);
+        if (p.sc > p.s0) { const r0 = P(p.s0, p.tc, p.top), l = p.sc - p.s0; quad(M.tiles, P(p.s0, p.tc - p.r, p.eave), P(p.sc, p.tc - p.r, p.eave), ap, r0, [0, 0], [l, 0], [l, sl], [0, sl]); quad(M.tiles, P(p.s0, p.tc + p.r, p.eave), P(p.sc, p.tc + p.r, p.eave), ap, r0, [0, 0], [l, 0], [l, sl], [0, sl]); }
+        for (let i = 0; i < N; i++) { const [a0, b0] = rim[i], [a1, b1] = rim[i + 1], u0 = i / N * Math.PI * p.r, u1 = (i + 1) / N * Math.PI * p.r; tri(M.tiles, P(a0, b0, p.eave), P(a1, b1, p.eave), ap, [u0, 0], [u1, 0], [(u0 + u1) / 2, sl]); }
+      } else if (p.k === 'quatre') {
+        const N = 64; let along = 0;
+        for (let i = 0; i < N; i++) {
+          const th0 = i / N * 2 * Math.PI, th1 = (i + 1) / N * 2 * Math.PI, R0 = quatreR(p, th0), R1 = quatreR(p, th1);
+          const a0 = p.sc + R0 * Math.cos(th0), b0 = p.tc + R0 * Math.sin(th0), a1 = p.sc + R1 * Math.cos(th1), b1 = p.tc + R1 * Math.sin(th1), Lw = Math.hypot(a1 - a0, b1 - b0);
+          quad(M.light, P(a0, b0, ZB), P(a1, b1, ZB), P(a1, b1, p.eave), P(a0, b0, p.eave), [along, ZB], [along + Lw, ZB], [along + Lw, p.eave], [along, p.eave]);
+          const ns = Math.cos((th0 + th1) / 2), nt = Math.sin((th0 + th1) / 2);
+          wall(M.frieze, a0, b0, a1, b1, p.eave - 0.5, p.eave, 0.04, ns, nt);
+          if (i % 16 === 0) arch((a0 + a1) / 2, (b0 + b1) / 2, (a1 - a0) / Lw, (b1 - b0) / Lw, ns, nt, 4.6, 0.55, 1.5);
+          along += Lw;
+        }
+      } else if (p.k === 'cone') {
+        const N = 32, ap = P(p.sc, p.tc, p.z1), sl = Math.hypot(p.r, p.z1 - p.z0), m = M.chapTiles;
+        for (let i = 0; i < N; i++) { const a0 = i / N * 2 * Math.PI, a1 = (i + 1) / N * 2 * Math.PI, u0 = a0 * p.r, u1 = a1 * p.r; tri(m, P(p.sc + p.r * Math.cos(a0), p.tc + p.r * Math.sin(a0), p.z0), P(p.sc + p.r * Math.cos(a1), p.tc + p.r * Math.sin(a1), p.z0), ap, [u0, 0], [u1, 0], [(u0 + u1) / 2, sl]); }
+      } else if (p.k === 'cyl') {   // a kápolna lámpása: nyolcszögű, vakolt, kis ablakokkal; a kúpos tetőből indul
+        const N = 8, z0 = 12.5;
+        for (let i = 0; i < N; i++) {
+          const a0 = (i + 0.5) / N * 2 * Math.PI, a1 = (i + 1.5) / N * 2 * Math.PI, A = [p.sc + p.r * Math.cos(a0), p.tc + p.r * Math.sin(a0)], B = [p.sc + p.r * Math.cos(a1), p.tc + p.r * Math.sin(a1)];
+          wall(M.plaster, A[0], A[1], B[0], B[1], z0, p.z1);
+          if (i % 2 === 0) { const ns = Math.cos((a0 + a1) / 2), nt = Math.sin((a0 + a1) / 2), Lw = Math.hypot(B[0] - A[0], B[1] - A[1]); arch((A[0] + B[0]) / 2, (A[1] + B[1]) / 2, (B[0] - A[0]) / Lw, (B[1] - A[1]) / Lw, ns, nt, 14.8, 0.35, 0.9); }
+        }
+        tri(M.plaster, P(p.sc, p.tc, p.z1), P(p.sc, p.tc, p.z1), P(p.sc, p.tc, p.z1), [0, 0], [0, 0], [0, 0]);
+      } else if (p.k === 'onion') {   // hagymasisak (forgástest; a felső fele a magasságmező), rajta kereszt
+        const prof = [[0, 0], [0.5, 0], [0.55, 0.05], [0.9, 0.2], ...ONION_TOP.slice().reverse()], N = 16, Hh = p.z1 - p.z0;
+        for (let j = 0; j < prof.length - 1; j++) for (let i = 0; i < N; i++) {
+          const a0 = i / N * 2 * Math.PI, a1 = (i + 1) / N * 2 * Math.PI, [q0, y0] = prof[j], [q1, y1] = prof[j + 1];
+          const pt = (q, y, a) => P(p.sc + p.r * q * Math.cos(a), p.tc + p.r * q * Math.sin(a), p.z0 + Hh * y);
+          quad(M.chapTiles, pt(q0, y0, a0), pt(q0, y0, a1), pt(q1, y1, a1), pt(q1, y1, a0), [i / N, y0], [(i + 1) / N, y0], [(i + 1) / N, y1], [i / N, y1]);
+        }
+        const k = (s0, s1, t0, t1, z0, z1) => { for (const [a0, b0, a1, b1] of [[s0, t0, s1, t0], [s1, t0, s1, t1], [s1, t1, s0, t1], [s0, t1, s0, t0]]) wall(M.cross, a0, b0, a1, b1, z0, z1); };
+        k(p.sc - 0.04, p.sc + 0.04, p.tc - 0.04, p.tc + 0.04, p.z1 - 0.1, p.z1 + 1.0); k(p.sc - 0.04, p.sc + 0.04, p.tc - 0.3, p.tc + 0.3, p.z1 + 0.6, p.z1 + 0.7);
+      }
+    }
+    for (const [m, B] of buf) {
+      const geo = new T.BufferGeometry(); geo.setAttribute('position', new T.Float32BufferAttribute(B.p, 3)); geo.setAttribute('uv', new T.Float32BufferAttribute(B.uv, 2)); geo.computeVertexNormals();
+      const mesh = new T.Mesh(geo, m); mesh.frustumCulled = false; grp.add(mesh);
+    }
+    return grp;
+  }
   function building(o, groundY, mats) {
     const grp = new T.Group(), g = o.kind === 'hill' ? 0 : groundY(o.x0, o.y0);
     if (o.kind === 'house') {
@@ -750,9 +964,9 @@ window.RealView = (function () {
     mats.trunk = new T.MeshStandardMaterial({ color: lin(0x5f554c), roughness: 0.95 });   // távoli törzsek: árnyékos, sötét kéreg
     mats.blob.map = canvasTex(128, 128, g => { const gr = g.createRadialGradient(64, 64, 4, 64, 64, 62); gr.addColorStop(0, 'rgba(20,28,14,.5)'); gr.addColorStop(1, 'rgba(20,28,14,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); });
     mats.blobThin = mats.blob.clone(); mats.blobThin.opacity = 0.35;
-    const objGroup = new T.Group(), turbGroup = new T.Group(), ghostGroup = new T.Group(), bldGroup = new T.Group(), forGroup = new T.Group();
-    scene.add(objGroup, bldGroup, forGroup, turbGroup, ghostGroup);
-    let bKey = '', hlId = null, nKey = '', fKey = '';
+    const objGroup = new T.Group(), turbGroup = new T.Group(), ghostGroup = new T.Group(), bldGroup = new T.Group(), forGroup = new T.Group(), lmGroup = new T.Group();
+    scene.add(objGroup, bldGroup, forGroup, lmGroup, turbGroup, ghostGroup);
+    let bKey = '', hlId = null, nKey = '', fKey = '', lKey = '';
     let tKey = '', oKey = '', trKey = '', turbs = [], raf = 0, satKey = '', lastObs = null;
     const t0 = performance.now();
     // a forgatás csak akkor rajzol, ha a kép látszik (telefonon kíméli az akkut)
@@ -822,6 +1036,12 @@ window.RealView = (function () {
         bldGroup.add(realBuildings(list, groundY, mats));
         const h = hlId; hlId = null; api.highlightBuilding(h);
       },
+      // műemlékek: [{ lm (részek), x0, y0, u, v (a templom helye és tengelyei helyi méterben), Y0 (talajszint a szemhez képest) }]
+      setLandmarks(list, key) {
+        if (key === lKey) return; lKey = key;
+        lmGroup.traverse(o => { if (o.isMesh) o.geometry.dispose(); }); lmGroup.clear();
+        for (const L of list) lmGroup.add(landmarkMesh(L, L.Y0, mats));
+      },
       // fák és erdők: [{ x, y (helyi m), H, R, ry, card, seed, kind, solid }] (lásd forestTrees)
       setForest(list, key, groundY, winter) {
         if (key === fKey) return; fKey = key;
@@ -856,7 +1076,7 @@ window.RealView = (function () {
       // 1. táj és takarások, 2. a turbinák takart része áttűnve, 3. a turbinák
       render() {
         renderer.autoClear = false; renderer.clear();
-        const gv = ghostGroup.visible, vis = v => { objGroup.visible = bldGroup.visible = forGroup.visible = sky.visible = v; if (terrain) terrain.visible = v; };
+        const gv = ghostGroup.visible, vis = v => { objGroup.visible = bldGroup.visible = forGroup.visible = lmGroup.visible = sky.visible = v; if (terrain) terrain.visible = v; };
         turbGroup.visible = false; ghostGroup.visible = false;
         renderer.render(scene, cam);
         vis(false);

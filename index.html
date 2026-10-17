@@ -745,8 +745,28 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .be-btns{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .tdist{font:600 .74rem/1.25 var(--body);padding:3px 6px;background:rgba(255,255,255,.92);border:1px solid #e8590c;color:#3a2a20;box-shadow:none}
 .tdist::before{display:none}
+.site-ic{display:flex;align-items:center;gap:4px;transform:translate(-14px,-14px);white-space:nowrap}
+.site-ic b{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#fff;color:#1d3f8f;border:2.5px solid #1f5fd6;font:800 .85rem var(--body);box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.site-ic.jak b{background:#1f5fd6;color:#fff;border-color:#fff}
+.site-ic span{font:700 .72rem var(--body);color:#fff;background:rgba(31,95,214,.9);padding:1px 5px;border-radius:4px}
+.sh-hr span{display:inline-block;transform:translate(-50%,-50%);font:700 .66rem var(--body);color:#222;background:rgba(255,255,255,.85);padding:0 3px;border-radius:3px}
 .vlabel span{display:inline-block;transform:translate(-50%,-130%);white-space:nowrap;font:700 .78rem var(--body);color:#fff;background:#e8590c;padding:2px 6px;border-radius:4px}
 .share-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+.real-row{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap;margin-top:10px}
+.real-row .btn{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.mont{position:fixed;inset:0;z-index:5000;display:flex;flex-direction:column;background:#000;color:#fff}
+.mont[hidden]{display:none}
+.mont-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top));background:#111}
+.mont-bar b{font-size:.95rem}
+.mont-stage{position:relative;flex:1;min-height:0;overflow:hidden;touch-action:none;cursor:grab}
+.mont-stage video,.mont-stage canvas{position:absolute;inset:0;width:100%;height:100%}
+.mont-stage video{object-fit:cover}
+.mont-hint{position:absolute;left:8px;bottom:8px;right:8px;font:600 .8rem/1.3 var(--body);color:#fff;text-shadow:0 1px 3px #000;pointer-events:none}
+.mont-ctl{background:var(--card);color:var(--ink);padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));max-height:42vh;overflow:auto;display:grid;gap:8px}
+.mont-ctl p{margin:0}
+.mont-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px 16px}
+.mont-grid label{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;font-size:.85rem}
+.mont-row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
 .btn.warn{border-color:var(--shadow);color:var(--shadow)}
 .turbs{display:grid;gap:6px}
 .tb{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:4px 10px;border:1px solid var(--line);border-radius:8px;padding:8px 6px 8px 12px;background:var(--paper)}
@@ -957,6 +977,23 @@ footer a{color:var(--accent)}
         <p class="small">A házak alaprajza légi- és műholdfelvételekből felismert, illetve OpenStreetMap-adat (Overture Maps). A magasságot ott, ahol nincs megadva, az alapterületből becsüli: melléképület 3–4,5 m, családi ház nyeregtetővel kb. 7 m, csűr, üzem 8–10 m. A kocsiutak úttestétől 3 m-en belül nem marad épület (ahol az adatban mégis belelógna, ott a házat visszavágja).</p>
         <p class="small" id="bldStat"></p>
       </div>
+      <div class="field" id="siteField">
+        <label class="check"><input type="checkbox" id="sites" checked> <b>Lehetséges telepítési területek</b> egy átvilágítás szerint (kék számok a térképen)</label>
+        <p class="small">A Vas vármegyei területrendezési terv mellékletei és a 700 m-es lakóterületi védőtávolság alapján készült átvilágítás 14 szabad területének közepe és mérete (az 1–4. érinti Ják határát). A területek pontos határa nincs meg, ezért csak a középpontjukat jelöljük. A jelre koppintva egy turbinát is odatehetsz. Tájékoztató adat, nem hivatalos kijelölés.</p>
+      </div>
+      <div class="field" id="shadowField">
+        <label class="check"><input type="checkbox" id="shOn"> <b>Árnyékvetés és villódzás</b> a térképen, a választott napon és időpontban</label>
+        <div id="shCtl" hidden>
+          <label class="flabel" for="shDay">Nap</label>
+          <div class="rng"><input type="range" id="shDay" min="1" max="365" step="1" value="172"><output id="shDayO"></output></div>
+          <label class="flabel" for="shMin">Időpont (magyar idő)</label>
+          <div class="rng"><input type="range" id="shMin" min="240" max="1320" step="5" value="1080"><output id="shMinO"></output></div>
+          <p class="small" id="shInfo" role="status"></p>
+          <button class="btn" type="button" id="shYear">Éves villódzás-térkép (legrosszabb eset)</button>
+          <p class="small" id="shYearInfo" role="status"></p>
+          <p class="small">A térképen a sötét folt a rotor árnyéka, a vastag vonal a toronyé, a szaggatott vonal a rotor árnyékának útja azon a napon (órákkal), a szaggatott kör a kb. 2,3 km-es villódzási határ: ennél messzebb a lapát már a napkorong kevesebb mint ötödét takarja, nincs zavaró villódzás. A Nap 3° alatt nem ad éles árnyékot. A számítás a legrosszabb esetet mutatja: mindig süt a Nap, a rotor mindig a Nap felé fordul és forog. A valóságban a felhők, a szélirány és a szélcsend miatt ennek jellemzően csak töredéke (gyakran negyede–harmada) fordul elő. Viszonyításnak: Németországban egy lakóhelyen legfeljebb évi 30 óra és napi 30 perc ilyen (csillagászatilag lehetséges) villódzást fogadnak el; e fölött a turbinát időszakosan le kell állítani. A 3D kép ilyenkor a választott napállásból világít.</p>
+        </div>
+      </div>
       <div class="field" id="forField">
         <label class="check"><input type="checkbox" id="forest" checked> <b>Fák és erdők</b> a légifotókról felismerve, a térképen, 3D-ben és a számításban</label>
         <label class="flabel" for="forD">Famagasság-korrekció</label>
@@ -986,6 +1023,7 @@ footer a{color:var(--accent)}
         <span class="checks"><label class="check"><input type="checkbox" id="ghost" checked> A takart rész pirosan áttűnik</label>
         <label class="check"><input type="checkbox" id="spin" checked> Forgó lapátok</label></span>
       </div>
+      <div class="real-row"><button class="btn" type="button" id="photoBtn">Turbina a saját fotódon</button><button class="btn" type="button" id="arBtn" hidden>Élő kamera (AR)</button><input type="file" id="photoIn" accept="image/*" hidden><span class="small" id="realNote">Fotózd le a tájat onnan, ahonnan nézed, és a program valós méretben ráteszi a turbinát.</span></div>
       <div class="bld-edit" id="bldEdit" hidden>
         <div class="be-head"><b>Kiválasztott épület</b><button type="button" id="beClose" aria-label="Bezárás">×</button></div>
         <p class="small" id="beInfo"></p>
@@ -1041,6 +1079,26 @@ h_takart = z_szem + D · tan(α_max) − z_talppont</div>
 <footer class="wrap">
   <p>Térkép: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> közreműködők, <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> (CC-BY-SA). Domborzat: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">AWS Terrain Tiles</a> (SRTM és más források). Településnevek: GeoNames (CC BY 4.0). Műholdkép: Copernicus Sentinel-2 (2023–2024, 10 m-es felbontás); a webes kiadásban légifotó: Esri, Maxar, Earthstar Geographics (Powered by Esri). Levél-, kéreg- és fűfotók: ez-tree (MIT, © Daniel Greenheck), égbolt-fény: Poly Haven (CC0). A számítás tájékoztató jellegű, nem helyettesíti a hivatalos látványtervet. <button class="linkbtn" type="button" id="copyLink">Link másolása ehhez a beállításhoz</button> <span id="copyMsg"></span></p>
 </footer>
+
+<div class="mont" id="mont" hidden role="dialog" aria-modal="true" aria-labelledby="montTitle">
+  <div class="mont-bar"><b id="montTitle">A turbina a saját fotódon</b><button class="btn" type="button" id="montClose">Bezárás</button></div>
+  <div class="mont-stage" id="montStage"><video id="arVideo" playsinline muted autoplay hidden></video><canvas id="montCv" role="img" aria-label="A kép a turbinával"></canvas><div class="mont-hint" id="montHint" aria-live="polite"></div></div>
+  <div class="mont-ctl">
+    <p class="small" id="montSt"></p>
+    <div class="mont-grid">
+      <label><span id="mHdL">Irány</span><input type="range" id="mHd" min="-40" max="40" step="0.1" value="0"><output id="mHdO"></output></label>
+      <label><span>Dőlés</span><input type="range" id="mPt" min="-15" max="15" step="0.1" value="0"><output id="mPtO"></output></label>
+      <label id="mRlW"><span>Billenés</span><input type="range" id="mRl" min="-8" max="8" step="0.1" value="0"><output id="mRlO"></output></label>
+      <label><span id="mFovL">Látószög</span><input type="range" id="mFov" min="15" max="110" step="0.5" value="66"><output id="mFovO"></output></label>
+    </div>
+    <div class="mont-row">
+      <label class="check"><input type="checkbox" id="mSky" checked> Modell-horizont és falunevek</label>
+      <label class="check"><input type="checkbox" id="mGhost" checked> A takart rész pirosan</label>
+      <button class="btn" type="button" id="mSave">Kép mentése</button>
+      <button class="btn" type="button" id="mShot" hidden>Pillanatkép mentése</button>
+    </div>
+  </div>
+</div>
 
 <script>
 /* @preserve
@@ -1522,6 +1580,220 @@ window.RealView = (function () {
     }
     return grp;
   }
+  /* ---------- Műemlék (a jáki templom és a Szent Jakab-kápolna) a lap által megadott részekből ----------
+     A részek alakja (falmagasság, tetőformák) pontosan a lap magasságmezője; a díszítés (párkányok, frízek, ablakok,
+     a kapuzat) legfeljebb néhány centiméterrel áll ki a falsíkból. */
+  // kváderkő: soronként változó magasságú, egyenként árnyalt kőtömbök; 512 px = 4 m
+  const stoneTex = (base, dark) => canvasTex(512, 512, (g, w, h) => {
+    g.fillStyle = dark; g.fillRect(0, 0, w, h);
+    let y = 0, row = 0;
+    while (y < h) {
+      const ch = 34 + ((rnd(row * 7.1) * 14) | 0); let x = -rnd(row * 3.3) * 60;
+      while (x < w) {
+        const bw = 60 + rnd(row * 31 + x) * 80, v = 0.86 + rnd(row * 13 + x * 0.7) * 0.2, wt = rnd(row * 5 + x * 0.3) > 0.88 ? 0.86 : 1;
+        const c = base.map(k => Math.min(255, k * v * wt) | 0);
+        const gr = g.createLinearGradient(0, y, 0, y + ch); gr.addColorStop(0, `rgb(${c.map(k => Math.min(255, k + 14)).join(',')})`); gr.addColorStop(1, `rgb(${c.map(k => k - 12).join(',')})`);
+        g.fillStyle = gr; g.fillRect(x + 1.5, y + 1.5, bw - 3, ch - 3);
+        for (let k = 0; k < bw * ch / 60; k++) { g.fillStyle = rnd(k + x + row * 99) < 0.5 ? 'rgba(80,70,55,.12)' : 'rgba(255,250,235,.12)'; g.fillRect(x + rnd(k * 1.3 + row) * bw, y + rnd(k * 2.7 + x) * ch, 2, 2); }
+        x += bw;
+      }
+      y += ch; row++;
+    }
+    // esőcsíkok
+    for (let k = 0; k < 30; k++) { const x = rnd(k + 500) * w, gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(70,62,50,0)'); gr.addColorStop(rnd(k + 9), 'rgba(70,62,50,.10)'); gr.addColorStop(1, 'rgba(70,62,50,0)'); g.fillStyle = gr; g.fillRect(x, 0, 3 + rnd(k) * 8, h); }
+  }, true);
+  // román kori ívsoros fríz (konzolos kis ívek a párkány alatt); 512 px = 4 m széles, a sáv teljes magassága
+  const friezeTex = () => canvasTex(512, 64, (g, w, h) => {
+    g.fillStyle = '#d6cab0'; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 8; i++) {
+      const x = i * 64; g.fillStyle = 'rgba(60,50,38,.45)';
+      g.beginPath(); g.moveTo(x + 6, h); g.lineTo(x + 6, 30); g.arc(x + 32, 30, 26, Math.PI, 0); g.lineTo(x + 58, h); g.closePath(); g.fill();
+      g.fillStyle = '#e4d9c0'; g.fillRect(x - 3, 40, 6, 24);
+    }
+    g.fillStyle = '#efe6d2'; g.fillRect(0, 0, w, 6); g.fillStyle = 'rgba(60,50,38,.35)'; g.fillRect(0, 6, w, 3);
+  }, true);
+  // a nyugati kapuzat homlokzata: lépcsőzetes, oszlopos bélletű kapu, timpanon, fölötte apostolszobrok fülkéi és orom;
+  // a kép 5,4 m széles és 15,5 m magas (a kapuépítmény homlokzata az oromcsúcsig)
+  const portalTex = () => canvasTex(512, 1024, (g, w, h) => {
+    const X = m => m / 5.4 * w, Yz = z => h - z / 15.5 * h, sx = w / 5.4, sy = h / 15.5;
+    const st = stoneTex([214, 200, 172], '#a89c86').image;   // 4 × 4 m-es kőminta, méretarányosan ismételve
+    for (let y = 0; y < h; y += 4 * sy) for (let x = 0; x < w; x += 4 * sx) g.drawImage(st, x, y, 4 * sx, 4 * sy);
+    g.save(); g.translate(0, 0);
+    const cx = X(2.7), zs = 5.9;   // az ív indítása
+    // lépcsőzetes béllet: kívülről befelé váltakozó világos oszlopok és árnyékos sávok
+    for (let k = 0; k < 8; k++) {
+      const r = 2.5 - k * 0.24, light = k % 2 === 0;
+      g.fillStyle = light ? `rgb(${226 - k * 6},${214 - k * 6},${188 - k * 6})` : `rgb(${132 - k * 6},${118 - k * 6},${96 - k * 6})`;
+      g.beginPath(); g.moveTo(cx - r * sx, Yz(0.35)); g.lineTo(cx - r * sx, Yz(zs)); g.ellipse(cx, Yz(zs), r * sx, r * sy, 0, Math.PI, 0); g.lineTo(cx + r * sx, Yz(0.35)); g.closePath(); g.fill();
+      if (light) { g.fillStyle = 'rgba(70,58,42,.35)'; for (const sg of [-1, 1]) g.fillRect(cx + sg * r * sx - (sg > 0 ? 3 : 0), Yz(zs), 3, Yz(0.35) - Yz(zs)); }
+    }
+    // ajtó és timpanon
+    g.fillStyle = '#cbbd9e'; g.beginPath(); g.ellipse(cx, Yz(4.5), 0.78 * sx, 0.78 * sy, 0, Math.PI, 0); g.closePath(); g.fill();
+    g.fillStyle = 'rgba(90,78,60,.5)'; g.beginPath(); g.arc(cx, Yz(4.85), 0.22 * sx, 0, 6.3); g.fill();
+    g.fillStyle = '#4b3424'; g.fillRect(cx - 0.78 * sx, Yz(4.5), 1.56 * sx, Yz(0.35) - Yz(4.5));
+    g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(cx - 1, Yz(4.5), 2, Yz(0.35) - Yz(4.5));
+    // lábazat, párkány a kapu fölött
+    g.fillStyle = '#9a8e78'; g.fillRect(0, Yz(0.35), w, h - Yz(0.35));
+    g.fillStyle = '#efe5cf'; g.fillRect(0, Yz(9.95), w, 0.18 * sy); g.fillStyle = 'rgba(60,50,38,.4)'; g.fillRect(0, Yz(9.77), w, 0.1 * sy);
+    // fülkesor apostolszobrokkal
+    for (let i = 0; i < 9; i++) {
+      const x = X(0.35 + i * 0.52), nw = 0.4 * sx;
+      g.fillStyle = '#7d705c'; g.beginPath(); g.moveTo(x, Yz(10.1)); g.lineTo(x, Yz(11.0)); g.ellipse(x + nw / 2, Yz(11.0), nw / 2, nw / 2 * sy / sx, 0, Math.PI, 0); g.lineTo(x + nw, Yz(10.1)); g.closePath(); g.fill();
+      g.fillStyle = '#e6dcc6'; g.beginPath(); g.ellipse(x + nw / 2, Yz(10.55), nw * 0.28, 0.42 * sy, 0, 0, 6.3); g.fill();
+      g.beginPath(); g.arc(x + nw / 2, Yz(11.08), nw * 0.15, 0, 6.3); g.fill();
+    }
+    g.fillStyle = '#efe5cf'; g.fillRect(0, Yz(11.5), w, 0.16 * sy);
+    // orom: középen Krisztus fülkéje, mellette két angyal
+    g.fillStyle = '#7d705c'; g.beginPath(); g.moveTo(X(2.35), Yz(11.8)); g.lineTo(X(2.35), Yz(13.2)); g.ellipse(cx, Yz(13.2), 0.35 * sx, 0.35 * sy, 0, Math.PI, 0); g.lineTo(X(3.05), Yz(11.8)); g.closePath(); g.fill();
+    g.fillStyle = '#e8dec8'; g.beginPath(); g.ellipse(cx, Yz(12.4), 0.2 * sx, 0.55 * sy, 0, 0, 6.3); g.fill(); g.beginPath(); g.arc(cx, Yz(13.15), 0.11 * sx, 0, 6.3); g.fill();
+    for (const sg of [-1, 1]) { g.beginPath(); g.ellipse(cx + sg * 1.0 * sx, Yz(12.2), 0.14 * sx, 0.38 * sy, 0, 0, 6.3); g.fill(); g.beginPath(); g.arc(cx + sg * 1.0 * sx, Yz(12.7), 0.09 * sx, 0, 6.3); g.fill(); }
+    g.restore();
+  }, true);
+  function landmarkMesh(L, Y0, mats) {
+    if (!mats.lm) {
+      const mk = (tex, rep, color, extra) => { if (tex) { tex.wrapS = tex.wrapT = T.RepeatWrapping; tex.anisotropy = 8; } const m = new T.MeshStandardMaterial({ map: tex || null, color: color != null ? color : 0xffffff, roughness: 0.92, side: T.DoubleSide, envMapIntensity: 0.5, ...(extra || {}) }); m.userData.rep = rep; return m; };
+      const stone = stoneTex([214, 201, 174], '#9c907a');
+      mats.lm = {
+        stone: mk(stone, [1 / 4, 1 / 4]), ledge: mk(stone, [1 / 4, 1 / 4], 0xd6cfc2),
+        light: mk(stoneTex([226, 218, 198], '#a99f8c'), [1 / 4, 1 / 4]),
+        spire: mk(stoneTex([222, 188, 153], '#9c8462'), [1 / 2.5, 1 / 2.5]),
+        tiles: mk(roofTexNeutral(), [1 / 3.2, 1 / 1.4], lin(0xa4613f)), chapTiles: mk(roofTexNeutral(), [1 / 3.2, 1 / 1.4], lin(0x8b4513)),
+        frieze: mk(friezeTex(), [1 / 4, 1]), portal: mk(portalTex(), [1, 1]), plaster: mk(plasterTex(), [1 / 3, 1 / 3], 0xf2eee6),
+        win: mk(null, [1, 1], lin(0x2a2420), { roughness: 0.7 }), cross: mk(null, [1, 1], lin(0x6c5a38), { metalness: 0.6, roughness: 0.4 })
+      };
+      mats.lm.portal.map.wrapS = mats.lm.portal.map.wrapT = T.ClampToEdgeWrapping;
+    }
+    const M = mats.lm, buf = new Map(), grp = new T.Group();
+    const P = (s, t, z) => [L.x0 + s * L.u[0] + t * L.v[0], Y0 + z, -(L.y0 + s * L.u[1] + t * L.v[1])];
+    const tri = (m, a, b, c, ua, ub, uc) => { if (!buf.has(m)) buf.set(m, { p: [], uv: [] }); const B = buf.get(m), [ru, rv] = m.userData.rep; B.p.push(...a, ...b, ...c); for (const q of [ua, ub, uc]) B.uv.push(q[0] * ru, q[1] * rv); };
+    const quad = (m, a, b, c, d, ua, ub, uc, ud) => { tri(m, a, b, c, ua, ub, uc); tri(m, a, c, d, ua, uc, ud); };
+    // függőleges fal a templom (s, t) pontjai között, z0 és z1 között (n: kifelé tolás méterben)
+    const wall = (m, s0, t0, s1, t1, z0, z1, n = 0, ns = 0, nt = 0) => {
+      const Lw = Math.hypot(s1 - s0, t1 - t0);
+      quad(m, P(s0 + ns * n, t0 + nt * n, z0), P(s1 + ns * n, t1 + nt * n, z0), P(s1 + ns * n, t1 + nt * n, z1), P(s0 + ns * n, t0 + nt * n, z1), [0, z0], [Lw, z0], [Lw, z1], [0, z1]);
+    };
+    // íves ablak (vagy ikerablak) a fal síkjában: a fal egy pontja (s, t), iránya (ws, wt), kifelé mutató normálisa (ns, nt)
+    const arch = (s, t, ws, wt, ns, nt, z, wdt, hgt) => {
+      const r = wdt / 2, pts = [[-r, 0], [r, 0]];
+      for (let i = 0; i <= 10; i++) { const a = i / 10 * Math.PI; pts.push([r * Math.cos(a), hgt - r + r * Math.sin(a)]); }
+      const at = ([x, y]) => P(s + ws * x + ns * 0.04, t + wt * x + nt * 0.04, z + y), c = at([0, (hgt - r) / 2]);
+      const ring = [[-r, 0], [r, 0], ...pts.slice(2)].concat([[-r, 0]]);
+      const ord = [[r, 0], ...pts.slice(2), [-r, 0]];
+      for (let i = 0; i < ord.length - 1; i++) tri(M.win, c, at(ord[i]), at(ord[i + 1]), [0, 0], [0, 0], [0, 0]);
+      tri(M.win, c, at([-r, 0]), at([r, 0]), [0, 0], [0, 0], [0, 0]);
+      void ring;
+    };
+    const faces = p => [   // [kezdő s, t, záró s, t, a fal iránya, kifelé mutató normális]
+      [p.s0, p.t0, p.s1, p.t0, 1, 0, 0, -1], [p.s1, p.t1, p.s0, p.t1, -1, 0, 0, 1], [p.s0, p.t1, p.s0, p.t0, 0, -1, -1, 0], [p.s1, p.t0, p.s1, p.t1, 0, 1, 1, 0]];
+    const ZB = -4;   // a falak a talaj alá nyúlnak (lejtős terep)
+    for (const p of L.lm.parts) {
+      if (p.k === 'box') {
+        const wm = p.mat === 'sacristy' ? M.light : M.stone, rm = p.mat === 'tower' ? M.spire : p.mat === 'portal' ? M.spire : M.tiles;
+        const sm = (p.s0 + p.s1) / 2, tm = (p.t0 + p.t1) / 2, hz = (s, t) => { let h = p.eave; const hw = (p.t1 - p.t0) / 2, hs = (p.s1 - p.s0) / 2, rh = p.top - p.eave;
+          if (p.roof === 'lean1') h = p.eave + rh * (t - p.t0) / (2 * hw); else if (p.roof === 'lean0') h = p.eave + rh * (p.t1 - t) / (2 * hw); return h; };
+        for (const [s0, t0, s1, t1, ws, wt, ns, nt] of faces(p)) {
+          const z0 = hz(s0, t0), z1 = hz(s1, t1);
+          if (p.mat === 'portal' && ns === -1) {   // a kapuzat homlokzata (ötszög) a kapuzat képével
+            const U = (t, z) => [(t - p.t0) / 5.4, Math.max(0, z) / 15.5];
+            quad(M.portal, P(s0, t0, ZB), P(s1, t1, ZB), P(s1, t1, p.eave), P(s0, t0, p.eave), U(t0, 0), U(t1, 0), U(t1, p.eave), U(t0, p.eave));
+            tri(M.portal, P(s0, t0, p.eave), P(s1, t1, p.eave), P(sm, tm, p.top), U(t0, p.eave), U(t1, p.eave), U(tm, p.top));
+            continue;
+          }
+          const Lw = Math.hypot(s1 - s0, t1 - t0);
+          quad(wm, P(s0, t0, ZB), P(s1, t1, ZB), P(s1, t1, z1), P(s0, t0, z0), [0, ZB], [Lw, ZB], [Lw, z1], [0, z0]);
+          if (p.roof === 'gable' && ns !== 0) tri(wm, P(s0, t0, p.eave), P(s1, t1, p.eave), P(sm, tm, p.top), [0, p.eave], [Lw, p.eave], [Lw / 2, p.top]);
+          // díszítés
+          if (p.mat === 'tower') {
+            for (const zc of [7.5, 13.5, 19]) wall(M.ledge, s0, t0, s1, t1, zc, zc + 0.35, 0.12, ns, nt);
+            wall(M.frieze, s0, t0, s1, t1, 22.9, 23.75, 0.06, ns, nt); wall(M.ledge, s0, t0, s1, t1, 23.75, 24, 0.22, ns, nt);
+            const ms = (s0 + s1) / 2, mt = (t0 + t1) / 2;
+            arch(ms, mt, ws, wt, ns, nt, 9.6, 0.32, 1.6); arch(ms, mt, ws, wt, ns, nt, 15.2, 0.4, 1.9);
+            for (const sg of [-1, 1]) arch(ms + ws * sg * 0.55, mt + wt * sg * 0.55, ws, wt, ns, nt, 20.1, 0.62, 2.1);
+          } else if (p.mat === 'nave' && nt !== 0) {
+            for (let s = 9; s < 28; s += 4) arch(s, nt > 0 ? p.t1 : p.t0, ws, wt, ns, nt, 12.1, 0.7, 1.7);
+            wall(M.frieze, s0, t0, s1, t1, 13.9, 14.5, 0.05, ns, nt);
+          } else if (p.mat === 'nave' && ns === 1) {
+            wall(M.frieze, s0, t0, s1, t1, 13.9, 14.5, 0.05, ns, nt);
+          } else if (p.mat === 'aisle' && ((p.roof === 'lean1' && nt === -1) || (p.roof === 'lean0' && nt === 1))) {
+            for (let s = 9.5; s < 28; s += 4) arch(s, nt > 0 ? p.t1 : p.t0, ws, wt, ns, nt, 3.6, 0.6, 1.7);
+            wall(M.frieze, s0, t0, s1, t1, 7.45, 8, 0.05, ns, nt);
+          } else if (p.mat === 'sacristy') arch((s0 + s1) / 2, (t0 + t1) / 2, ws, wt, ns, nt, 2.6, 0.6, 1.4);
+        }
+        // tető
+        const c = [P(p.s0, p.t0, hz(p.s0, p.t0)), P(p.s1, p.t0, hz(p.s1, p.t0)), P(p.s1, p.t1, hz(p.s1, p.t1)), P(p.s0, p.t1, hz(p.s0, p.t1))];
+        const Ls = p.s1 - p.s0, Lt = p.t1 - p.t0;
+        if (p.roof === 'pyr') {
+          const apex = P(sm, tm, p.top), sl = Math.hypot(Math.max(Ls, Lt) / 2, p.top - p.eave);
+          for (let i = 0; i < 4; i++) { const a = c[i], b = c[(i + 1) % 4], e = i % 2 ? Lt : Ls; tri(rm, a, b, apex, [0, 0], [e, 0], [e / 2, sl]); }
+          if (p.mat === 'tower') {   // kereszt a sisak csúcsán
+            const k = (s0, s1, t0, t1, z0, z1) => { for (const [a0, b0, a1, b1] of [[s0, t0, s1, t0], [s1, t0, s1, t1], [s1, t1, s0, t1], [s0, t1, s0, t0]]) wall(M.cross, a0, b0, a1, b1, z0, z1); };
+            k(sm - 0.06, sm + 0.06, tm - 0.06, tm + 0.06, p.top - 0.2, p.top + 1.6); k(sm - 0.06, sm + 0.06, tm - 0.45, tm + 0.45, p.top + 0.95, p.top + 1.1);
+          }
+        } else if (p.roof === 'gable') {
+          const r0 = P(p.s0, tm, p.top), r1 = P(p.s1, tm, p.top), sl = Math.hypot(Lt / 2, p.top - p.eave);
+          quad(rm, c[0], c[1], r1, r0, [0, 0], [Ls, 0], [Ls, sl], [0, sl]); quad(rm, c[3], c[2], r1, r0, [0, 0], [Ls, 0], [Ls, sl], [0, sl]);
+        } else {
+          const sl = Math.hypot(Lt, p.top - p.eave);
+          quad(rm, c[0], c[1], c[2], c[3], [0, 0], [Ls, 0], [Ls, sl], [0, sl]);
+        }
+        if (p.mat === 'nave') { const rs = P(1.75, tm, 17.6); void rs; arch(1.78, tm, 0, 1, -1, 0, 16.6, 1.3, 1.6); }   // kerek ablak a nyugati oromfalon
+      } else if (p.k === 'apse') {
+        const N = 18, rim = [];
+        for (let i = 0; i <= N; i++) { const a = -Math.PI / 2 + i / N * Math.PI; rim.push([p.sc + p.r * Math.cos(a), p.tc + p.r * Math.sin(a)]); }
+        if (p.sc > p.s0) { wall(M.stone, p.s0, p.tc - p.r, p.sc, p.tc - p.r, ZB, p.eave); wall(M.stone, p.sc, p.tc + p.r, p.s0, p.tc + p.r, ZB, p.eave); }
+        let along = 0;
+        for (let i = 0; i < N; i++) {
+          const [a0, b0] = rim[i], [a1, b1] = rim[i + 1], Lw = Math.hypot(a1 - a0, b1 - b0);
+          quad(M.stone, P(a0, b0, ZB), P(a1, b1, ZB), P(a1, b1, p.eave), P(a0, b0, p.eave), [along, ZB], [along + Lw, ZB], [along + Lw, p.eave], [along, p.eave]);
+          const ns = (a0 + a1) / 2 - p.sc, nt = (b0 + b1) / 2 - p.tc, nl = Math.hypot(ns, nt);
+          wall(M.frieze, a0, b0, a1, b1, p.eave - (p.r > 3 ? 0.7 : 0.45), p.eave, 0.05, ns / nl, nt / nl);
+          if (p.r > 3 && i % 3 === 1) wall(M.ledge, a0 + (a1 - a0) * 0.42, b0 + (b1 - b0) * 0.42, a0 + (a1 - a0) * 0.58, b0 + (b1 - b0) * 0.58, 0.6, p.eave - 0.7, 0.1, ns / nl, nt / nl);   // féloszlopok
+          if (p.r > 3 && (i === 4 || i === 9 || i === 13)) arch((a0 + a1) / 2, (b0 + b1) / 2, (a1 - a0) / Lw, (b1 - b0) / Lw, ns / nl, nt / nl, 5.2, 0.7, 2.0);
+          along += Lw;
+        }
+        // tető: az egyenes szakaszon kétoldalt lejt, a félkörön félkúp
+        const ap = P(p.sc, p.tc, p.top), sl = Math.hypot(p.r, p.top - p.eave);
+        if (p.sc > p.s0) { const r0 = P(p.s0, p.tc, p.top), l = p.sc - p.s0; quad(M.tiles, P(p.s0, p.tc - p.r, p.eave), P(p.sc, p.tc - p.r, p.eave), ap, r0, [0, 0], [l, 0], [l, sl], [0, sl]); quad(M.tiles, P(p.s0, p.tc + p.r, p.eave), P(p.sc, p.tc + p.r, p.eave), ap, r0, [0, 0], [l, 0], [l, sl], [0, sl]); }
+        for (let i = 0; i < N; i++) { const [a0, b0] = rim[i], [a1, b1] = rim[i + 1], u0 = i / N * Math.PI * p.r, u1 = (i + 1) / N * Math.PI * p.r; tri(M.tiles, P(a0, b0, p.eave), P(a1, b1, p.eave), ap, [u0, 0], [u1, 0], [(u0 + u1) / 2, sl]); }
+      } else if (p.k === 'quatre') {
+        const N = 64; let along = 0;
+        for (let i = 0; i < N; i++) {
+          const th0 = i / N * 2 * Math.PI, th1 = (i + 1) / N * 2 * Math.PI, R0 = quatreR(p, th0), R1 = quatreR(p, th1);
+          const a0 = p.sc + R0 * Math.cos(th0), b0 = p.tc + R0 * Math.sin(th0), a1 = p.sc + R1 * Math.cos(th1), b1 = p.tc + R1 * Math.sin(th1), Lw = Math.hypot(a1 - a0, b1 - b0);
+          quad(M.light, P(a0, b0, ZB), P(a1, b1, ZB), P(a1, b1, p.eave), P(a0, b0, p.eave), [along, ZB], [along + Lw, ZB], [along + Lw, p.eave], [along, p.eave]);
+          const ns = Math.cos((th0 + th1) / 2), nt = Math.sin((th0 + th1) / 2);
+          wall(M.frieze, a0, b0, a1, b1, p.eave - 0.5, p.eave, 0.04, ns, nt);
+          if (i % 16 === 0) arch((a0 + a1) / 2, (b0 + b1) / 2, (a1 - a0) / Lw, (b1 - b0) / Lw, ns, nt, 4.6, 0.55, 1.5);
+          along += Lw;
+        }
+      } else if (p.k === 'cone') {
+        const N = 32, ap = P(p.sc, p.tc, p.z1), sl = Math.hypot(p.r, p.z1 - p.z0), m = M.chapTiles;
+        for (let i = 0; i < N; i++) { const a0 = i / N * 2 * Math.PI, a1 = (i + 1) / N * 2 * Math.PI, u0 = a0 * p.r, u1 = a1 * p.r; tri(m, P(p.sc + p.r * Math.cos(a0), p.tc + p.r * Math.sin(a0), p.z0), P(p.sc + p.r * Math.cos(a1), p.tc + p.r * Math.sin(a1), p.z0), ap, [u0, 0], [u1, 0], [(u0 + u1) / 2, sl]); }
+      } else if (p.k === 'cyl') {   // a kápolna lámpása: nyolcszögű, vakolt, kis ablakokkal; a kúpos tetőből indul
+        const N = 8, z0 = 12.5;
+        for (let i = 0; i < N; i++) {
+          const a0 = (i + 0.5) / N * 2 * Math.PI, a1 = (i + 1.5) / N * 2 * Math.PI, A = [p.sc + p.r * Math.cos(a0), p.tc + p.r * Math.sin(a0)], B = [p.sc + p.r * Math.cos(a1), p.tc + p.r * Math.sin(a1)];
+          wall(M.plaster, A[0], A[1], B[0], B[1], z0, p.z1);
+          if (i % 2 === 0) { const ns = Math.cos((a0 + a1) / 2), nt = Math.sin((a0 + a1) / 2), Lw = Math.hypot(B[0] - A[0], B[1] - A[1]); arch((A[0] + B[0]) / 2, (A[1] + B[1]) / 2, (B[0] - A[0]) / Lw, (B[1] - A[1]) / Lw, ns, nt, 14.8, 0.35, 0.9); }
+        }
+        tri(M.plaster, P(p.sc, p.tc, p.z1), P(p.sc, p.tc, p.z1), P(p.sc, p.tc, p.z1), [0, 0], [0, 0], [0, 0]);
+      } else if (p.k === 'onion') {   // hagymasisak (forgástest; a felső fele a magasságmező), rajta kereszt
+        const prof = [[0, 0], [0.5, 0], [0.55, 0.05], [0.9, 0.2], ...ONION_TOP.slice().reverse()], N = 16, Hh = p.z1 - p.z0;
+        for (let j = 0; j < prof.length - 1; j++) for (let i = 0; i < N; i++) {
+          const a0 = i / N * 2 * Math.PI, a1 = (i + 1) / N * 2 * Math.PI, [q0, y0] = prof[j], [q1, y1] = prof[j + 1];
+          const pt = (q, y, a) => P(p.sc + p.r * q * Math.cos(a), p.tc + p.r * q * Math.sin(a), p.z0 + Hh * y);
+          quad(M.chapTiles, pt(q0, y0, a0), pt(q0, y0, a1), pt(q1, y1, a1), pt(q1, y1, a0), [i / N, y0], [(i + 1) / N, y0], [(i + 1) / N, y1], [i / N, y1]);
+        }
+        const k = (s0, s1, t0, t1, z0, z1) => { for (const [a0, b0, a1, b1] of [[s0, t0, s1, t0], [s1, t0, s1, t1], [s1, t1, s0, t1], [s0, t1, s0, t0]]) wall(M.cross, a0, b0, a1, b1, z0, z1); };
+        k(p.sc - 0.04, p.sc + 0.04, p.tc - 0.04, p.tc + 0.04, p.z1 - 0.1, p.z1 + 1.0); k(p.sc - 0.04, p.sc + 0.04, p.tc - 0.3, p.tc + 0.3, p.z1 + 0.6, p.z1 + 0.7);
+      }
+    }
+    for (const [m, B] of buf) {
+      const geo = new T.BufferGeometry(); geo.setAttribute('position', new T.Float32BufferAttribute(B.p, 3)); geo.setAttribute('uv', new T.Float32BufferAttribute(B.uv, 2)); geo.computeVertexNormals();
+      const mesh = new T.Mesh(geo, m); mesh.frustumCulled = false; grp.add(mesh);
+    }
+    return grp;
+  }
   function building(o, groundY, mats) {
     const grp = new T.Group(), g = o.kind === 'hill' ? 0 : groundY(o.x0, o.y0);
     if (o.kind === 'house') {
@@ -1632,9 +1904,9 @@ window.RealView = (function () {
     mats.trunk = new T.MeshStandardMaterial({ color: lin(0x5f554c), roughness: 0.95 });   // távoli törzsek: árnyékos, sötét kéreg
     mats.blob.map = canvasTex(128, 128, g => { const gr = g.createRadialGradient(64, 64, 4, 64, 64, 62); gr.addColorStop(0, 'rgba(20,28,14,.5)'); gr.addColorStop(1, 'rgba(20,28,14,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); });
     mats.blobThin = mats.blob.clone(); mats.blobThin.opacity = 0.35;
-    const objGroup = new T.Group(), turbGroup = new T.Group(), ghostGroup = new T.Group(), bldGroup = new T.Group(), forGroup = new T.Group();
-    scene.add(objGroup, bldGroup, forGroup, turbGroup, ghostGroup);
-    let bKey = '', hlId = null, nKey = '', fKey = '';
+    const objGroup = new T.Group(), turbGroup = new T.Group(), ghostGroup = new T.Group(), bldGroup = new T.Group(), forGroup = new T.Group(), lmGroup = new T.Group();
+    scene.add(objGroup, bldGroup, forGroup, lmGroup, turbGroup, ghostGroup);
+    let bKey = '', hlId = null, nKey = '', fKey = '', lKey = '';
     let tKey = '', oKey = '', trKey = '', turbs = [], raf = 0, satKey = '', lastObs = null;
     const t0 = performance.now();
     // a forgatás csak akkor rajzol, ha a kép látszik (telefonon kíméli az akkut)
@@ -1704,6 +1976,12 @@ window.RealView = (function () {
         bldGroup.add(realBuildings(list, groundY, mats));
         const h = hlId; hlId = null; api.highlightBuilding(h);
       },
+      // műemlékek: [{ lm (részek), x0, y0, u, v (a templom helye és tengelyei helyi méterben), Y0 (talajszint a szemhez képest) }]
+      setLandmarks(list, key) {
+        if (key === lKey) return; lKey = key;
+        lmGroup.traverse(o => { if (o.isMesh) o.geometry.dispose(); }); lmGroup.clear();
+        for (const L of list) lmGroup.add(landmarkMesh(L, L.Y0, mats));
+      },
       // fák és erdők: [{ x, y (helyi m), H, R, ry, card, seed, kind, solid }] (lásd forestTrees)
       setForest(list, key, groundY, winter) {
         if (key === fKey) return; fKey = key;
@@ -1738,7 +2016,7 @@ window.RealView = (function () {
       // 1. táj és takarások, 2. a turbinák takart része áttűnve, 3. a turbinák
       render() {
         renderer.autoClear = false; renderer.clear();
-        const gv = ghostGroup.visible, vis = v => { objGroup.visible = bldGroup.visible = forGroup.visible = sky.visible = v; if (terrain) terrain.visible = v; };
+        const gv = ghostGroup.visible, vis = v => { objGroup.visible = bldGroup.visible = forGroup.visible = lmGroup.visible = sky.visible = v; if (terrain) terrain.visible = v; };
         turbGroup.visible = false; ghostGroup.visible = false;
         renderer.render(scene, cam);
         vis(false);
@@ -2129,6 +2407,12 @@ function analyze(t, ei) {
     if (a > bestS.a) bestS = { a, kind: 'bld', b, d: hit.d, z: top };
     if (a > bestW.a) bestW = { a, kind: 'bld', b, d: hit.d, z: top };
   }
+  for (const L of lmLocal(fr)) {   // műemlék (a jáki templom): ugyanaz a magasságmező, mint a 3D képen
+    const hit = lmHit(L, sx, sy, eyeZ); if (!hit || hit.t0 >= D - 40) continue;
+    const top = L.g + hit.H - drop(hit.d), a = Math.atan2(top - eyeZ, hit.d);
+    if (a > bestS.a) bestS = { a, kind: 'lm', lm: L.lm, d: hit.d, z: top, H: hit.H, chapel: hit.chapel };
+    if (a > bestW.a) bestW = { a, kind: 'lm', lm: L.lm, d: hit.d, z: top, H: hit.H, chapel: hit.chapel };
+  }
   const hid = b => b.a === -Infinity ? -Infinity : eyeZ + D * Math.tan(b.a) - baseApp;
   res.blockS = bestS; res.blockW = bestW;
   res.hidS = hid(bestS); res.hidW = hid(bestW);
@@ -2151,6 +2435,7 @@ function blockerText(b) {
   if (b.kind === 'terrain') return `a domborzat (egy hajlat ${km(b.d)}-re, ${nf(b.zg)} m tengerszint feletti magasságban)`;
   if (b.kind === 'forest') return `${b.f === 2 ? 'egy erdő' : 'egy erdőszél'} (${km(b.d)}-re, a fák ott kb. ${nf(Math.round(b.H))} m magasak)`;
   if (b.kind === 'tree') return `egy fa (${km(b.d)}-re, kb. ${nf(Math.round(b.H))} m magas)`;
+  if (b.kind === 'lm') return `${b.chapel ? 'a Szent Jakab-kápolna' : b.lm.name + (b.H > 24.5 ? ' tornya' : '')} (${km(b.d)}-re; ott ${nf(Math.round(b.H))} m magas)`;
   if (b.kind === 'bld') return `egy épület (${km(b.d)}-re, becsült magassága ${nf(b.b.h, b.b.h % 1 ? 1 : 0)} m)`;
   const d = OB[b.o.type]; return `${d.art} ${d.name.toLowerCase()} (${km(b.d)}-re)`;
 }
@@ -2309,7 +2594,9 @@ function renderReal() {
   c += state.tilt || 0;   // fel-le húzás
   const { dMax } = panoBBox();
   RV.size(cssW, cssH, dpr);
-  RV.setSun(az0 / RAD + 145, 36);
+  // a Nap: árnyék módban a választott napon és időpontban; különben a néző mögül, jobbról (jól megvilágított kép)
+  const sunNow = SHADOW.on ? sunPos(huToUTC(SHADOW.doy, SHADOW.min), state.viewer.lat, state.viewer.lon) : null;
+  if (sunNow && sunNow.el > 1 * RAD) RV.setSun(sunNow.az / RAD, sunNow.el / RAD); else RV.setSun(az0 / RAD + 145, 36);
   const step = 5 * RAD, cAz = Math.round(az0 / step) * step, half = state.fov * RAD / 2 + 14 * RAD;
   const gY = (x, y) => { const z = fr.elev(x, y), d = Math.hypot(x, y); return (z === z ? z : ei.g) - drop(d) - eyeZ; };
   const sat = satTexture(fr, cAz, half, dMax);
@@ -2340,6 +2627,9 @@ function renderReal() {
     bl.sort((p, q) => p.x * p.x + p.y * p.y - q.x * q.x - q.y * q.y); bl.length = Math.min(bl.length, 9000);
   }
   RV.setBuildings(bl, `${vk}|${cAz.toFixed(3)}|${state.fov}|${Math.round(dMax)}|${bldLocal.key}|${state.bld}|${demOk}`, gY);
+  // műemlék: a templom közepének talajszintjére (a takarásszámítással azonos magasságmező)
+  const lms = lmLocal(fr).filter(L => Math.hypot(L.cx, L.cy) <= dMax).map(L => ({ ...L, Y0: L.g - drop(Math.hypot(L.cx, L.cy)) - eyeZ }));
+  RV.setLandmarks(lms, `${vk}|${lms.map(L => L.Y0.toFixed(2)).join()}|${demOk}`);
   // erdők: koronák a látott ékben, a távolsággal ritkuló (de összezáró) rácson, a turbináig; egyes fák TREE_R-ig
   const fl = forestLookup(fr), fItems = [], winterF = state.season === 'winter';
   if (fl) {
@@ -2837,6 +3127,7 @@ function bldLocal(fr) {
   const out = [], dLa = R / 111195, dLo = R / (111195 * Math.cos(V.lat * RAD)), R2 = R * R;
   for (const r of bldChunks.values()) if (r.list) for (const b of r.list) {
     if (Math.abs(b.lat - V.lat) > dLa || Math.abs(b.lon - V.lon) > dLo) continue;   // gyors előszűrés
+    if (b.lmx === undefined) b.lmx = lmExcluded(b.lat, b.lon); if (b.lmx) continue;   // a műemlék helyén (azt külön modell adja)
     const [x, y] = fr.fromLL(b.lat, b.lon); if (x * x + y * y > R2) continue;
     const ex = Math.sin(b.a), ey = Math.cos(b.a), al = x * ex + y * ey, ac = x * ey - y * ex;
     const hEdit = state.bldH[b.id];
@@ -2895,6 +3186,104 @@ function bldHit(b, sx, sy, eyeZ, fr) {
   }
   return { t0, d: best.d, H: best.H };
 }
+/* ---------- Műemlék: a jáki Szent György-templom és a Szent Jakab-kápolna ----------
+   OpenStreetMap szerint: alaprajz és tájolás (a tengely 67,6°, keletelt), a két torony 6,9 × 6,9 m, a tornytest 24 m,
+   a kőszínű gúlasisak 24–36 m; a kápolna négykaréjos, falai 10 m, kúpos cseréptetője 15 m-ig ér, a lámpás és a
+   hagymasisak 16,5–19,5 m. A főhajó, a mellékhajók, a szentélyek és a sekrestye magassága a román kori bazilika
+   felépítése szerint becsült. A részekből egy magasságmező adódik: ugyanezzel számol a takarás, és ugyanebből épül a
+   3D modell (a díszítések, párkányok, frízek, ablakok legfeljebb néhány centiméterrel állnak ki belőle).
+   A templom saját rendszere: s a tengely mentén (a tornyok nyugati síkjától kelet felé), t keresztben (észak felé),
+   z a templom közepénél mért talajszint fölött, méterben. */
+const LANDMARKS = [{
+  id: 'jak', name: 'a jáki templom', lat: 47.1392, lon: 16.5822, az: 67.6, center: [14, 5.9],
+  ex: [[-1.5, -10, 35, 16.5], [-34, -3.5, -23, 7.5]],   // az itt álló egyszerű épülettömbök (a templom és a kápolna) helyett
+  parts: [
+    { k: 'box', s0: 0, s1: 6.9, t0: -3.85, t1: 3.0, eave: 24, top: 36, roof: 'pyr', mat: 'tower' },        // déli torony
+    { k: 'box', s0: 0, s1: 6.9, t0: 8.4, t1: 15.3, eave: 24, top: 36, roof: 'pyr', mat: 'tower' },         // északi torony
+    { k: 'box', s0: 0, s1: 1.8, t0: 3.0, t1: 8.4, eave: 11.5, top: 15.5, roof: 'gable', mat: 'portal' },   // kapuépítmény, orommal nyugat felé
+    { k: 'box', s0: 1.8, s1: 28.3, t0: 1.2, t1: 10.6, eave: 14.5, top: 20.5, roof: 'gable', mat: 'nave' }, // főhajó
+    { k: 'box', s0: 6.9, s1: 28.3, t0: -2.8, t1: 1.2, eave: 8, top: 11.5, roof: 'lean1', mat: 'aisle' },  // déli mellékhajó (a főhajó felé emelkedő tető)
+    { k: 'box', s0: 6.9, s1: 28.3, t0: 10.6, t1: 14.6, eave: 8, top: 11.5, roof: 'lean0', mat: 'aisle' }, // északi mellékhajó
+    { k: 'apse', s0: 28.3, sc: 29.2, tc: 5.9, r: 4.2, eave: 11.5, top: 14.5 },                             // főszentély
+    { k: 'apse', s0: 28.3, sc: 28.3, tc: -0.8, r: 1.9, eave: 7.5, top: 9.3 },                              // mellékszentélyek
+    { k: 'apse', s0: 28.3, sc: 28.3, tc: 12.6, r: 1.9, eave: 7.5, top: 9.3 },
+    { k: 'box', s0: 19.9, s1: 26.5, t0: -9.5, t1: -2.8, eave: 6.5, top: 9.5, roof: 'pyr', mat: 'sacristy' }, // sekrestye
+    { k: 'quatre', sc: -28.7, tc: 2.0, c: 2.2, r: 2.1, eave: 10 },                                         // Szent Jakab-kápolna
+    { k: 'cone', sc: -28.7, tc: 2.0, r: 4.6, z0: 10, z1: 15 },
+    { k: 'cyl', sc: -28.7, tc: 2.0, r: 1.3, z1: 16.5 },
+    { k: 'cone', sc: -28.7, tc: 2.0, r: 1.45, z0: 16.5, z1: 17.5 },
+    { k: 'onion', sc: -28.7, tc: 2.0, r: 0.85, z0: 17, z1: 19.5 }
+  ]
+}];
+// a hagymasisak felső felülete: a középtől mért arányos sugár → arányos magasság (a 3D-ben ennek a forgástestnek a teteje)
+const ONION_TOP = [[0, 1], [0.12, 0.86], [0.35, 0.72], [0.7, 0.55], [1, 0.38]];
+// a négykaréjos alaprajz széle a θ irányban: a középső négyzet és a négy karéj (kör) közül a legtávolabbi
+function quatreR(p, th) {
+  const dx = Math.cos(th), dy = Math.sin(th); let R = p.c / Math.max(Math.abs(dx), Math.abs(dy));
+  for (const [cx, cy] of [[p.c, 0], [-p.c, 0], [0, p.c], [0, -p.c]]) { const b = dx * cx + dy * cy, q = b * b - (p.c * p.c - p.r * p.r); if (q >= 0) R = Math.max(R, b + Math.sqrt(q)); }
+  return R;
+}
+// egy rész teteje (z) a templom (s, t) pontjában; -Infinity, ha a pont kívül esik
+function lmPartH(p, s, t) {
+  if (p.k === 'box') {
+    if (s < p.s0 || s > p.s1 || t < p.t0 || t > p.t1) return -Infinity;
+    const hw = (p.t1 - p.t0) / 2, hs = (p.s1 - p.s0) / 2, dt = Math.abs(t - (p.t0 + hw)), ds = Math.abs(s - (p.s0 + hs)), rh = p.top - p.eave;
+    return p.roof === 'gable' ? p.eave + rh * (1 - dt / hw) : p.roof === 'pyr' ? p.eave + rh * (1 - Math.max(dt / hw, ds / hs))
+      : p.roof === 'lean1' ? p.eave + rh * (t - p.t0) / (2 * hw) : p.roof === 'lean0' ? p.eave + rh * (p.t1 - t) / (2 * hw) : p.eave;
+  }
+  const ds = s - p.sc, dt = t - p.tc;
+  if (p.k === 'apse') {
+    const rho = s < p.s0 ? Infinity : s <= p.sc ? Math.abs(dt) : Math.hypot(ds, dt);
+    return rho <= p.r ? p.eave + (p.top - p.eave) * (1 - rho / p.r) : -Infinity;
+  }
+  const rho = Math.hypot(ds, dt);
+  if (p.k === 'quatre') return rho <= quatreR(p, Math.atan2(dt, ds)) ? p.eave : -Infinity;
+  if (rho > p.r) return -Infinity;
+  if (p.k === 'cone') return p.z0 + (p.z1 - p.z0) * (1 - rho / p.r);
+  if (p.k === 'cyl') return p.z1;
+  if (p.k === 'onion') { const q = rho / p.r; for (let i = 1; i < ONION_TOP.length; i++) { const [q0, z0] = ONION_TOP[i - 1], [q1, z1] = ONION_TOP[i]; if (q <= q1) return p.z0 + (p.z1 - p.z0) * (z0 + (z1 - z0) * (q - q0) / (q1 - q0)); } }
+  return -Infinity;
+}
+function lmHeight(lm, s, t) { let h = -Infinity; for (const p of lm.parts) { const v = lmPartH(p, s, t); if (v > h) h = v; } return h; }
+// a műemlékek a nézőpont helyi síkkoordinátáiban: origó, tengelyirányok, talajszint (a templom közepénél)
+function lmLocal(fr) {
+  if (!state.bld) return [];
+  return LANDMARKS.map(lm => {
+    const [x0, y0] = fr.fromLL(lm.lat, lm.lon), u = [Math.sin(lm.az * RAD), Math.cos(lm.az * RAD)], v = [-u[1], u[0]];
+    const cx = x0 + lm.center[0] * u[0] + lm.center[1] * v[0], cy = y0 + lm.center[0] * u[1] + lm.center[1] * v[1];
+    if (Math.hypot(cx, cy) > 25000) return null;
+    const g = fr.elev(cx, cy); if (g !== g) return null;
+    // a nézőpont a templom rendszerében; ha épp a műemlékben áll, az nem takar (mint a saját ház)
+    const vs = -x0 * u[0] - y0 * u[1], vt = -x0 * v[0] - y0 * v[1];
+    return { lm, x0, y0, u, v, g, cx, cy, vs, vt, own: lmHeight(lm, vs, vt) > -Infinity };
+  }).filter(Boolean);
+}
+// a műemléken át menő sugár (sx, sy irány): belépési távolság és a legmagasabban takaró pont (0,25 m-es lépésekkel)
+function lmHit(L, sx, sy, eyeZ) {
+  if (L.own) return null;
+  const ds = sx * L.u[0] + sy * L.u[1], dt = sx * L.v[0] + sy * L.v[1];
+  let d0 = 0.5, d1 = Infinity;
+  for (const [o, dd, lo, hi] of [[L.vs, ds, -35, 35], [L.vt, dt, -11, 17]]) {   // a templom és a kápolna befoglalója
+    if (Math.abs(dd) < 1e-9) { if (o < lo || o > hi) return null; continue; }
+    let a = (lo - o) / dd, b = (hi - o) / dd; if (a > b) [a, b] = [b, a];
+    d0 = Math.max(d0, a); d1 = Math.min(d1, b);
+  }
+  if (d1 <= d0) return null;
+  let best = null, t0 = null;
+  const probe = d => { const h = lmHeight(L.lm, L.vs + ds * d, L.vt + dt * d); if (h === -Infinity) return; if (t0 === null || d < t0) t0 = d; const sl = (L.g + h - drop(d) - eyeZ) / d; if (!best || sl > best.sl) best = { sl, d, H: h }; };
+  for (let d = d0; d <= d1; d += 0.25) probe(d);
+  if (best) { const c = best.d; for (let d = Math.max(d0, c - 0.25); d <= Math.min(d1, c + 0.25); d += 0.02) probe(d); }   // a csúcsok, gerincek pontosan
+  return best ? { t0, d: best.d, H: best.H, chapel: L.vs + ds * best.d < -15 } : null;
+}
+// a műemlék helyén álló egyszerű épülettömb? (lat, lon → a templom rendszerében a kihagyott téglalapokban)
+function lmExcluded(lat, lon) {
+  for (const lm of LANDMARKS) {
+    const x = (lon - lm.lon) * 111195 * Math.cos(lm.lat * RAD), y = (lat - lm.lat) * 111195, u = [Math.sin(lm.az * RAD), Math.cos(lm.az * RAD)];
+    const s = x * u[0] + y * u[1], t = -x * u[1] + y * u[0];
+    if (lm.ex.some(([s0, t0, s1, t1]) => s >= s0 && s <= s1 && t >= t0 && t <= t1)) return true;
+  }
+  return false;
+}
 // alaprajzok a térképen (16-os nagyítástól)
 const BldLayer = L.GridLayer.extend({
   createTile(c, done) {
@@ -2906,6 +3295,7 @@ const BldLayer = L.GridLayer.extend({
       const g = tile.getContext('2d'); g.fillStyle = 'rgba(255,240,215,.35)'; g.strokeStyle = 'rgba(255,170,90,.95)'; g.lineWidth = 1.2;
       for (const list of lists) if (list) for (const b of list) {
         const X = (g13x(b.lon) - gx0) / k, Yp = (g13y(b.lat) - gy0) / k; if (X < -40 || X > 296 || Yp < -40 || Yp > 296) continue;
+        if (b.lmx === undefined) b.lmx = lmExcluded(b.lat, b.lon); if (b.lmx) continue;
         const mpp = 156543.03 * Math.cos(b.lat * RAD) / 2 ** c.z, ex = Math.sin(b.a), ey = Math.cos(b.a), hl = b.L / 2 / mpp, hw = b.W / 2 / mpp;
         g.beginPath();
         for (const [s, u] of [[1, 1], [1, -1], [-1, -1], [-1, 1]]) g.lineTo(X + ex * hl * s + ey * hw * u, Yp - (ey * hl * s - ex * hw * u));
@@ -3168,6 +3558,173 @@ if (VILLAGES.length) {
     const big = v.rings.reduce((a, r) => r.length > a.length ? r : a, v.rings[0]), b = L.polygon(big).getBounds();
     L.marker([b.getNorth(), b.getCenter().lng], { icon: L.divIcon({ className: 'vlabel', html: `<span>${esc(v.name)} lakott területe</span>`, iconSize: null }), interactive: false, keyboard: false }).addTo(vl);
   }
+}
+/* ---------- Lehetséges telepítési területek egy átvilágítás szerint ----------
+   Forrás: „Ják és környéke – szélerőmű-telepítési átvilágítás” (Vas vármegye területrendezési tervének mellékletei:
+   ökológiai hálózat, kiváló szántók, erdők, tájképvédelem, honvédelmi terület, nagyvízi meder, vízminőség-védelem,
+   valamint a 700 m-es lakóterületi védőtávolság alapján). A térkép táblázata a szabad területek középpontját
+   (±100 m) és méretét adja; a területek pontos határa ebben nincs benne, ezért csak a középpontjukat jelöljük.
+   [sorszám, terület (ha), szélesség, hosszúság, legközelebbi települések, ebből Ják közigazgatási területén (ha)] */
+const SITES = [
+  [1, 2725, 47.0996, 16.5659, 'Rádóckölked 2,3 km · Nagykölked 2,5 km', 1050], [2, 553, 47.1491, 16.5256, 'Pornóapáti 2,9 km · Ják 3,5 km', 364],
+  [3, 489, 47.1671, 16.5550, 'Nárai 2,6 km · Ják 3,3 km', 275], [4, 40, 47.1671, 16.5797, 'Ják 3,2 km · Nárai 3,6 km', 40],
+  [5, 1811, 47.0959, 16.6886, 'Nemesrempehollós 0,7 km · Sorokpolány 4,1 km', 0], [6, 1012, 47.0615, 16.6037, 'Rádóckölked 2,9 km · Harasztifalu 3,6 km', 0],
+  [7, 779, 47.2169, 16.4765, 'Felsőcsatár 0,5 km · Dozmat 2,3 km', 0], [8, 399, 47.2003, 16.5114, 'Dozmat 2,5 km · Nárai 2,8 km', 0],
+  [9, 377, 47.0524, 16.6462, 'Magyarszecsőd 1,3 km · Molnaszecsőd 2,7 km', 0], [10, 153, 47.1266, 16.6384, 'Kisunyom 1,1 km · Sorokpolány 2,8 km', 0],
+  [11, 149, 47.2158, 16.5336, 'Torony 1,7 km · Dozmat 2,3 km', 0], [12, 120, 47.1828, 16.4969, 'Horvátlövő 1,0 km · Pornóapáti 2,4 km', 0],
+  [13, 113, 47.1737, 16.4740, 'Horvátlövő 1,1 km · Pornóapáti 1,9 km', 0], [14, 76, 47.1499, 16.4518, 'Pornóapáti 3,3 km · Horvátlövő 4,2 km', 0]
+];
+const siteLayer = L.layerGroup();
+if (REGION && Math.hypot(REGION.lat - 47.14, REGION.lon - 16.58) < 0.3) {
+  for (const [n, ha, la, lo, near, jak] of SITES) {
+    const m = L.marker([la, lo], { icon: L.divIcon({ className: 'site-ic' + (jak ? ' jak' : ''), html: `<b>${n}</b><span>${nf(ha)} ha</span>`, iconSize: null }), keyboard: true, title: `${n}. lehetséges terület` }).addTo(siteLayer);
+    m.bindPopup(`<b>${n}. lehetséges telepítési terület</b><br>kb. ${nf(ha)} ha szabad terület${jak ? `, ebből ${nf(jak)} ha Ják közigazgatási területén` : ''}<br>Legközelebbi települések: ${near}<br>
+      <button class="btn" type="button" data-site="${n}" style="margin-top:6px">Turbina ide (a terület közepére)</button>
+      <p class="small" style="margin:6px 0 0">Egy szélerőmű-telepítési átvilágítás térképéről (területrendezési terv mellékletei, 700 m-es védőtávolság). A jel a szabad terület közepe (±100 m); a terület határa ennél sokkal szabálytalanabb lehet. Tájékoztató adat, nem hivatalos kijelölés.</p>`);
+  }
+  siteLayer.addTo(map);
+  map.on('popupopen', e => {
+    const b = e.popup.getElement().querySelector('[data-site]'); if (!b) return;
+    b.onclick = () => { const st = SITES.find(x => x[0] === +b.dataset.site); state.turbines.push({ lat: st[2], lon: st[3] }); state.sel = state.turbines.length - 1; map.closePopup(); buildMarkers(); update(); fitView(); };
+  });
+}
+/* ---------- Árnyékvetés és villódzás ----------
+   A Nap helyzete csillagászati közelítéssel (kb. 0,01°), a választott napon és magyar idő szerint (CET, nyáron CEST).
+   A rotor árnyéka a legrosszabb esetre: a rotor síkja merőleges a napsugarakra, a Nap süt, a lapátok forognak.
+   Villódzás ott lehet, ahol a Nap legalább 3°-kal a horizont fölött van, és a lapát a napkorong legalább 20%-át
+   eltakarja: a lapát átlagos szélességéből ez kb. 2,3 km-ig teljesül. Az árnyék sík terepre esik, a turbina
+   talppontjának magasságában. */
+const SHADOW = { on: false, doy: 172, min: 18 * 60, year: null, yearKey: '' };
+const FLICK_MAX = 2300, SUN_MIN = 3 * RAD, SH_YEAR = 2026;
+const HU_MONTHS = ['január', 'február', 'március', 'április', 'május', 'június', 'július', 'augusztus', 'szeptember', 'október', 'november', 'december'];
+function lastSunday(y, m) { const d = new Date(Date.UTC(y, m + 1, 0)); return d.getUTCDate() - d.getUTCDay(); }
+// a nap (1–365) és a helyi idő (percben éjféltől) → UTC időpont (ms); nyári időszámítás március utolsó vasárnapjától október utolsó vasárnapjáig
+function huToUTC(doy, min) {
+  const t0 = Date.UTC(SH_YEAR, 0, 1) + (doy - 1) * 864e5 + min * 6e4, u2 = t0 - 72e5;   // helyi idő, mintha UTC volna; nyári idő: UTC+2
+  const s = Date.UTC(SH_YEAR, 2, lastSunday(SH_YEAR, 2), 1), e = Date.UTC(SH_YEAR, 9, lastSunday(SH_YEAR, 9), 1);
+  return u2 >= s && u2 < e ? u2 : t0 - 36e5;
+}
+function dayLabel(doy) { const d = new Date(Date.UTC(SH_YEAR, 0, doy)); return `${HU_MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}.`; }
+// a Nap iránya (északtól, óramutató szerint) és magassága radiánban
+function sunPos(t, lat, lon) {
+  const d = (t - Date.UTC(2000, 0, 1, 12)) / 864e5, g = (357.529 + 0.98560028 * d) * RAD, q = 280.459 + 0.98564736 * d;
+  const L = (q + 1.915 * Math.sin(g) + 0.02 * Math.sin(2 * g)) * RAD, e = (23.439 - 3.6e-7 * d) * RAD;
+  const ra = Math.atan2(Math.cos(e) * Math.sin(L), Math.cos(L)), dec = Math.asin(Math.sin(e) * Math.sin(L));
+  const H = ((18.697374558 + 24.06570982441908 * d) % 24) * 15 * RAD + lon * RAD - ra, la = lat * RAD;
+  const el = Math.asin(Math.sin(la) * Math.sin(dec) + Math.cos(la) * Math.cos(dec) * Math.cos(H));
+  const az = Math.atan2(-Math.sin(H), Math.tan(dec) * Math.cos(la) - Math.sin(la) * Math.cos(H));
+  return { az: (az + 2 * Math.PI) % (2 * Math.PI), el };
+}
+// a rotor árnyéka a talajon (helyi méter a talpponthoz képest): középpont, irány (a Nappal szemben), féltengelyek
+function rotorShadow(m, sun) {
+  if (sun.el < SUN_MIN) return null;
+  const dx = -Math.sin(sun.az), dy = -Math.cos(sun.az), off = m.hub / Math.tan(sun.el);
+  return { cx: dx * off, cy: dy * off, ux: dx, uy: dy, a: m.R / Math.sin(sun.el), b: m.R, tower: off };
+}
+const llOff = (T, x, y) => [T.lat + y / 111195, T.lon + x / (111195 * Math.cos(T.lat * RAD))];
+const shadowLayer = L.layerGroup();
+function drawShadow() {
+  shadowLayer.clearLayers();
+  if (!SHADOW.on) return;
+  const m = model(), t = huToUTC(SHADOW.doy, SHADOW.min), hit = new Set(); let sunTxt = '';
+  for (const T of state.turbines) {
+    const sun = sunPos(t, T.lat, T.lon);
+    sunTxt = `A Nap ${nf(Math.round(sun.az / RAD))}°-os irányban, ${nf(sun.el / RAD, 1)}°-kal a horizont fölött.`;
+    L.circle([T.lat, T.lon], { radius: FLICK_MAX, color: '#5a5a5a', weight: 1, dashArray: '4 6', fill: false, interactive: false }).addTo(shadowLayer);
+    // a nap árnyékpályája (a rotor közepének árnyéka), óránként jelölve
+    const path = [];
+    for (let mn = 0; mn <= 1440; mn += 5) {
+      const s = rotorShadow(m, sunPos(huToUTC(SHADOW.doy, mn), T.lat, T.lon)); if (!s || Math.hypot(s.cx, s.cy) > FLICK_MAX + m.R) { if (path.length && path[path.length - 1].length) path.push([]); continue; }
+      if (!path.length) path.push([]);
+      path[path.length - 1].push(llOff(T, s.cx, s.cy));
+      if (mn % 60 === 0) L.marker(llOff(T, s.cx, s.cy), { icon: L.divIcon({ className: 'sh-hr', html: `<span>${mn / 60}h</span>`, iconSize: null }), interactive: false, keyboard: false }).addTo(shadowLayer);
+    }
+    for (const seg of path) if (seg.length > 1) L.polyline(seg, { color: '#3b3b3b', weight: 1.5, dashArray: '2 4', interactive: false }).addTo(shadowLayer);
+    const s = rotorShadow(m, sun); if (!s) continue;
+    const pts = [];
+    for (let k = 0; k < 48; k++) { const a = k / 48 * 2 * Math.PI, x = s.cx + s.ux * s.a * Math.cos(a) - s.uy * s.b * Math.sin(a), y = s.cy + s.uy * s.a * Math.cos(a) + s.ux * s.b * Math.sin(a); pts.push([x, y]); }
+    const far = Math.hypot(s.cx, s.cy) > FLICK_MAX;
+    L.polyline([[T.lat, T.lon], llOff(T, s.ux * s.tower, s.uy * s.tower)], { color: '#111111', weight: 3.5, opacity: 0.75, interactive: false }).addTo(shadowLayer);
+    L.polygon(pts.map(([x, y]) => llOff(T, x, y)), { color: '#ffffff', weight: 1.5, opacity: 0.9, fillColor: '#111111', fillOpacity: far ? 0.2 : 0.55, dashArray: far ? '4 4' : null, interactive: false }).addTo(shadowLayer);
+    if (!far) for (const v of VILLAGES) if (pts.some(([x, y]) => { const [la, lo] = llOff(T, x, y); return villageDist({ lat: la, lon: lo }, v) === 0; })) hit.add(v.name);
+  }
+  const el = $('shInfo');
+  if (el) el.innerHTML = `${dayLabel(SHADOW.doy)} ${String(Math.floor(SHADOW.min / 60)).padStart(2, '0')}:${String(SHADOW.min % 60).padStart(2, '0')}. ${sunTxt} `
+    + (!state.turbines.length ? 'Tegyél le egy turbinát a térképre.' : hit.size ? `<b>A rotor árnyéka most eléri: ${[...hit].join(', ')} lakott területét.</b>` : 'A rotor árnyéka most nem éri el a lakott területet (vagy a Nap túl alacsonyan van, és nincs éles árnyék).');
+}
+/* Éves villódzás a legrosszabb esetre, 20 m-es rácson: minden nap, 2 percenként, a Nap 3° fölött; a rotor árnyékának
+   ellipszise. Eredmény: óra/év és a legtöbb perc egy napon, cellánként. */
+async function flickerYear(onProgress) {
+  const m = model(), Ts = state.turbines; if (!Ts.length) return null;
+  const C = 20, lat0 = Ts[0].lat, lon0 = Ts[0].lon, kx = 111195 * Math.cos(lat0 * RAD), ky = 111195;
+  const P = Ts.map(T => [(T.lon - lon0) * kx, (T.lat - lat0) * ky]);
+  const x0 = Math.min(...P.map(p => p[0])) - FLICK_MAX, x1 = Math.max(...P.map(p => p[0])) + FLICK_MAX, y0 = Math.min(...P.map(p => p[1])) - FLICK_MAX, y1 = Math.max(...P.map(p => p[1])) + FLICK_MAX;
+  const W = Math.ceil((x1 - x0) / C), H = Math.ceil((y1 - y0) / C), tot = new Float32Array(W * H), day = new Uint16Array(W * H), dmax = new Uint16Array(W * H), touched = [];
+  const STEP = 2;
+  for (let doy = 1; doy <= 365; doy++) {
+    for (let mn = 0; mn < 1440; mn += STEP) {
+      const sun = sunPos(huToUTC(doy, mn), lat0, lon0); if (sun.el < SUN_MIN) continue;
+      const s = rotorShadow(m, sun);
+      for (const [px, py] of P) {
+        const cx = px + s.cx, cy = py + s.cy, ex = Math.abs(s.ux) * s.a + Math.abs(s.uy) * s.b, ey = Math.abs(s.uy) * s.a + Math.abs(s.ux) * s.b;
+        const i0 = Math.max(0, Math.floor((cx - ex - x0) / C)), i1 = Math.min(W - 1, Math.floor((cx + ex - x0) / C)), j0 = Math.max(0, Math.floor((cy - ey - y0) / C)), j1 = Math.min(H - 1, Math.floor((cy + ey - y0) / C));
+        for (let j = j0; j <= j1; j++) {
+          const y = y0 + (j + 0.5) * C, dy = y - cy, ty = y - py;
+          for (let i = i0; i <= i1; i++) {
+            const x = x0 + (i + 0.5) * C, dx = x - cx, q = (dx * s.ux + dy * s.uy) / s.a, p = (-dx * s.uy + dy * s.ux) / s.b;
+            if (q * q + p * p > 1) continue;
+            const tx = x - px; if (tx * tx + ty * ty > FLICK_MAX * FLICK_MAX) continue;
+            const k = j * W + i; if (!day[k]) touched.push(k); day[k] += STEP; tot[k] += STEP;
+          }
+        }
+      }
+    }
+    for (const k of touched) { if (day[k] > dmax[k]) dmax[k] = day[k]; day[k] = 0; } touched.length = 0;
+    if (doy % 15 === 0) { onProgress && onProgress(doy / 365); await new Promise(r => setTimeout(r, 0)); }
+  }
+  return { W, H, C, x0, y0, lat0, lon0, kx, ky, tot, dmax };
+}
+let flickOverlay = null;
+async function runFlicker() {
+  const btn = $('shYear'), info = $('shYearInfo'); if (!state.turbines.length) { info.textContent = 'Tegyél le legalább egy turbinát.'; return; }
+  btn.disabled = true; info.textContent = 'Számolás…';
+  const F = await flickerYear(p => { info.textContent = `Számolás… ${Math.round(p * 100)}%`; });
+  btn.disabled = false; if (!F) return;
+  // térképréteg: 1–10 óra/év sárga, 10–30 narancs, 30 fölött (vagy napi 30 perc fölött) piros
+  const cv = document.createElement('canvas'); cv.width = F.W; cv.height = F.H; const g = cv.getContext('2d'), im = g.createImageData(F.W, F.H);
+  for (let j = 0; j < F.H; j++) for (let i = 0; i < F.W; i++) {
+    const k = j * F.W + i, h = F.tot[k] / 60, o = ((F.H - 1 - j) * F.W + i) * 4; if (h < 1) continue;
+    const c = h > 30 || F.dmax[k] > 30 ? [214, 39, 40, 170] : h > 10 ? [245, 140, 30, 140] : [250, 215, 60, 110];
+    im.data.set(c, o);
+  }
+  g.putImageData(im, 0, 0);
+  if (flickOverlay) map.removeLayer(flickOverlay);
+  const sw = [F.lat0 + F.y0 / F.ky, F.lon0 + F.x0 / F.kx], ne = [F.lat0 + (F.y0 + F.H * F.C) / F.ky, F.lon0 + (F.x0 + F.W * F.C) / F.kx];
+  flickOverlay = L.imageOverlay(cv.toDataURL(), [sw, ne], { interactive: false, className: 'flick-ov' }).addTo(map);
+  // lakóházak a sávokban (a betöltött épületek közül a lakóház méretűek)
+  const at = (la, lo) => { const i = Math.floor(((lo - F.lon0) * F.kx - F.x0) / F.C), j = Math.floor(((la - F.lat0) * F.ky - F.y0) / F.C); return i < 0 || j < 0 || i >= F.W || j >= F.H ? -1 : j * F.W + i; };
+  let over = 0, some = 0, worst = 0; const byV = {};
+  for (const r of bldChunks.values()) if (r.list) for (const b of r.list) {
+    if (!b.pitched || b.L * b.W < 40 || b.L * b.W > 400) continue;
+    const k = at(b.lat, b.lon); if (k < 0) continue;
+    const h = F.tot[k] / 60, dm = F.dmax[k]; if (h < 1) continue;
+    some++; worst = Math.max(worst, h);
+    if (h > 30 || dm > 30) { over++; const v = VILLAGES.find(v => villageDist(b, v) === 0); if (v) byV[v.name] = (byV[v.name] || 0) + 1; }
+  }
+  const kmax = F.tot.reduce((a, v, i) => v > F.tot[a] ? i : a, 0);
+  info.innerHTML = `<b>Legrosszabb esetben</b> ${nf(some)} lakóház kap évente legalább 1 óra villódzást, ebből <b>${nf(over)}</b> évi 30 óránál vagy egy napon 30 percnél többet${Object.keys(byV).length ? ` (${Object.entries(byV).map(([n, c]) => `${n}: ${nf(c)}`).join(', ')})` : ''}. A legérintettebb háznál kb. ${nf(Math.round(worst))} óra/év; a térképen a legtöbb kb. ${nf(Math.round(F.tot[kmax] / 60))} óra/év.`
+    + ` <span class="small">Sárga: 1–10, narancs: 10–30 óra/év, piros: 30 óra/év vagy napi 30 perc fölött.</span>`;
+  SHADOW.yearKey = flickKey();
+}
+const flickKey = () => JSON.stringify([state.turbines, state.model, state.custom]);
+function syncShadow() {
+  $('shCtl').hidden = !SHADOW.on;
+  $('shDay').value = SHADOW.doy; $('shDayO').textContent = dayLabel(SHADOW.doy);
+  $('shMin').value = SHADOW.min; $('shMinO').textContent = `${String(Math.floor(SHADOW.min / 60)).padStart(2, '0')}:${String(SHADOW.min % 60).padStart(2, '0')}`;
+  if (SHADOW.on && !map.hasLayer(shadowLayer)) shadowLayer.addTo(map);
+  if (!SHADOW.on) { map.removeLayer(shadowLayer); if (flickOverlay) { map.removeLayer(flickOverlay); flickOverlay = null; $('shYearInfo').textContent = ''; } }
+  if (flickOverlay && SHADOW.yearKey !== flickKey()) { map.removeLayer(flickOverlay); flickOverlay = null; $('shYearInfo').textContent = 'A turbinák megváltoztak: számold újra az éves térképet.'; }
+  drawShadow();
 }
 function buildMarkers() {
   if (!viewerMk) {
@@ -3545,6 +4102,7 @@ async function update() {
   const { bb } = panoBBox();
   if (pendingTiles(bb) || pendingBuildings(bb) || pendingForest(bb)) { $('busy').hidden = false; renderPano(0.5); await Promise.all([ensureTiles(bb), ensureBuildings(bb), ensureForest(bb)]); if (my_ !== gen) return; recalc(); }
   renderPano(1);
+  if (SHADOW.on) syncShadow();
   $('busy').hidden = true;
   const missing = [...tiles.values()].some(v => v === null);
   if (LOCAL) warn(demOutside && AN.some(a => !a.ok) ? (REGION ? `A kijelölt hely kívül esik a beépített adaton (a régió ${REGION.km} km-es körzete), ott nem tudok számolni.` : 'A kijelölt hely kívül esik a beépített domborzati adaton (Magyarország és kb. 25 km-es környezete), ott nem tudok számolni.') : '', 'dem');
@@ -3552,6 +4110,384 @@ async function update() {
   else if (missing) warn('Néhány domborzati csempe nem töltődött be, ezért a terep egy része hiányzik a számításból. Pár másodperc múlva mozdítsd meg a nézőpontot, és újra megpróbálja.', 'dem');
   else warn('', 'dem');
   saveHash();
+}
+
+/* ---------- Turbina a valódi képen: saját fotó (fotómontázs) és élő kamera (AR) ----------
+   Közös rész: lyukkamera-vetítés (irány, dőlés, billenés, látószög); a modell horizontja (minden irányban a takarás
+   emelkedési szöge, ugyanazzal a számítással, mint a turbinák takarása); és a turbina rajza, amelyet e horizont fölé
+   vágunk: ami a modell szerint takarásban van, az a valódi képen is a takaró tárgy mögé kerül (kérésre pirosan
+   áttűnik). A fotón és a kamera képén a valódi táj látszik; a modell csak a turbinát és a vágóvonalat adja. */
+const DECL = 5.4;   // mágneses elhajlás Ják környékén (fok, kelet felé), 2026: az iránytű ennyivel tér el az északtól
+const v3 = {
+  dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+  cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+  norm: a => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; },
+  rotZ: (a, d) => [a[0] * Math.cos(d) + a[1] * Math.sin(d), -a[0] * Math.sin(d) + a[1] * Math.cos(d), a[2]]   // óramutató szerint d-vel
+};
+const dirOf = (az, el) => [Math.sin(az) * Math.cos(el), Math.cos(az) * Math.cos(el), Math.sin(el)];
+// kamera irányszögekből (fok): hd az optikai tengely iránya északtól, pt dőlés felfelé, rl billenés (óramutató szerint)
+function camFromAngles(hd, pt, rl) {
+  const f = dirOf(hd * RAD, pt * RAD), r0 = [Math.cos(hd * RAD), -Math.sin(hd * RAD), 0], u0 = v3.cross(r0, f), c = Math.cos(rl * RAD), s = Math.sin(rl * RAD);
+  return { f, r: r0.map((v, i) => v * c - u0[i] * s), u: u0.map((v, i) => v * c + r0[i] * s) };
+}
+// vetítés a képre: F a fókusztávolság képpontban, (cx, cy) a képközép; null, ha a pont a kamera mögött van
+function projector(b, F, cx, cy) {
+  return p => { const d = v3.dot(p, b.f); if (d < 1e-3) return null; return [cx + F * v3.dot(p, b.r) / d, cy - F * v3.dot(p, b.u) / d]; };
+}
+
+/* A modell horizontja 0,1°-os rácson, egy adott távolságig: az irányba D távolságra tett célpontra számolt legnagyobb
+   takarási szög (domborzat, házak, fák, kézi takarások; évszak szerint), azaz csak a D-nél közelebbi takarás számít.
+   A turbinák vágásához a turbina távolságáig (ami mögötte van, nem takarhatja), a segédvonalhoz 20 km-ig.
+   Lustán, képkockánként adagolva számol. */
+const SKY_FAR = 20000;
+const SKY = { key: '', tabs: new Map(), want: new Set() };
+function skyKey() { return JSON.stringify([state.viewer, state.floor, state.season, state.forest, state.forD, state.bld, state.bldH, state.obstacles, forLoadedKey()]); }
+function skyReset() { const k = skyKey(); if (k !== SKY.key) { SKY.key = k; SKY.tabs.clear(); SKY.want.clear(); } }
+function skyAt(az, D = SKY_FAR) {   // radián; undefined, ha még nincs kiszámolva (és kéri)
+  const Dk = Math.round(D / 10) * 10, i = ((Math.round(az / RAD * 10) % 3600) + 3600) % 3600;
+  let tab = SKY.tabs.get(Dk); if (!tab) { tab = new Float32Array(3600).fill(NaN); SKY.tabs.set(Dk, tab); }
+  const v = tab[i]; if (v !== v) { SKY.want.add(Dk * 4000 + i); return undefined; }
+  return v;
+}
+function skyWork(budgetMs) {
+  if (!SKY.want.size) return 0;
+  const ei = eyeInfo(), t0 = performance.now();
+  for (const w of SKY.want) {
+    SKY.want.delete(w);
+    const Dk = Math.floor(w / 4000), i = w % 4000, az = i / 10 * RAD; let a = -0.2;
+    for (const D of Dk === SKY_FAR ? [20000, 8000, 3000, 1000] : [Dk]) {
+      const [la, lo] = ei.fr.toLL(Math.sin(az) * D, Math.cos(az) * D), r = analyze({ lat: la, lon: lo }, ei);
+      if (r.ok) { const b = state.season === 'winter' ? r.blockW : r.blockS; a = Math.max(b.a, -0.2); break; }
+    }
+    const tab = SKY.tabs.get(Dk); if (tab) tab[i] = a;
+    if (performance.now() - t0 > budgetMs) break;
+  }
+  return SKY.want.size;
+}
+// a horizonthoz kellő adatok a nézőpont 20 km-es körzetében (domborzat, fák; a házak 6 km-ig)
+function prepReal() {
+  const bb = bboxAround([state.viewer], 20000), bbB = bboxAround([state.viewer], 6000);
+  return Promise.all([ensureTiles(bb), ensureBuildings(bbB), ensureForest(bb)]);
+}
+
+/* A turbina rajza (méterben, a nézőpont helyi síkkoordinátáiban, a szemmagassághoz képest): kúpos torony (a tövén
+   6,8 m, fent 3,8 m átmérő), gondola, agy és három lapát (húr a tőnél 4,3 m, a végén 0,7 m). A rotor a néző felé néz. */
+function turbineColors(D, red) {
+  const k = 0.7 * (1 - Math.exp(-D / 14000)), hz = [196, 208, 222];
+  const mix = c => `rgb(${c.map((x, i) => Math.round(x + (hz[i] - x) * k)).join(',')})`;
+  if (red) return { lit: '#ff6a5a', mid: '#f0503f', shade: '#c93a2c', blade: '#ff5f4f' };
+  return { lit: mix([244, 246, 245]), mid: mix([222, 226, 227]), shade: mix([170, 177, 183]), blade: mix([237, 240, 240]) };
+}
+// rotorszög: álló helyzetben egy lapát függőlegesen felfelé (mint a 3D képen); forgás elölről nézve az óramutató
+// járásával egyezően, kb. 8,5 fordulat/perc
+const rotorAngle = () => Math.PI / 2 - (state.spin ? performance.now() / 1000 * 2 * Math.PI * 8.5 / 60 : 0);
+function drawTurbine2D(g, proj, t, m, rot, col) {
+  const v = [t.x / t.D, t.y / t.D, 0], s = [v[1], -v[0], 0], k = [0, 0, 1];
+  const P = (o, ...terms) => { const p = [o[0], o[1], o[2]]; for (const [vec, w] of terms) { p[0] += vec[0] * w; p[1] += vec[1] * w; p[2] += vec[2] * w; } return proj(p); };
+  const poly = (pts, fill) => { if (pts.some(p => !p)) return; g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); g.fillStyle = fill; g.fill(); };
+  const B = [t.x, t.y, t.z0], top = m.hub - 2.3;
+  const q = [P(B, [s, -3.4]), P(B, [s, 3.4]), P(B, [s, 1.9], [k, top]), P(B, [s, -1.9], [k, top])];
+  if (q.every(Boolean)) {
+    const gr = g.createLinearGradient(q[0][0], q[0][1], q[1][0], q[1][1]);
+    gr.addColorStop(0, col.shade); gr.addColorStop(0.6, col.lit); gr.addColorStop(1, col.mid);
+    poly(q, gr);
+  }
+  const n0 = [t.x, t.y, t.z0 + m.hub - 2.3];
+  poly([P(n0, [s, -2.1]), P(n0, [s, 2.1]), P(n0, [s, 2.1], [v, 11]), P(n0, [s, -2.1], [v, 11])], col.shade);
+  poly([P(n0, [s, -2.1]), P(n0, [s, 2.1]), P(n0, [s, 2.1], [k, 4.6]), P(n0, [s, -2.1], [k, 4.6])], col.mid);
+  const hub = [t.x - v[0] * 3, t.y - v[1] * 3, t.z0 + m.hub];
+  for (let b = 0; b < 3; b++) {
+    const ph = rot + b * 2 * Math.PI / 3, c = Math.cos(ph), sn = Math.sin(ph);
+    const dv = [s[0] * c, s[1] * c, sn], nv = [-s[0] * sn, -s[1] * sn, c], L = [], Tr = [];
+    for (let j = 0; j <= 16; j++) {
+      const u = j / 16, r = 1.6 + (m.R - 1.6) * u, ch = u < 0.18 ? 2.6 + 1.7 * u / 0.18 : 4.3 - 3.6 * (u - 0.18) / 0.82;
+      L.push(P(hub, [dv, r], [nv, ch * 0.32])); Tr.push(P(hub, [dv, r], [nv, -ch * 0.68]));
+    }
+    poly([...L, ...Tr.reverse()], col.blade);
+  }
+  const hc = proj(hub), he = P(hub, [s, 2.2]);
+  if (hc && he) { g.beginPath(); g.arc(hc[0], hc[1], Math.max(0.7, Math.hypot(he[0] - hc[0], he[1] - hc[1])), 0, 2 * Math.PI); g.fillStyle = col.lit; g.fill(); }
+}
+
+/* A teljes ráfedés: modell-horizont, fokbeosztás, falunevek és a turbinák (a horizont fölé vágva).
+   cam: { b (irányok), F, cx, cy, W, H }; opts: { sky, ghost, labels, tlabel, rot } */
+function drawReal(g, cam, opts) {
+  skyReset();
+  const proj = projector(cam.b, cam.F, cam.cx, cam.cy), ei = eyeInfo(), fr = ei.fr, m = model(), sc = cam.W / 1000;
+  const azC = Math.atan2(cam.b.f[0], cam.b.f[1]), half = Math.atan(Math.hypot(cam.W, cam.H) / 2 / cam.F) + 0.02;
+  const dAz = a => ((a - azC) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI;
+  const at = (az, el) => proj(dirOf(az, el).map(x => x * 1000));
+  const skyOr = (az, d) => { const e = skyAt(az); return e === undefined ? d : e; };
+  // fokbeosztás a kép tetején (az igazításhoz)
+  if (opts.sky || opts.labels) { g.save(); g.font = `600 ${Math.round(11 * sc + 6)}px system-ui, sans-serif`; g.textAlign = 'center';
+  for (let d = Math.ceil((azC - half) / RAD); d <= Math.floor((azC + half) / RAD); d++) {
+    const p = at(d * RAD, 0); if (!p) continue;
+    const dd = ((d % 360) + 360) % 360, big = dd % 10 === 0;
+    if (!big && dd % 5) continue;
+    g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(p[0] - 1, 0, 2, big ? 14 * sc + 6 : 8 * sc + 4);
+    g.fillStyle = '#fff'; g.fillRect(p[0] - 0.5, 0, 1, big ? 14 * sc + 6 : 8 * sc + 4);
+    if (big) { const nm = { 0: 'É', 90: 'K', 180: 'D', 270: 'Ny' }[dd] || dd + '°'; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.55)'; g.strokeText(nm, p[0], 30 * sc + 12); g.fillText(nm, p[0], 30 * sc + 12); }
+  }
+  g.restore(); }
+  // modell-horizont (sárga) és a vízszintes (szaggatott)
+  if (opts.sky) {
+    const line = el => { g.beginPath(); let on = false; for (let a = azC - half; a <= azC + half; a += 0.5 * RAD) { const e = el == null ? skyAt(a) : el, p = e === undefined ? null : at(a, e); if (!p) { on = false; continue; } on ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); on = true; } g.stroke(); };
+    g.save(); g.lineJoin = 'round';
+    g.setLineDash([6 * sc + 2, 6 * sc + 2]); g.lineWidth = 1.2 * sc + 0.6; g.strokeStyle = 'rgba(255,255,255,.55)'; line(0); g.setLineDash([]);
+    g.lineWidth = 3.4 * sc + 1.5; g.strokeStyle = 'rgba(0,0,0,.45)'; line(); g.lineWidth = 1.6 * sc + 0.8; g.strokeStyle = '#ffd23f'; line();
+    g.restore();
+  }
+  // falunevek a horizonton (az igazításhoz)
+  if (opts.labels) {
+    const V = state.viewer, cl = Math.cos(V.lat * RAD), used = [];
+    g.save(); g.font = `600 ${Math.round(12 * sc + 7)}px system-ui, sans-serif`; g.textAlign = 'center';
+    for (const [name, la, lo, w] of [...SETTLE].sort((p, q) => q[3] - p[3])) {
+      const x = (lo - V.lon) * 111195 * cl, y = (la - V.lat) * 111195, D = Math.hypot(x, y), az = Math.atan2(x, y);
+      if (D < 400 || D > 25000 || Math.abs(dAz(az)) > half) continue;
+      const p = at(az, skyOr(az, 0)); if (!p) continue;
+      const txt = `${name} ${km(D)}`, tw = g.measureText(txt).width;
+      if (used.some(u => Math.abs(u - p[0]) < tw * 0.6 + 20)) continue;
+      used.push(p[0]);
+      const y0 = p[1] - 34 * sc - 14;
+      g.fillStyle = 'rgba(255,255,255,.8)'; g.fillRect(p[0] - 0.75, y0 + 4, 1.5, p[1] - y0 - 4);
+      g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.6)'; g.strokeText(txt, p[0], y0); g.fillStyle = '#fff'; g.fillText(txt, p[0], y0);
+      if (used.length >= 10) break;
+    }
+    g.restore();
+  }
+  // turbinák: a távolabbitól a közelebbi felé
+  const list = state.turbines.map((T, i) => { const [x, y] = fr.fromLL(T.lat, T.lon), D = Math.hypot(x, y), z = fr.elev(x, y); return { i, x, y, D, z0: z - drop(D) - ei.eyeZ }; })
+    .filter(t => t.z0 === t.z0 && t.D > 60).sort((a, b) => b.D - a.D);
+  let pending = false;
+  for (const t of list) {
+    const az = Math.atan2(t.x, t.y), hw = Math.atan((m.R + 8) / t.D) + 0.003;
+    if (Math.abs(dAz(az)) > half + hw) continue;
+    const pts = []; for (let a = az - hw; a <= az + hw + 1e-9; a += 0.1 * RAD) { const e = skyAt(a, t.D); if (e === undefined) pending = true; pts.push([a, e === undefined ? -0.2 : e]); }
+    const a0 = pts[0][0], a1 = pts[pts.length - 1][0];
+    const clip = up => { g.beginPath(); const sk = pts.map(([a, e]) => at(a, e)); if (sk.some(p => !p)) return false; sk.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); for (const [a, e] of [[a1, up ? 1.3 : -1.3], [a0, up ? 1.3 : -1.3]]) { const p = at(a, e); if (!p) return false; g.lineTo(p[0], p[1]); } g.closePath(); g.clip(); return true; };
+    g.save(); if (clip(true)) drawTurbine2D(g, proj, t, m, opts.rot, turbineColors(t.D)); g.restore();
+    if (opts.ghost) { g.save(); if (clip(false)) { g.globalAlpha = 0.5; drawTurbine2D(g, proj, t, m, opts.rot, turbineColors(t.D, true)); } g.restore(); }
+    // felirat a lapátvég fölött
+    const p = opts.tlabel === false ? null : proj([t.x, t.y, t.z0 + m.tip + 12]);
+    if (p) { g.save(); g.font = `700 ${Math.round(12 * sc + 7)}px system-ui, sans-serif`; g.textAlign = 'center'; const txt = `T${t.i + 1} · ${km(t.D)}`; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.55)'; g.strokeText(txt, p[0], p[1]); g.fillStyle = '#fff'; g.fillText(txt, p[0], p[1]); g.restore(); }
+  }
+  return pending || SKY.want.size > 0;
+}
+
+/* Fotó adatai (EXIF, JPEG): GPS hely és magasság, irány (iránytű), 35 mm-es egyenértékű fókusz, dátum */
+function readExif(buf) {
+  const v = new DataView(buf); if (v.byteLength < 4 || v.getUint16(0) !== 0xFFD8) return null;
+  for (let o = 2; o + 4 < v.byteLength;) {
+    const mk = v.getUint16(o); if ((mk & 0xFF00) !== 0xFF00 || mk === 0xFFDA) break;
+    const len = v.getUint16(o + 2);
+    if (mk === 0xFFE1 && v.getUint32(o + 4) === 0x45786966) return exifTiff(v, o + 10);
+    o += 2 + len;
+  }
+  return null;
+}
+function exifTiff(v, t) {
+  const le = v.getUint16(t) === 0x4949, u16 = p => v.getUint16(p, le), u32 = p => v.getUint32(p, le);
+  const ifd = p => { const out = {}, n = u16(p); for (let i = 0; i < n; i++) { const e = p + 2 + i * 12; out[u16(e)] = { type: u16(e + 2), cnt: u32(e + 4), vo: e + 8 }; } return out; };
+  const SZ = { 1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 7: 1, 9: 4, 10: 8 };
+  const val = en => {
+    if (!en) return undefined;
+    const sz = SZ[en.type] || 1, p = sz * en.cnt <= 4 ? en.vo : t + u32(en.vo);
+    if (en.type === 2) { let s = ''; for (let i = 0; i < en.cnt - 1; i++) s += String.fromCharCode(v.getUint8(p + i)); return s; }
+    const one = q => en.type === 3 ? u16(q) : en.type === 4 ? u32(q) : en.type === 5 ? u32(q) / (u32(q + 4) || 1) : en.type === 10 ? v.getInt32(q, le) / (v.getInt32(q + 4, le) || 1) : en.type === 9 ? v.getInt32(q, le) : v.getUint8(q);
+    return en.cnt === 1 ? one(p) : Array.from({ length: en.cnt }, (_, i) => one(p + i * sz));
+  };
+  const i0 = ifd(t + u32(t + 4)), r = { make: val(i0[0x10F]), model: val(i0[0x110]) };
+  if (i0[0x8769]) { const ex = ifd(t + u32(i0[0x8769].vo)); r.f35 = val(ex[0xA405]); r.f = val(ex[0x920A]); r.date = val(ex[0x9003]); }
+  if (i0[0x8825]) {
+    const gp = ifd(t + u32(i0[0x8825].vo)), la = val(gp[2]), lo = val(gp[4]);
+    if (la && lo && la.length === 3) { r.lat = (la[0] + la[1] / 60 + la[2] / 3600) * (val(gp[1]) === 'S' ? -1 : 1); r.lon = (lo[0] + lo[1] / 60 + lo[2] / 3600) * (val(gp[3]) === 'W' ? -1 : 1); }
+    r.dir = val(gp[0x11]); r.dirRef = val(gp[0x10]);
+  }
+  return r;
+}
+
+/* ---------- A közös teljes képernyős nézet ---------- */
+const MONT = { mode: null, img: null, bg: null, hd0: 0, hd: 0, pt: 0, rl: 0, fov: 66, raf: 0, drag: null, msg: '' };
+const AR = { stream: null, watch: null, f: null, u: null, abs: false, ios: false, hdOff: 0, ptOff: 0, acc: null, gps: null, lastFix: null, fov: 66 };
+try { AR.fov = +localStorage.getItem('arFov') || 66; } catch (e) {}
+const inRegion = (la, lo) => !REGION || Math.hypot((la - REGION.lat) * 111.2, (lo - REGION.lon) * 111.32 * Math.cos(REGION.lat * RAD)) <= REGION.km + 3;
+function montStatus(html) { $('montSt').innerHTML = html; }
+function openMont(mode) {
+  MONT.mode = mode; $('mont').hidden = false; document.body.style.overflow = 'hidden';
+  $('montTitle').textContent = mode === 'ar' ? 'Élő kamera: a turbina a helyén' : 'A turbina a saját fotódon';
+  $('arVideo').hidden = mode !== 'ar';
+  for (const id of ['mRlW', 'mSave']) $(id).hidden = mode === 'ar';
+  $('mShot').hidden = mode !== 'ar';
+  $('mHdL').textContent = mode === 'ar' ? 'Iránytű-javítás' : 'Irány'; $('mFovL').textContent = mode === 'ar' ? 'A kamera látószöge' : 'Látószög';
+  syncMontCtl(); cancelAnimationFrame(MONT.raf); MONT.raf = requestAnimationFrame(montFrame);
+  $('montClose').focus();
+}
+function closeMont() {
+  MONT.mode = null; $('mont').hidden = true; document.body.style.overflow = ''; cancelAnimationFrame(MONT.raf);
+  if (AR.stream) { AR.stream.getTracks().forEach(tr => tr.stop()); AR.stream = null; $('arVideo').srcObject = null; }
+  if (AR.watch != null) { navigator.geolocation.clearWatch(AR.watch); AR.watch = null; }
+  window.removeEventListener('deviceorientationabsolute', onOri); window.removeEventListener('deviceorientation', onOri);
+  if (MONT.img) { URL.revokeObjectURL(MONT.img.src); MONT.img = null; MONT.bg = null; }
+  renderPano(1);
+}
+function syncMontCtl() {
+  const ar = MONT.mode === 'ar';
+  $('mHd').value = ar ? AR.hdOff : MONT.hd - MONT.hd0; $('mHdO').textContent = `${(+$('mHd').value).toFixed(1)}°`;
+  $('mPt').value = ar ? AR.ptOff : MONT.pt; $('mPtO').textContent = `${(+$('mPt').value).toFixed(1)}°`;
+  $('mRl').value = MONT.rl; $('mRlO').textContent = `${MONT.rl.toFixed(1)}°`;
+  $('mFov').value = ar ? AR.fov : MONT.fov; $('mFovO').textContent = `${(+$('mFov').value).toFixed(0)}°`;
+}
+// a nézet kamerája a vászon képpontjaiban (a fotó a vászon közepén, arányosan kicsinyítve)
+function montCam(W, H) {
+  if (MONT.mode === 'ar') {
+    const vd = $('arVideo'), vw = vd.videoWidth || W, vh = vd.videoHeight || H, s = Math.max(W / vw, H / vh);
+    return { b: arBasis(), F: Math.max(vw, vh) / 2 / Math.tan(AR.fov * RAD / 2) * s, cx: W / 2, cy: H / 2, W, H, rect: [0, 0, W, H] };
+  }
+  const iw = MONT.img.naturalWidth, ih = MONT.img.naturalHeight, s = Math.min(W / iw, H / ih), pw = iw * s, ph = ih * s;
+  const hf = MONT.fov * RAD, F = pw / 2 / Math.tan(hf / 2);
+  return { b: camFromAngles(MONT.hd, MONT.pt, MONT.rl), F, cx: W / 2, cy: H / 2, W: pw, H: ph, rect: [(W - pw) / 2, (H - ph) / 2, pw, ph] };
+}
+function montFrame() {
+  if (!MONT.mode) return;
+  const cv = $('montCv'), st = $('montStage'), dpr = Math.min(2, window.devicePixelRatio || 1), W = Math.round(st.clientWidth * dpr), H = Math.round(st.clientHeight * dpr);
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  const g = cv.getContext('2d'); g.clearRect(0, 0, W, H);
+  let busy = false;
+  if (MONT.mode === 'photo' && MONT.img) {
+    const cam = montCam(W, H); g.drawImage(MONT.img, ...cam.rect);
+    g.save(); g.beginPath(); g.rect(...cam.rect); g.clip();
+    busy = drawReal(g, cam, { sky: $('mSky').checked, ghost: $('mGhost').checked, labels: $('mSky').checked, rot: rotorAngle() });
+    g.restore();
+  } else if (MONT.mode === 'ar' && AR.f) {
+    busy = drawReal(g, montCam(W, H), { sky: $('mSky').checked, ghost: $('mGhost').checked, labels: $('mSky').checked, rot: rotorAngle() });
+  }
+  const left = skyWork(MONT.mode === 'ar' ? 7 : 12);
+  $('montHint').textContent = (busy || left ? 'A takarás vonalának számítása… ' : '') + MONT.msg;
+  MONT.raf = requestAnimationFrame(montFrame);
+}
+// húzás a képen: a ráfedés az ujjal együtt mozog (irány és dőlés finomhangolása)
+function montDrag(e) {
+  const st = $('montStage');
+  if (e.type === 'pointerdown') { MONT.drag = { x: e.clientX, y: e.clientY }; st.setPointerCapture(e.pointerId); return; }
+  if (e.type !== 'pointermove' || !MONT.drag) { MONT.drag = null; return; }
+  const dpr = Math.min(2, window.devicePixelRatio || 1), cam = montCam(st.clientWidth * dpr, st.clientHeight * dpr), k = dpr / cam.F / RAD;   // fok / CSS-képpont
+  const dx = (e.clientX - MONT.drag.x) * k, dy = (e.clientY - MONT.drag.y) * k; MONT.drag = { x: e.clientX, y: e.clientY };
+  if (MONT.mode === 'ar') { AR.hdOff = Math.max(-40, Math.min(40, AR.hdOff - dx)); AR.ptOff = Math.max(-15, Math.min(15, AR.ptOff + dy)); }
+  else { MONT.hd -= dx; MONT.pt = Math.max(-25, Math.min(25, MONT.pt + dy)); if (Math.abs(MONT.hd - MONT.hd0) > 40) MONT.hd0 = MONT.hd; }
+  syncMontCtl();
+}
+
+/* ---------- Saját fotó ---------- */
+async function openPhoto(file) {
+  let ex = null; try { ex = readExif(await file.arrayBuffer()); } catch (e) {}
+  const img = new Image(), url = URL.createObjectURL(file);
+  img.onerror = () => { URL.revokeObjectURL(url); alert('Ezt a képet a böngésző nem tudja megnyitni (például HEIC). Mentsd vagy küldd el JPEG-ként, és próbáld újra.'); };
+  img.onload = async () => {
+    if (MONT.img) URL.revokeObjectURL(MONT.img.src);
+    MONT.img = img; const notes = [];
+    // hely: a fotó GPS-adata, ha a régióban van; különben a térképen megadott nézőpont
+    if (ex && ex.lat != null && inRegion(ex.lat, ex.lon)) { state.viewer = { lat: ex.lat, lon: ex.lon }; notes.push('<b>Hely:</b> a fotó GPS-adatából (a térképen is oda tettem a nézőpontot).'); }
+    else notes.push(ex && ex.lat != null ? '<b>Hely:</b> a fotó GPS-adata a régión kívül esik, ezért a térképen megadott nézőpontból számolok.' : '<b>Hely:</b> a fotóban nincs GPS-adat, ezért a térképen megadott nézőpontból számolok. Tedd oda, ahol a fotó készült.');
+    // évszak a fotó dátumából (november–március: lombtalan)
+    const mo = ex && ex.date ? +ex.date.slice(5, 7) : 0;
+    if (mo) { state.season = mo >= 11 || mo <= 3 ? 'winter' : 'summer'; notes.push(`<b>Évszak:</b> a fotó dátuma alapján ${state.season === 'winter' ? 'tél (lombtalan fák)' : 'nyár (lombos fák)'}.`); }
+    // látószög: a 35 mm-es egyenértékű fókuszból (az átlóra vonatkozik), különben a telefonok fő kamerája (26 mm)
+    const f35 = ex && ex.f35 > 8 ? ex.f35 : 26, iw = img.naturalWidth, ih = img.naturalHeight;
+    MONT.fov = 2 * Math.atan(Math.tan(Math.atan(43.27 / (2 * f35))) * iw / Math.hypot(iw, ih)) / RAD;
+    notes.push(ex && ex.f35 > 8 ? `<b>Látószög:</b> a fotó adatából (${f35} mm-es egyenérték): ${MONT.fov.toFixed(0)}°.` : `<b>Látószög:</b> nincs a fotóban, a telefonok szokásos fő kamerájával számolok (${MONT.fov.toFixed(0)}°); ha nem stimmel, állíts rajta.`);
+    // irány: a fotó iránytű-adatából, különben a kijelölt turbina felé
+    await update();
+    const T = state.turbines[state.sel];
+    if (ex && typeof ex.dir === 'number') { MONT.hd = ex.dir + (ex.dirRef === 'M' ? DECL : 0); notes.push('<b>Irány:</b> a fotó iránytű-adatából; ez pár fokot tévedhet.'); }
+    else if (T) { const [x, y] = frame(state.viewer.lat, state.viewer.lon).fromLL(T.lat, T.lon); MONT.hd = Math.atan2(x, y) / RAD; notes.push('<b>Irány:</b> nincs a fotóban, ezért a kijelölt turbina felé állítottam.'); }
+    MONT.hd0 = MONT.hd; MONT.pt = 0; MONT.rl = 0;
+    if (!state.turbines.length) notes.push('Még nincs turbina a térképen: tegyél le egyet, és itt is megjelenik.');
+    MONT.msg = '';
+    montStatus(notes.join(' ') + ' <b>Igazítás:</b> húzd a képet (vagy használd a csúszkákat), amíg a sárga modell-horizont és a falunevek a fotón látható dombokra, erdőszélekre, templomtornyokra nem kerülnek.');
+    syncControls(); openMont('photo'); prepReal();
+  };
+  img.src = url;
+}
+// a kész kép a fotó eredeti felbontásában (legfeljebb 4096 px), a forrás feltüntetésével
+async function saveMontage(fromVideo) {
+  let W, H, c, cam;
+  if (fromVideo) {
+    const vd = $('arVideo'); W = vd.videoWidth; H = vd.videoHeight; if (!W) return;
+    c = document.createElement('canvas'); c.width = W; c.height = H; c.getContext('2d').drawImage(vd, 0, 0, W, H);
+    cam = { b: arBasis(), F: Math.max(W, H) / 2 / Math.tan(AR.fov * RAD / 2), cx: W / 2, cy: H / 2, W, H };
+  } else {
+    const s = Math.min(1, 4096 / Math.max(MONT.img.naturalWidth, MONT.img.naturalHeight)); W = Math.round(MONT.img.naturalWidth * s); H = Math.round(MONT.img.naturalHeight * s);
+    c = document.createElement('canvas'); c.width = W; c.height = H; c.getContext('2d').drawImage(MONT.img, 0, 0, W, H);
+    cam = { b: camFromAngles(MONT.hd, MONT.pt, MONT.rl), F: W / 2 / Math.tan(MONT.fov * RAD / 2), cx: W / 2, cy: H / 2, W, H };
+  }
+  const g = c.getContext('2d');
+  drawReal(g, cam, { sky: false, ghost: $('mGhost').checked, labels: false, rot: rotorAngle() });
+  const m = model(); let fs = Math.max(11, Math.round(W / 70)); const txt = `Látványmodell: ${MODELS[state.model] ? MODELS[state.model].name.split(' · ')[0] : 'egyedi turbina'} (${m.tip} m lapátvég) · a takarás a domborzat, a házak és a fák modellje szerint · ${LOCAL && LOCAL.web ? location.host : 'Szélerőmű-rálátás'}`;
+  g.font = `600 ${fs}px system-ui, sans-serif`; let tw = g.measureText(txt).width;
+  if (tw > W * 0.96) { fs = Math.max(8, Math.floor(fs * W * 0.96 / tw)); g.font = `600 ${fs}px system-ui, sans-serif`; tw = g.measureText(txt).width; }
+  g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(0, H - fs * 1.9, Math.min(W, tw + fs * 1.4), fs * 1.9); g.fillStyle = '#fff'; g.fillText(txt, fs * 0.7, H - fs * 0.62);
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.9)); if (!blob) return;
+  const name = `szeleromu-${new Date().toISOString().slice(0, 10)}.jpg`, file = new File([blob], name, { type: 'image/jpeg' });
+  if (window.claude && window.claude.use) {
+    const dl = await window.claude.use('downloads').catch(() => null);
+    if (dl) { try { await dl.save({ filename: name, data: blob }); MONT.msg = ' A kép elmentve.'; return; } catch (e) { if (e && e.code === 'declined') return; } }
+  }
+  if (navigator.canShare && navigator.canShare({ files: [file] }) && matchMedia('(pointer: coarse)').matches) { try { await navigator.share({ files: [file], title: 'Szélerőmű a valós tájban' }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  MONT.msg = ' A kép letöltődött.';
+}
+
+/* ---------- Élő kamera (AR) ----------
+   Irány: a készülék tájolása (W3C deviceorientation; Androidon az abszolút, iOS-en az iránytűvel kiegészített),
+   simítva; a mágneses elhajlás és a kézi iránytű-javítás hozzáadva. Hely: GPS (a régión belül a nézőpont oda kerül).
+   A kamera látószöge készülékenként más: a csúszkával egyszer beállítható, a böngésző megjegyzi. */
+const AR_OK = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) && typeof DeviceOrientationEvent !== 'undefined';
+function oriMatrix(a, b, gm) {
+  const cA = Math.cos(a * RAD), sA = Math.sin(a * RAD), cB = Math.cos(b * RAD), sB = Math.sin(b * RAD), cG = Math.cos(gm * RAD), sG = Math.sin(gm * RAD);
+  // a készülék tengelyei (x jobbra, y a kijelző teteje felé, z a kijelzőből kifelé) a Föld rendszerében (kelet, észak, fel)
+  return { X: [cA * cG - sA * sB * sG, cG * sA + cA * sB * sG, -cB * sG], Y: [-cB * sA, cA * cB, sB], Z: [cG * sA * sB + cA * sG, sA * sG - cA * cG * sB, cB * cG] };
+}
+function onOri(e) {
+  if (e.type === 'deviceorientation' && AR.abs && !AR.ios) return;   // ha van abszolút esemény, azt használjuk
+  let a = e.alpha; const b = e.beta, gm = e.gamma; if (b == null || gm == null) return;
+  if (typeof e.webkitCompassHeading === 'number') { a = 360 - e.webkitCompassHeading; AR.ios = true; AR.acc = e.webkitCompassAccuracy; }
+  else if (e.type === 'deviceorientationabsolute' || e.absolute) AR.abs = true;
+  else return;   // csak relatív tájolás: nincs mihez igazítani az irányt
+  const M = oriMatrix(a, b, gm), th = ((screen.orientation && screen.orientation.angle) || window.orientation || 0) * RAD;
+  const f = M.Z.map(x => -x), u = M.Y.map((y, i) => y * Math.cos(th) + M.X[i] * Math.sin(th));
+  if (!AR.f) { AR.f = f; AR.u = u; } else { const k = 0.25; AR.f = v3.norm(AR.f.map((x, i) => x + (f[i] - x) * k)); AR.u = v3.norm(AR.u.map((x, i) => x + (u[i] - x) * k)); }
+}
+function arBasis() {
+  let f = AR.f, r = v3.norm(v3.cross(AR.f, AR.u)), u = v3.cross(r, f);
+  const d = (DECL + AR.hdOff) * RAD; f = v3.rotZ(f, d); r = v3.rotZ(r, d); u = v3.rotZ(u, d);
+  const p = AR.ptOff * RAD, f2 = f.map((x, i) => x * Math.cos(p) + u[i] * Math.sin(p)), u2 = u.map((x, i) => x * Math.cos(p) - f[i] * Math.sin(p));
+  return { f: f2, r, u: u2 };
+}
+async function startAR() {
+  const framed = window.top !== window, link = 'https://jak-szeleromu.netlify.app';
+  const fail = t => alert(t + (framed && !(LOCAL && LOCAL.web) ? `\n\nAz élő kamera a nyilvános oldalon működik: ${link}` : ''));
+  try { if (DeviceOrientationEvent.requestPermission && await DeviceOrientationEvent.requestPermission() !== 'granted') return fail('Az iránytű és a dőlésérzékelő használatát nem engedélyezted, enélkül nem tudom, merre nézel.'); }
+  catch (e) { return fail('Az iránytűt ez az oldal nem érheti el.'); }
+  try { AR.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false }); }
+  catch (e) { return fail(e && e.name === 'NotAllowedError' ? 'A kamera használatát nem engedélyezted (vagy itt a böngésző nem engedi).' : 'A kamerát nem sikerült elindítani.'); }
+  const vd = $('arVideo'); vd.srcObject = AR.stream; try { await vd.play(); } catch (e) {}
+  AR.f = null; AR.abs = false; AR.ios = false; AR.gps = null;
+  window.addEventListener('deviceorientationabsolute', onOri); window.addEventListener('deviceorientation', onOri);
+  MONT.msg = '';
+  montStatus('<b>Tartsd a telefont függőlegesen</b>, és fordulj a turbina felé. Ha a sárga modell-horizont vagy a falunevek oldalra elcsúsznak a valódi tájhoz képest (az iránytű pár fokot téved), <b>húzd a képet</b> oldalra, amíg a helyükre kerülnek. Ha a távoli tárgyak mérete nem stimmel, a kamera látószögén állíts (egyszer kell, megjegyzi).');
+  if (navigator.geolocation) AR.watch = navigator.geolocation.watchPosition(onGps, () => { AR.gps = 'nincs'; }, { enableHighAccuracy: true, maximumAge: 3000, timeout: 30000 });
+  openMont('ar'); prepReal();
+  setTimeout(() => { if (MONT.mode === 'ar' && !AR.f) MONT.msg = ' Nem érkezik iránytű-adat: ez a böngésző vagy készülék nem adja meg, merre nézel.'; }, 4000);
+}
+function onGps(p) {
+  const { latitude: la, longitude: lo, accuracy: acc } = p.coords;
+  if (!inRegion(la, lo)) { AR.gps = 'kint'; MONT.msg = ' Most nem vagy a régióban, ezért a térképen megadott nézőpontból számolok.'; return; }
+  AR.gps = Math.round(acc);
+  const V = state.viewer, moved = Math.hypot((la - V.lat) * 111195, (lo - V.lon) * 111195 * Math.cos(la * RAD));
+  if (acc < 150 && moved > Math.max(6, acc / 2)) {
+    state.viewer = { lat: la, lon: lo }; buildMarkers(); update().then(prepReal);
+    MONT.msg = ` A nézőpont a GPS szerinti helyeden van (±${Math.round(acc)} m).`;
+  }
 }
 
 /* ---------- Megosztható link ---------- */
@@ -3586,6 +4522,20 @@ async function shareLink(msg) {
 }
 $('copyLink').onclick = () => shareLink($('copyMsg'));
 $('shareBtn').onclick = () => shareLink($('shareMsg'));
+$('photoBtn').onclick = () => $('photoIn').click();
+$('photoIn').onchange = () => { const f = $('photoIn').files[0]; $('photoIn').value = ''; if (f) openPhoto(f); };
+if (AR_OK && matchMedia('(pointer: coarse)').matches) $('arBtn').hidden = false;
+else $('realNote').textContent += ' Telefonon élő kamerás nézet is van.';
+$('arBtn').onclick = startAR;
+$('montClose').onclick = closeMont;
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && MONT.mode) closeMont(); });
+for (const ev of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']) $('montStage').addEventListener(ev, montDrag);
+$('mHd').oninput = () => { const v = +$('mHd').value; if (MONT.mode === 'ar') AR.hdOff = v; else MONT.hd = MONT.hd0 + v; syncMontCtl(); };
+$('mPt').oninput = () => { const v = +$('mPt').value; if (MONT.mode === 'ar') AR.ptOff = v; else MONT.pt = v; syncMontCtl(); };
+$('mRl').oninput = () => { MONT.rl = +$('mRl').value; syncMontCtl(); };
+$('mFov').oninput = () => { const v = +$('mFov').value; if (MONT.mode === 'ar') { AR.fov = v; try { localStorage.setItem('arFov', v); } catch (e) {} } else MONT.fov = v; syncMontCtl(); };
+$('mSave').onclick = () => saveMontage(false);
+$('mShot').onclick = () => saveMontage(true);
 
 // a térkép a nézőpontra és a turbinákra; turbina nélkül a nézőpont környékére (Ják és a szomszéd falvak)
 function fitView() {
@@ -3609,6 +4559,12 @@ $('resetBtn').onclick = () => {
 /* ---------- Indítás ---------- */
 if (!(LOCAL && LOCAL.b12)) $('bldField').hidden = $('bldHint').hidden = true;
 if (!hasForest()) $('forField').hidden = true;
+if (!map.hasLayer(siteLayer)) $('siteField').hidden = true;
+$('shOn').onchange = () => { SHADOW.on = $('shOn').checked; syncShadow(); renderPano(1); };
+$('shDay').oninput = () => { SHADOW.doy = +$('shDay').value; syncShadow(); renderPano(1); };
+$('shMin').oninput = () => { SHADOW.min = +$('shMin').value; syncShadow(); renderPano(1); };
+$('shYear').onclick = runFlicker;
+$('sites').onchange = () => { if ($('sites').checked) siteLayer.addTo(map); else map.removeLayer(siteLayer); };
 syncForLayer();
 syncBldLayer();
 if (LOCAL && !LOCAL.web) { $('copyLink').hidden = true; $('shareBtn').parentElement.hidden = true; }

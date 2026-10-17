@@ -29,6 +29,12 @@ alakú régió adatait tartalmazza, jelenleg Ják 30 km-es környékét (kb. 63 
 - **lakott terület határa** (Ják, Nárai): az épületekből számolt összefüggő beépítés körvonala (nem a hivatalos
   belterületi határ). A térképen szaggatott narancs vonal; minden turbina mellett látszik a határtól mért távolsága,
 - **településnevek:** Overture Maps divisions (ODbL), az osztrák falvakkal együtt.
+- **a jáki Szent György-templom és a Szent Jakab-kápolna** külön, részletes modellként (kváderkő, kőgúlás tornyok,
+  lépcsőzetes kapuzat az apostolfülkékkel, ikerablakok, ívsoros frízek, három szentély, a kápolna hagymasisakja).
+  Alaprajz, tájolás, a tornyok és a kápolna magassága OpenStreetMap szerint; a főhajó, a mellékhajók és a szentélyek
+  magassága becsült. A 3D modell és a takarásszámítás ugyanabból a magasságmezőből dolgozik,
+- **lehetséges telepítési területek:** egy szélerőmű-telepítési átvilágítás 14 szabad területének középpontja és mérete
+  (a területrendezési terv mellékletei és a 700 m-es védőtávolság alapján); a területek határa nincs meg, csak a közepük,
 
 Előállítás (a régió közepe és sugara paraméter):
 
@@ -68,6 +74,28 @@ A `--esri-key=<kulcs>` nagy felbontású légifotót (Esri World Imagery, kb. 30
 (ArcGIS Location Platform, „Basemaps” jogosultság), és az Esri felületén a weboldal címére kell korlátozni.
 Érvénytelen kulcsnál az oldal magától a beépített Sentinel-2 képre vált. A claude.ai artifact külső képet nem tölthet be,
 ott a Sentinel-2 marad.
+
+### A turbina a valódi képen
+
+- **Saját fotó (fotómontázs):** a 3D kép alatti gombbal egy helyszíni fotó tölthető be. A fotó adataiból (EXIF) a hely
+  (GPS), a látószög (35 mm-es egyenértékű fókusz), az irány (iránytű) és az évszak (dátum) jön; ami hiányzik, azt a
+  térképi nézőpont, a telefonok szokásos fő kamerája (26 mm) és a kijelölt turbina iránya pótolja. A program a turbinát
+  valós méretben rárajzolja, és a modell szerinti takarás vonala fölé vágja (a takart rész kérésre pirosan áttűnik).
+  Igazításhoz a modell horizontja (sárga vonal), a falunevek és a fokbeosztás látszik; a kép húzható, és csúszkák is
+  vannak. A kész kép menthető, a sarkában a forrás feltüntetésével.
+- **Élő kamera (AR, telefonon, a nyilvános weboldalon):** a hátsó kamera képére rajzolja a turbinát a GPS, az iránytű és
+  a dőlésérzékelő alapján. Az iránytű pár fokos hibáját a kép oldalra húzásával lehet javítani, a kamera látószögét
+  egyszer kell beállítani (a böngésző megjegyzi). Pillanatkép menthető. A claude.ai artifactban a kamera nem érhető el.
+
+### Árnyékvetés és villódzás
+
+A Beállítások között egy nap (az év bármelyik napja) és egy időpont (magyar idő, nyári időszámítással) választható. A
+Nap helyzetét csillagászati közelítés adja (kb. 0,01°). A térképen látszik a torony és a rotor árnyéka, a rotor
+árnyékának útja azon a napon (órákkal), a kb. 2,3 km-es villódzási határ, és hogy az árnyék eléri-e a lakott területet;
+a 3D kép ilyenkor a választott napállásból világít. Az éves villódzás-térkép a legrosszabb esetet számolja 20 m-es
+rácson, minden nap 2 percenként (mindig süt a Nap, a rotor a Nap felé néz és forog; a Nap 3° fölött; a lapát a napkorong
+legalább 20%-át takarja): óra/év és a legtöbb perc egy napon, plusz a lakóházak száma a sávokban. Viszonyításként a
+Németországban alkalmazott 30 óra/év és 30 perc/nap irányértéket jelöli.
 
 ## Térképes változat
 

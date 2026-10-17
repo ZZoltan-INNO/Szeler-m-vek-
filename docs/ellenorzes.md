@@ -99,3 +99,38 @@ A határ az épületekből számolt összefüggő beépítés (`tools/build_vill
 ellenőrzésként a csúcspontokig mért legkisebb távolsággal összevetve (pl. 47,1660 / 16,5850-nél Ják 1125 m,
 Nárai 2780 m). A címke a turbina húzásakor frissül, a turbinalistában is megjelenik. Alaphelyzetben nincs
 turbina és kézi takarás; az Alaphelyzet gomb a fejlécben van. 400 és 1300 px szélesen: 14/14 rendben.
+
+## A turbina a valódi képen: a ráfedés és a vágás
+
+Próba: a program saját 3D képét használjuk „fotóként” ugyanazzal a kameraállással (irány, dőlés, látószög), és erre
+rajzoljuk a 2D-s ráfedést. Hat nézőpont (erdő, egyes fa, ház, domborzat takar; 1,2–2,8 km): a talppont minden esetben
+pixelre, a lapátvég 0–2 képpontra egyezik (2 km-en túl a lapát 0,7 m-es hegye egy képpontnál vékonyabb, a 3D képen
+elhalványul: ott 3–5 képpont). A rárajzolt vágás a számolt takarással 0,5 m-en belül egyezik. Javítva a próba során:
+a vágóvonalat eleinte a 20 km-es horizontból vettük, így egy turbina mögötti domb is levághatta volna a turbina alját;
+most minden turbinánál csak a nála közelebbi takarás számít (mint a fő számításban). A fotó mód végig (betöltés EXIF
+nélkül, igazítás, mentés, bezárás) rendben.
+
+## A jáki templom
+
+A templom és a kápolna egy közös magasságmezőből épül (3D) és számol (takarás); a sugár mentén 0,25 m-es, a
+legmagasabb pont körül 2 cm-es lépésekkel. A templom mögé tett turbinával, 400–450 m-ről (főhajó gerince, tornysisak
+lejtője és csúcsa): számítás 122,4 / 106,5 / 156,8 m, 3D kép 122,0 / 106,1 / 156,5 m. Javítva: a 0,25 m-es lépés a
+gúlasisak lejtőjén legfeljebb 0,4 m-rel elvéthette a csúcspontot (a turbinánál ez több méter is lehetett).
+A templom helyén álló egyszerű épülettömbök (Overture) kimaradnak.
+
+## Árnyék: a Nap helyzete
+
+Jákon (47,14° É, 16,58° K) a számolt delelési magasság a nyári napfordulón 66,30° (12:55 nyári idő), a téli napfordulón
+19,43° (11:52), a tavaszi napéjegyenlőségen 43,19° (12:01); ez egyezik a 90° − szélesség ± 23,44° képlettel. A delelés
+iránya 179,7–180,1°, a napkelte 4:58, illetve 7:38 (Szombathely hivatalos adataival egyező). Nyári délben egy 165 m-es agy
+árnyéka 73 m-re esik észak felé (165 / tan 66,3°). Az éves villódzás-térkép egy turbinára kb. 3 s. Egy Jáktól 0,5 km-re
+északra tett turbinánál a falu házaira nem jut villódzás: délre csak akkor esne árnyék, ha a Nap legalább 19°-kal a
+horizont fölött északon járna, ami ezen a szélességen nem fordul elő; a villódzás „szárnyai” délnyugat és délkelet felé,
+napkeltekor és napnyugtakor nyúlnak el.
+
+## Élő kamera (szimulált telefonon)
+
+Hamis kamerakép, megadott GPS-hely és tájolás-események: a nézőpont a GPS szerinti helyre kerül, a turbina felé nézve a
+turbina a kép közepén van (50%), 5°-kal balra fordulva 65%-nál (a vetítés szerint 64%), a kép húzásával az iránytű
+javítható, bezáráskor a kamera leáll. 7/7 rendben. Valódi készüléken az iránytű néhány fokot téved, ezért kell a kézi
+igazítás.
