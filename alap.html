@@ -77,6 +77,7 @@ main{display:grid;gap:20px;padding-bottom:20px}
 .presets{display:flex;flex-wrap:wrap;gap:6px}
 .btn{font:600 .88rem/1 var(--body);border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:8px;padding:8px 11px;cursor:pointer;white-space:nowrap}
 .btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.warn{border-color:var(--shadow);color:var(--shadow);background:var(--soft)}
 .btn:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .fixed{display:flex;justify-content:space-between;gap:10px;font-size:.92rem;border:1px dashed var(--line);border-radius:8px;padding:8px 10px}
 .fixed b{font-family:var(--mono);font-weight:500}
@@ -123,7 +124,7 @@ footer{padding-block:4px 32px;font-size:.8rem;color:var(--muted)}
 
   <div class="two">
     <section class="card" aria-labelledby="h-set">
-      <h2 id="h-set">Beállítások</h2>
+      <div class="card-head"><h2 id="h-set">Beállítások</h2><button class="btn" type="button" id="resetBtn" title="A távolság, a turbina és a takarások visszaállnak a kiinduló példára">Alaphelyzet</button></div>
       <div class="field">
         <span class="flabel">Szélerőmű</span>
         <div class="presets" id="presets" role="group" aria-label="Turbinatípus gyors beállítása"></div>
@@ -711,7 +712,11 @@ const TYPES = {
 };
 const S = { D: 1500, hub: 165, rot: 170, els: [] };
 let uid = 1;
-S.els.push({ id: uid++, type: 'bokor', d: 20, h: 2 }, { id: uid++, type: 'fak', d: 100, h: 15 });
+function setDefaults() {
+  Object.assign(S, { D: 1500, hub: 165, rot: 170 });
+  S.els = [{ id: uid++, type: 'bokor', d: 20, h: 2 }, { id: uid++, type: 'fak', d: 100, h: 15 }];
+}
+setDefaults();
 const tip = () => S.hub + S.rot / 2, low = () => S.hub - S.rot / 2;
 
 /* ---------- Számítás ---------- */
@@ -1034,6 +1039,13 @@ $('addrow').innerHTML = Object.entries(TYPES).map(([k, t]) => `<button class="bt
 $('addrow').addEventListener('click', ev => {
   const b = ev.target.closest('[data-add]'); if (!b) return; const T = TYPES[b.dataset.add];
   S.els.push({ id: uid++, type: b.dataset.add, d: Math.min(T.d, S.D - 10), h: T.h }); draw(true);
+});
+// alaphelyzet két koppintással, hogy véletlenül ne vesszen el semmi
+$('resetBtn').addEventListener('click', () => {
+  const b = $('resetBtn'); clearTimeout(b._t);
+  const idle = () => { delete b.dataset.arm; b.textContent = 'Alaphelyzet'; b.classList.remove('warn'); };
+  if (!b.dataset.arm) { b.dataset.arm = 1; b.textContent = 'Biztosan? Koppints újra'; b.classList.add('warn'); b._t = setTimeout(idle, 4000); return; }
+  idle(); setDefaults(); syncTurbine(); renderPresets(); draw(true);
 });
 $('spin').addEventListener('change', () => { spin = $('spin').checked; draw(false); });
 syncTurbine(); renderPresets(); draw(true);

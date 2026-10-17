@@ -738,6 +738,16 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .btn{font:600 .88rem/1 var(--body);border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:8px;padding:9px 12px;cursor:pointer;white-space:nowrap}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .btn:disabled{opacity:.55;cursor:progress}
+.btn.warn{border-color:var(--shadow);color:var(--shadow)}
+.turbs{display:grid;gap:6px}
+.tb{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:4px 10px;border:1px solid var(--line);border-radius:8px;padding:8px 6px 8px 12px;background:var(--paper)}
+.tb.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.tb-n{font-family:var(--display);font-size:1.05rem}
+.tb-i{font-size:.86rem;line-height:1.3}
+.tb-i .num{font-family:var(--mono);font-size:.82rem}
+.tb-on{font-size:.8rem;color:var(--accent);font-weight:600;padding:2px 4px}
+.tb-x{border:0;background:none;color:var(--muted);font-size:1.3rem;line-height:1;cursor:pointer;padding:4px 8px;border-radius:4px}
+.tb-x:hover,.tb-x:focus-visible{color:var(--shadow)}
 #map{height:460px;border-radius:8px;border:1px solid var(--line);background:var(--soft);z-index:0}
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.82rem;color:var(--muted)}
 .legend span{display:inline-flex;align-items:center;gap:6px}
@@ -785,6 +795,8 @@ th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-
 th{font-weight:600;color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.05em}
 td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 tr.sel td{background:var(--soft)}
+td:last-child{white-space:normal}
+@media (max-width:520px){th,td{padding:6px 5px}th{letter-spacing:.02em}}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
 .linkbtn{border:0;background:none;color:var(--accent);font:600 .85rem var(--body);cursor:pointer;padding:2px 4px}
 
@@ -896,7 +908,12 @@ footer a{color:var(--accent)}
     </section>
 
     <section class="card" id="c-ctrl" aria-labelledby="h-ctrl">
-      <h2 id="h-ctrl">Beállítások</h2>
+      <div class="card-head"><h2 id="h-ctrl">Beállítások</h2><button class="btn" type="button" id="resetBtn" title="Minden beállítás, turbina és takarás visszaáll a kiinduló példára">Alaphelyzet</button></div>
+      <div class="field">
+        <span class="flabel" id="lbl-turbs">Turbinák</span>
+        <div class="turbs" id="turbList" role="list" aria-labelledby="lbl-turbs"></div>
+        <p class="small">Új turbina: válaszd a térkép felett az „Új turbina” módot, és koppints a térképre. A × törli a turbinát.</p>
+      </div>
       <div class="field">
         <label for="model">Turbinatípus</label>
         <select id="model"></select>
@@ -2150,7 +2167,7 @@ function renderProfile() {
 /* ---------- Eredmény ---------- */
 function renderResults() {
   const a = AN[state.sel], m = model(), box = $('verdict');
-  if (!a) { box.innerHTML = '<p class="hint">Tegyél le egy turbinát a térképre.</p>'; $('tblWrap').innerHTML = ''; return; }
+  if (!a) { box.innerHTML = '<p class="hint">Tegyél le egy turbinát a térképre.</p>'; $('tblWrap').innerHTML = ''; renderTurbList(); return; }
   if (!a.ok) { box.innerHTML = `<p class="hint">${a.D < 60 ? 'A nézőpont túl közel van a turbinához.' : 'A domborzati adat még töltődik, vagy ezen a helyen nem érhető el.'}</p>`; }
   else {
     const { h, b } = hiddenFor(a), c = classify(h);
@@ -2176,15 +2193,23 @@ function renderResults() {
       </div>`;
   }
   if (AN.length > 1) {
-    let t = '<table><thead><tr><th>Turbina</th><th>Távolság</th><th>Takarva</th><th>Mi látszik</th><th></th></tr></thead><tbody>';
+    let t = '<table><thead><tr><th>Turbina</th><th>Távolság</th><th>Takarva</th><th>Mi látszik</th></tr></thead><tbody>';
     AN.forEach((x, i) => {
-      if (!x.ok) { t += `<tr><td>T${i + 1}</td><td colspan="3" class="hint">nincs adat</td><td></td></tr>`; return; }
+      if (!x.ok) { t += `<tr><td>T${i + 1}</td><td colspan="3" class="hint">nincs adat</td></tr>`; return; }
       const { h } = hiddenFor(x), c = classify(h);
-      t += `<tr class="${i === state.sel ? 'sel' : ''}"><td><b>T${i + 1}</b></td><td class="num">${km(x.D)}</td><td class="num">${h <= 0 ? '–' : h >= m.tip ? 'teljesen' : nf(Math.round(h)) + ' m-ig'}</td><td><span class="dot" style="background:${VCOL[c]}"></span>${VLABEL[c]}</td><td>${i === state.sel ? '' : `<button class="linkbtn" data-sel="${i}">Erre nézz</button>`}<button class="linkbtn" data-del="${i}" aria-label="T${i + 1} törlése">Törlés</button></td></tr>`;
+      t += `<tr class="${i === state.sel ? 'sel' : ''}"><td><b>T${i + 1}</b></td><td class="num">${km(x.D)}</td><td class="num">${h <= 0 ? '–' : h >= m.tip ? 'teljesen' : nf(Math.round(h)) + ' m-ig'}</td><td><span class="dot" style="background:${VCOL[c]}"></span>${VLABEL[c]}</td></tr>`;
     });
     $('tblWrap').innerHTML = t + '</tbody></table>';
-  } else if (AN.length === 1) $('tblWrap').innerHTML = `<p class="small">Több turbinát is letehetsz: válaszd a térkép felett az „Új turbina” módot. <button class="linkbtn" data-del="0">T1 törlése</button></p>`;
-  else $('tblWrap').innerHTML = '';
+  } else $('tblWrap').innerHTML = '';
+  renderTurbList();
+}
+function renderTurbList() {
+  const m = model();
+  $('turbList').innerHTML = !AN.length ? '<p class="empty">Nincs turbina. Válaszd a térkép felett az „Új turbina” módot, és koppints a térképre.</p>' : AN.map((x, i) => {
+    let info = '<span class="hint">nincs adat</span>';
+    if (x.ok) { const c = classify(hiddenFor(x).h); info = `<span class="num">${km(x.D)}</span> · <span class="dot" style="background:${VCOL[c]}"></span>${VLABEL[c]}`; }
+    return `<div class="tb${i === state.sel ? ' sel' : ''}" role="listitem"><b class="tb-n">T${i + 1}</b><span class="tb-i">${info}</span>${i === state.sel ? '<span class="tb-on">erre nézel</span>' : `<button class="linkbtn" type="button" data-sel="${i}">Erre nézz</button>`}<button class="tb-x" type="button" data-del="${i}" aria-label="T${i + 1} törlése" title="T${i + 1} törlése">×</button></div>`;
+  }).join('');
 }
 
 /* ---------- Térkép ---------- */
@@ -2716,6 +2741,20 @@ $('copyLink').onclick = async () => {
   saveHash();
   try { await navigator.clipboard.writeText(location.href); $('copyMsg').textContent = 'A link a vágólapon van.'; }
   catch (e) { $('copyMsg').textContent = 'Másold ki a böngésző címsorából: a link tartalmazza a beállításokat.'; }
+};
+
+/* ---------- Alaphelyzet (két koppintással, hogy véletlenül ne vesszen el semmi) ---------- */
+$('resetBtn').onclick = () => {
+  const b = $('resetBtn'); clearTimeout(b._t);
+  const idle = () => { delete b.dataset.arm; b.textContent = 'Alaphelyzet'; b.classList.remove('warn'); };
+  if (!b.dataset.arm) { b.dataset.arm = 1; b.textContent = 'Biztosan? Koppints újra'; b.classList.add('warn'); b._t = setTimeout(idle, 4000); return; }
+  idle();
+  state = JSON.parse(JSON.stringify(DEFAULT));
+  state.obstacles = state.obstacles.map(o => fromLOS({ ...o, id: uid++ }));
+  setMode('view'); clearViewshed(false);
+  syncControls(); renderObstacles(); buildMarkers();
+  map.fitBounds(L.latLngBounds([[state.viewer.lat, state.viewer.lon], ...state.turbines.map(t => [t.lat, t.lon])]).pad(0.35));
+  update();
 };
 
 /* ---------- Indítás ---------- */
