@@ -52,7 +52,7 @@ const rows = []; let bad = 0;
     for (const fov of FOVS) for (const D of DS) {
       const r = await p.evaluate(async ({ fov, D }) => {
         const V = { lat: 47.14105, lon: 16.58072 }, fr = frame(V.lat, V.lon), [la, lo] = fr.toLL(0, D);
-        Object.assign(state, { viewer: V, turbines: [{ lat: la, lon: lo }], sel: 0, obstacles: [], bld: false, spin: false, ghost: true, fov, pan: 0, floor: 0 });
+        window.FOV_OVERRIDE = fov; Object.assign(state, { viewer: V, turbines: [{ lat: la, lon: lo }], sel: 0, obstacles: [], bld: false, spin: false, ghost: true, fov, pan: 0, tilt: 0, floor: 0 });
         syncControls(); renderObstacles(); buildMarkers(); await update(); renderPano(1);
         const a = AN[0], L = renderPano.last, m = model(), t = RV.debugTurbines()[0];
         const baseY = a.baseApp - a.eyeZ, out = { fov, D, Dprog: a.D, Dvin: vincenty(V.lat, V.lon, la, lo) };

@@ -780,6 +780,8 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .busy{position:absolute;right:10px;top:10px;font:500 .78rem/1 var(--mono);background:rgba(23,34,29,.78);color:#fff;padding:6px 8px;border-radius:6px;pointer-events:none}
 .pano-tools{display:flex;gap:8px 12px;flex-wrap:wrap;align-items:center;justify-content:space-between}
 .checks{display:inline-flex;gap:6px 14px;flex-wrap:wrap}
+.fov-note{flex:1 1 260px;margin:0}
+.tilt{display:inline-flex;gap:6px}.tilt .btn{padding:7px 12px}
 .check{display:inline-flex;gap:7px;align-items:center;font-size:.88rem;color:var(--muted);cursor:pointer}
 
 /* eredmény */
@@ -962,17 +964,14 @@ footer a{color:var(--accent)}
 
   <div class="col">
     <section class="card" id="c-view" aria-labelledby="h-view">
-      <div class="card-head"><h2 id="h-view">Amit szemmagasságból látsz</h2><span class="hint">Húzd oldalra a képet a körülnézéshez, dupla kattintással visszaáll a turbinára.</span></div>
+      <div class="card-head"><h2 id="h-view">Amit szemmagasságból látsz</h2><span class="hint">Húzd a képet oldalra a körülnézéshez, a ▲ ▼ gombokkal (egérrel húzva is) fel-le nézhetsz; dupla kattintással visszaáll a turbinára.</span></div>
       <div class="pano-wrap">
         <canvas id="pano" role="img" aria-label="A nézőpontból látott kép: domborzat, takarások és a szélturbina"></canvas>
         <div class="busy" id="busy" hidden>Domborzat betöltése…</div>
       </div>
       <div class="pano-tools">
-        <div class="seg" role="group" aria-label="Látószög">
-          <button type="button" data-fov="65">Széles, 65°</button>
-          <button type="button" data-fov="40">Normál, 40°</button>
-          <button type="button" data-fov="15">Nagyított, 15°</button>
-        </div>
+        <span class="tilt" role="group" aria-label="Fel-le nézés"><button class="btn" type="button" id="tiltUp" aria-label="Nézz feljebb">▲</button><button class="btn" type="button" id="tiltDown" aria-label="Nézz lejjebb">▼</button></span>
+        <p class="small fov-note" id="fovNote"></p>
         <span class="checks"><label class="check"><input type="checkbox" id="ghost" checked> A takart rész pirosan áttűnik</label>
         <label class="check"><input type="checkbox" id="spin" checked> Forgó lapátok</label></span>
       </div>
@@ -1753,7 +1752,7 @@ const DEFAULT = {
   turbines: [{ lat: 47.1665, lon: 16.5905 }, { lat: 47.1700, lon: 16.6000 }, { lat: 47.1580, lon: 16.6100 }],
   sel: 0, model: 'sg170', custom: { hub: 165, rotor: 170 }, floor: 0, season: 'summer',
   obstacles: [{ type: 'trees', dist: 450, h: 15, w: 250, off: 120 }],
-  fov: 40, pan: 0, ghost: true, spin: true, bld: true, bldH: {}, isExample: true
+  fov: 40, pan: 0, tilt: 0, ghost: true, spin: true, bld: true, bldH: {}, isExample: true
 };
 let state = JSON.parse(JSON.stringify(DEFAULT, (k, v) => v === Infinity ? 'inf' : v), (k, v) => v === 'inf' ? Infinity : v);
 let uid = 1;
@@ -2121,7 +2120,7 @@ function satTexture(fr, az, half, dMax) {
   return null;
 }
 function renderReal() {
-  const cv = $('pano'), cssW = cv.clientWidth || cv.parentElement.clientWidth || 640, cssH = Math.round(cssW * (cssW < 560 ? 0.75 : 0.5625));
+  const cv = $('pano'), cssW = cv.clientWidth || cv.parentElement.clientWidth || 640, cssH = Math.round(cssW * panoAspect(cssW));
   const dpr = Math.min(window.devicePixelRatio || 1, 2), W = Math.round(cssW * dpr), H = Math.round(cssH * dpr);
   if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
   const ctx = cv.getContext('2d'); ctx.clearRect(0, 0, W, H);
@@ -2131,6 +2130,7 @@ function renderReal() {
   let c = sel ? sel.aTip * 0.45 : 1;
   if (sel && sel.aTip > c + span * 0.4) c = sel.aTip - span * 0.4;
   if (sel && sel.aBase < c - span * 0.45) c = Math.max(sel.aBase + span * 0.4, sel.aTip - span * 0.4);
+  c += state.tilt || 0;   // fel-le húzás
   const { dMax } = panoBBox();
   RV.size(cssW, cssH, dpr);
   RV.setSun(az0 / RAD + 145, 36);
@@ -2204,12 +2204,27 @@ function drawOverlay(ctx, dpr, w, h, az0, c, tl) {
   if (state.ghost) { ctx.font = '500 11px Barlow, system-ui, sans-serif'; halo('pirosan áttűnő: a takart rész', w - 8, h - 10, 'right'); }
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
+// Életnagyságú látószög: a kép annyi fokot fed le, amennyit a képernyőn elfoglal, ha szokásos távolságból nézed
+// (telefon kb. 35 cm, tablet kb. 45 cm, számítógép kb. 60 cm). A CSS-képpont fizikai mérete becslés:
+// érintőképernyőn kb. 0,0165 cm, asztali gépen kb. 0,0265 cm (96 dpi).
+function lifeFov(cssW) {
+  if (window.FOV_OVERRIDE) return window.FOV_OVERRIDE;   // csak ellenőrzéshez
+  const touch = matchMedia('(pointer: coarse)').matches, dist = touch ? (innerWidth < 700 ? 35 : 45) : 60;
+  const w = cssW * (touch ? 0.0165 : 0.0265);
+  return Math.round(clamp(2 * Math.atan(w / 2 / dist) / RAD, 8, 60) * 2) / 2;
+}
+function updateFovNote(cssW) {
+  const touch = matchMedia('(pointer: coarse)').matches, dist = touch ? (innerWidth < 700 ? 35 : 45) : 60;
+  $('fovNote').textContent = `Életnagyságú kép: ${nf(state.fov, state.fov % 1 ? 1 : 0)}° széles látómező. Ha a ${touch ? 'telefont' : 'képernyőt'} kb. ${dist} cm-ről nézed, a turbina és a házak akkorának látszanak, mint a valóságban arról a pontról.`;
+}
+const panoAspect = cssW => cssW < 560 ? 1 : 0.5625;
 function renderPano(q = 1) {
+  { const cw = $('pano').clientWidth || $('pano').parentElement.clientWidth || 640; state.fov = lifeFov(cw); updateFovNote(cw); }
   if (RV === undefined) { try { RV = window.RealView ? window.RealView.create($('pano').parentElement, { assets: 'assets/' }) : null; if (RV) RV.onReady = () => renderPano(1); } catch (e) { RV = null; } }
   if (RV) { renderPano.lastEye = eyeInfo().eyeZ; renderReal(); return; }
   const cv = $('pano'), cssW = cv.clientWidth || cv.parentElement.clientWidth || 640;
   const dpr = Math.min(window.devicePixelRatio || 1, 2) * q;
-  const W = clamp(Math.round(cssW * dpr), 240, 1600), H = Math.round(W * (cssW < 560 ? 0.75 : 0.5625));
+  const W = clamp(Math.round(cssW * dpr), 240, 1600), H = Math.round(W * panoAspect(cssW));
   if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
   const ctx = cv.getContext('2d'), lw = W / cssW;
   const ei = eyeInfo(), { fr, eyeZ, start } = ei, m = model();
@@ -2220,6 +2235,7 @@ function renderPano(q = 1) {
   let c = sel ? sel.aTip * 0.45 : 1;
   if (sel && sel.aTip > c + span * 0.4) c = sel.aTip - span * 0.4;
   if (sel && sel.aBase < c - span * 0.45) c = Math.max(sel.aBase + span * 0.4, sel.aTip - span * 0.4);
+  c += state.tilt || 0;   // fel-le húzás
   const yOfDeg = a => H / 2 - (a - c) * k, degOfY = y => c + (H / 2 - y) / k;
   renderPano.last = { W, H, k, c, az0, eyeZ }; // a vetítés paraméterei (ellenőrzéshez)
   const { dMax } = panoBBox();
@@ -2986,7 +3002,6 @@ $('floor').oninput = () => { state.floor = +$('floor').value; syncControls(); re
 document.querySelectorAll('#floorSeg button').forEach(b => b.onclick = () => { state.floor = +b.dataset.f; syncControls(); update(); });
 $('sSummer').onclick = () => { state.season = 'summer'; syncControls(); update(); };
 $('sWinter').onclick = () => { state.season = 'winter'; syncControls(); update(); };
-document.querySelectorAll('[data-fov]').forEach(b => b.onclick = () => { state.fov = +b.dataset.fov; syncControls(); update(); });
 $('ghost').onchange = () => { state.ghost = $('ghost').checked; renderPano(); saveHash(); };
 $('bld').onchange = () => { state.bld = $('bld').checked; bldLocal.key = ''; syncBldLayer(); update(); };
 $('spin').onchange = () => { state.spin = $('spin').checked; renderPano(); };
@@ -3043,14 +3058,13 @@ function syncControls() {
   $('floorO').textContent = state.floor === 0 ? 'talajszint' : state.floor < 0 ? `${nf(-state.floor, 1)} m mély árok` : `+${nf(state.floor, state.floor % 1 ? 1 : 0)} m`;
   document.querySelectorAll('#floorSeg button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.f === state.floor));
   $('sSummer').setAttribute('aria-pressed', state.season === 'summer'); $('sWinter').setAttribute('aria-pressed', state.season === 'winter');
-  document.querySelectorAll('[data-fov]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.fov === state.fov));
   $('ghost').checked = state.ghost; $('spin').checked = state.spin; $('bld').checked = state.bld;
 }
 
 /* ---------- Kép húzása ---------- */
 (() => {
-  const cv = $('pano'); let x0 = null, p0 = 0, down = null;
-  cv.addEventListener('pointerdown', e => { x0 = e.clientX; p0 = state.pan; down = [e.clientX, e.clientY]; cv.setPointerCapture(e.pointerId); cv.classList.add('drag'); });
+  const cv = $('pano'); let x0 = null, y0 = 0, p0 = 0, t0 = 0, down = null;
+  cv.addEventListener('pointerdown', e => { x0 = e.clientX; y0 = e.clientY; p0 = state.pan; t0 = state.tilt || 0; down = [e.clientX, e.clientY]; cv.setPointerCapture(e.pointerId); cv.classList.add('drag'); });
   // koppintás (nem húzás): a képen eltalált ház kijelölése a magasság megadásához
   cv.addEventListener('pointerup', e => {
     if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 6 || !RV || !state.bld) return;
@@ -3060,11 +3074,14 @@ function syncControls() {
   cv.addEventListener('pointermove', e => {
     if (x0 === null) return;
     state.pan = p0 - (e.clientX - x0) / cv.clientWidth * state.fov;
+    state.tilt = clamp(t0 + (e.clientY - y0) / cv.clientHeight * state.fov * cv.clientHeight / cv.clientWidth, -30, 60);
     cancelAnimationFrame(dragRaf); dragRaf = requestAnimationFrame(() => renderPano(0.5));
   });
   const end = () => { if (x0 === null) return; x0 = null; cv.classList.remove('drag'); update(); };
   cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
-  cv.addEventListener('dblclick', () => { state.pan = 0; update(); });
+  cv.addEventListener('dblclick', () => { state.pan = 0; state.tilt = 0; update(); });
+  const tilt = dir => { const v = state.fov * cv.clientHeight / cv.clientWidth; state.tilt = clamp((state.tilt || 0) + dir * v / 3, -30, 60); renderPano(1); };
+  $('tiltUp').onclick = () => tilt(1); $('tiltDown').onclick = () => tilt(-1);
 })();
 let dragRaf = 0;
 
