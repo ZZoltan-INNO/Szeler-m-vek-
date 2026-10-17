@@ -1190,7 +1190,7 @@ window.RealView = (function () {
       }
       if (j > 0) for (let i = 0; i < M; i++) { const a = (j - 1) * M + i, b = (j - 1) * M + (i + 1) % M, c2 = j * M + i, d = j * M + (i + 1) % M; idx.push(a, c2, b, b, c2, d); }
     });
-    const tip = pos.length / 3; pos.push(0, R * 1.003, 0);
+    const tip = pos.length / 3; pos.push(0, R, 0);
     for (let i = 0; i < M; i++) idx.push((S.length - 1) * M + i, tip, (S.length - 1) * M + (i + 1) % M);
     const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
     return g;
@@ -1204,11 +1204,11 @@ window.RealView = (function () {
     const L = Math.max(10, rotor * 0.11);
     add(new T.BoxGeometry(6.4, 6.6, L), mats.white, m => { m.position.set(0, hub + 0.6, -L / 2 + 2.5); });
     add(new T.CylinderGeometry(3.3, 3.3, L * 0.9, 24, 1, false, 0, Math.PI), mats.white, m => { m.rotation.x = Math.PI / 2; m.rotation.z = Math.PI / 2; m.position.set(0, hub + 3.9, -L / 2 + 2.5); });
-    const rot = new T.Group(); rot.position.set(0, hub + 0.4, 4.2); grp.add(rot);
+    const rot = new T.Group(); rot.position.set(0, hub, 4.2); grp.add(rot);
     const sp = new T.Mesh(new T.SphereGeometry(2.9, 32, 20), mats.white); sp.scale.set(1, 1, 1.45); rot.add(sp);
     const bg = bladeGeometry(R);
     for (let k = 0; k < 3; k++) { const b = new T.Mesh(bg, mats.blade); b.rotation.z = -k * 2 * Math.PI / 3; b.position.z = 0.6; rot.add(b); }
-    grp.userData.rotor = rot;
+    grp.userData.rotor = rot; grp.userData.R = R; grp.userData.hub = hub;
     return grp;
   }
 
@@ -1590,6 +1590,25 @@ window.RealView = (function () {
         raf = requestAnimationFrame(loop);
       },
       fixRotor() { api.setRotor(0); },
+      // ellenőrzéshez: a turbinák valódi térbeli pontjai (helyi m: x kelet, y észak, z a szem fölött)
+      debugTurbines() {
+        const v = new T.Vector3(), w = p => [+p.x.toFixed(3), +(-p.z).toFixed(3), +p.y.toFixed(3)];
+        scene.updateMatrixWorld(true);
+        return turbs.map(t => {
+          const g = t.g, rot = g.userData.rotor, R = g.userData.R;
+          const blades = rot.children.filter(c => c.geometry && c.geometry.attributes.position.count > 60);
+          return { base: w(g.getWorldPosition(new T.Vector3())), hub: w(rot.getWorldPosition(new T.Vector3())), R, hubH: g.userData.hub,
+                   tips: blades.map(b => w(b.localToWorld(v.set(0, R, 0)).clone())) };
+        });
+      },
+      // ellenőrzéshez: mindig látszó, tiszta bíbor gömbök ismert helyeken (helyi m), null: törlés
+      testMarkers(list) {
+        if (api._mk) { scene.remove(api._mk); api._mk = null; }
+        if (!list) return;
+        const g = new T.Group(), mat = new T.MeshBasicMaterial({ color: 0xff00ff, depthTest: false, toneMapped: false, fog: false });
+        for (const [x, y, z, r] of list) { const s = new T.Mesh(new T.SphereGeometry(r, 24, 16), mat); s.position.set(x, z, -y); s.renderOrder = 99; g.add(s); }
+        scene.add(g); api._mk = g;
+      },
       // ellenőrzéshez: a turbina és a takart rész tiszta színnel (tónusleképzés nélkül)
       testColors() { mats.white.toneMapped = mats.blade.toneMapped = false; mats.white.color.setRGB(0, 1, 0); mats.blade.color.setRGB(0, 1, 0); mats.white.envMapIntensity = mats.blade.envMapIntensity = 0; mats.white.emissive.setRGB(0, 1, 0); mats.blade.emissive.setRGB(0, 1, 0); mats.ghost.color.setRGB(1, 0, 0); mats.ghost.opacity = 1; mats.ghost.toneMapped = false; mats.white.needsUpdate = mats.blade.needsUpdate = mats.ghost.needsUpdate = true; }
     };
