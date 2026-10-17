@@ -751,6 +751,9 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .tpin b{font:600 11px/1 var(--mono);background:#17221d;color:#fff;padding:2px 4px;border-radius:3px;margin-top:-2px}
 .tpin.sel b{background:#d6336c}
 .tlabel span{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font:600 11.5px/1 var(--body);color:#1c2620;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 2px #fff;pointer-events:none}
+.obh{width:16px;height:16px;margin:3px;border-radius:50%;background:#d6453a;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);cursor:move}
+.obh.e{background:#fff;border-color:#17221d;width:12px;height:12px;margin:5px}
+#obType{max-width:12rem}
 .popbtns{display:flex;gap:6px;margin-top:6px}
 .popbtns button{font:600 12px/1 var(--body);padding:6px 8px;border-radius:6px;border:1px solid #c9d1c8;background:#f1f4f0;cursor:pointer}
 
@@ -851,7 +854,9 @@ footer a{color:var(--accent)}
         <div class="seg" role="group" aria-label="Mit tegyen a kattintás a térképen">
           <button type="button" id="modeView" aria-pressed="true">Nézőpont áthelyezése</button>
           <button type="button" id="modeTurb" aria-pressed="false">Új turbina</button>
+          <button type="button" id="modeOb" aria-pressed="false">Takarás</button>
         </div>
+        <select id="obType" aria-label="Milyen takarást tegyen le a kattintás" hidden></select>
         <form class="search" id="searchForm" role="search">
           <input type="text" id="q" placeholder="Település vagy koordináta (46.46, 17.85)" aria-label="Település vagy cím keresése" autocomplete="off">
           <button class="btn" type="submit">Keres</button>
@@ -916,7 +921,7 @@ footer a{color:var(--accent)}
       </div>
       <div class="field">
         <span class="flabel">Előtte álló takarások</span>
-        <p class="small">A sávok merőlegesek a turbina felé néző irányra. A távolság tőled mérve értendő; az oldalirányú eltolással a ház vagy a fasor kitolható a rálátás vonalából.</p>
+        <p class="small">A takarások a térképen vannak. A piros pöttyel mozgatod őket, a fehér végpontokkal nyújtod és forgatod a sorokat. Újat a térkép feletti „Takarás” móddal a térképre koppintva, vagy az alábbi gombokkal a rálátás vonalára tehetsz.</p>
         <div class="obs" id="obs"></div>
         <div class="addrow" id="addrow" role="group" aria-label="Takarás hozzáadása"></div>
       </div>
@@ -1015,15 +1020,16 @@ const MODELS = {
   custom: { name: 'Egyedi méret…', hub: 165, rotor: 170, note: '' }
 };
 const OB = {
-  bush:   { name: 'Bokorsor',      art: 'a', h: 2,  d: 20,  w: Infinity, leafy: true,  col: '#6f9a3c', hmax: 6 },
+  bush:   { name: 'Bokorsor',      art: 'a', h: 2,  d: 20,  w: 200,      leafy: true,  col: '#6f9a3c', hmax: 6 },
   fence:  { name: 'Tömör kerítés', art: 'a', h: 2,  d: 8,   w: 30,       leafy: false, col: '#9b8f7e', hmax: 4 },
-  trees:  { name: 'Fasor',         art: 'a', h: 15, d: 100, w: Infinity, leafy: true,  col: '#2f5e25', hmax: 35 },
+  trees:  { name: 'Fasor',         art: 'a', h: 15, d: 100, w: 300,      leafy: true,  col: '#2f5e25', hmax: 35 },
   forest: { name: 'Erdősáv',       art: 'az', h: 22, d: 400, w: 600,     leafy: true,  col: '#24491d', hmax: 40 },
   house:  { name: 'Családi ház',   art: 'a', h: 8,  d: 40,  w: 12,       leafy: false, col: '#a24b33', hmax: 14 },
   block:  { name: 'Társasház',     art: 'a', h: 15, d: 150, w: 60,       leafy: false, col: '#8c8f96', hmax: 45 },
-  mound:  { name: 'Földhát, töltés', art: 'a', h: 4, d: 60, w: Infinity, leafy: false, col: '#8a7a45', hmax: 20 }
+  mound:  { name: 'Földhát, töltés', art: 'a', h: 4, d: 60, w: 300,      leafy: false, col: '#8a7a45', hmax: 20 }
 };
 const OB_ORDER = ['bush', 'fence', 'trees', 'forest', 'house', 'block', 'mound'];
+const LINEAR = t => t !== 'house' && t !== 'block';   // vonalas takarás (sor, sáv) vagy épület
 
 /* ---------- Állapot ---------- */
 const DEFAULT = {
@@ -1034,7 +1040,17 @@ const DEFAULT = {
   fov: 40, pan: 0, ghost: true, isExample: true
 };
 let state = JSON.parse(JSON.stringify(DEFAULT, (k, v) => v === Infinity ? 'inf' : v), (k, v) => v === 'inf' ? Infinity : v);
-let uid = 1; state.obstacles.forEach(o => o.id = uid++);
+let uid = 1;
+/* A takarások a térképen vannak: középpont (lat, lon), hossz/szélesség (w, m), irány (rot, radián, északtól).
+   A régi, rálátás-vonalhoz kötött megadást (dist, off) erre váltjuk át. */
+function fromLOS(o) {
+  const V = state.viewer, T = state.turbines[state.sel] || state.turbines[0] || { lat: V.lat + 0.01, lon: V.lon };
+  const c0 = Math.cos(V.lat * RAD), az = Math.atan2((T.lon - V.lon) * c0, T.lat - V.lat), sx = Math.sin(az), sy = Math.cos(az);
+  const x = sx * o.dist + sy * (o.off || 0), y = sy * o.dist - sx * (o.off || 0);
+  return { id: o.id, type: o.type, h: o.h, w: isFinite(o.w) ? o.w : OB[o.type].w, rot: az + Math.PI / 2,
+    lat: V.lat + y / R_E / RAD, lon: V.lon + x / (R_E * c0) / RAD };
+}
+state.obstacles = state.obstacles.map(o => fromLOS({ ...o, id: uid++ }));
 let AN = [];         // a turbinák elemzése
 function model() { const m = state.model === 'custom' ? { hub: +state.custom.hub, rotor: +state.custom.rotor } : MODELS[state.model]; const R = m.rotor / 2; return { hub: m.hub, R, tip: m.hub + R, low: m.hub - R }; }
 
@@ -1147,6 +1163,27 @@ function frame(lat0, lon0) {
     fromLL: (lat, lon) => [(lon - lon0) * RAD * R_E * cos0, (lat - lat0) * RAD * R_E]
   };
 }
+// takarás a nézőpont síkkoordinátáiban
+function obGeom(o, fr) { const [cx, cy] = fr.fromLL(o.lat, o.lon); return { o, cx, cy, ex: Math.sin(o.rot), ey: Math.cos(o.rot) }; }
+// az (sx, sy) irányú sugár metszése: { r: távolság a sugár mentén, u: helyzet a takaráson belül } vagy null
+function obHit(g, sx, sy) {
+  const o = g.o, h = o.w / 2;
+  if (LINEAR(o.type)) {
+    const ax = g.cx - g.ex * h, ay = g.cy - g.ey * h, dx = 2 * h * g.ex, dy = 2 * h * g.ey;
+    const den = sx * dy - sy * dx;
+    if (Math.abs(den) < 1e-9) {   // a sor pontosan a nézés irányában fut: a közelebbi végénél takar
+      if (Math.abs(ax * sy - ay * sx) > 0.5) return null;
+      const t0 = ax * sx + ay * sy, t1 = (ax + dx) * sx + (ay + dy) * sy, t = Math.min(t0, t1) > 0.3 ? Math.min(t0, t1) : Math.max(t0, t1) > 0.3 ? 0.3 : -1;
+      return t > 0 ? { r: t, u: (t === t0 ? -0.5 : 0.5) * o.w } : null;
+    }
+    const t = (ax * dy - ay * dx) / den, k = (ax * sy - ay * sx) / den;
+    if (t <= 0.3 || k < 0 || k > 1) return null;
+    return { r: t, u: (k - 0.5) * o.w };
+  }
+  const t = g.cx * sx + g.cy * sy, p = g.cx * sy - g.cy * sx;   // épület: szemből látott négyzet
+  if (t <= 0 || Math.abs(p) > h) return null;
+  return { r: Math.max(0.5, t - h), u: p };
+}
 function bboxAround(pts, m) {
   let n = -90, s = 90, e = -180, w = 180;
   for (const p of pts) { const dl = m / 111195, dn = m / (111195 * Math.cos(p.lat * RAD)); n = Math.max(n, p.lat + dl); s = Math.min(s, p.lat - dl); e = Math.max(e, p.lon + dn); w = Math.min(w, p.lon - dn); }
@@ -1181,13 +1218,12 @@ function analyze(t, ei) {
   let bestS = { ...best }, bestW = { ...best };
   res.obs = [];
   for (const o of state.obstacles) {
-    if (o.dist >= D - 40) continue;
-    if (!(Math.abs(o.off) <= o.w / 2)) continue;
-    const z = fr.elev(sx * o.dist, sy * o.dist); if (z !== z) continue;
-    const top = z + o.h - drop(o.dist), a = Math.atan2(top - eyeZ, o.dist);
-    res.obs.push({ o, g: z - drop(o.dist), top, a });
-    if (a > bestS.a) bestS = { a, kind: 'ob', o, d: o.dist, z: top };
-    if (!OB[o.type].leafy && a > bestW.a) bestW = { a, kind: 'ob', o, d: o.dist, z: top };
+    const hit = obHit(obGeom(o, fr), sx, sy); if (!hit || hit.r >= D - 40) continue;
+    const r = hit.r, z = fr.elev(sx * r, sy * r); if (z !== z) continue;
+    const top = z + o.h - drop(r), a = Math.atan2(top - eyeZ, r);
+    res.obs.push({ o, d: r, g: z - drop(r), top, a });
+    if (a > bestS.a) bestS = { a, kind: 'ob', o, d: r, z: top };
+    if (!OB[o.type].leafy && a > bestW.a) bestW = { a, kind: 'ob', o, d: r, z: top };
   }
   const hid = b => b.a === -Infinity ? -Infinity : eyeZ + D * Math.tan(b.a) - baseApp;
   res.blockS = bestS; res.blockW = bestW;
@@ -1209,7 +1245,7 @@ const VCOL = ['var(--v0)', 'var(--v1)', 'var(--v2)', 'var(--v3)'];
 function blockerText(b) {
   if (!b || b.kind === 'none') return 'semmi';
   if (b.kind === 'terrain') return `a domborzat (egy hajlat ${km(b.d)}-re, ${nf(b.zg)} m tengerszint feletti magasságban)`;
-  const d = OB[b.o.type]; return `${d.art} ${d.name.toLowerCase()} (${km(b.o.dist)}-re)`;
+  const d = OB[b.o.type]; return `${d.art} ${d.name.toLowerCase()} (${km(b.d)}-re)`;
 }
 function verdictText(h, b) {
   const m = model(), c = classify(h), H = Math.round(Math.max(0, h));
@@ -1225,7 +1261,7 @@ const rgba = (r, g, b, a = 255) => ((a << 24) | (b << 16) | (g << 8) | r) >>> 0;
 const FIELDS = [[121, 152, 74], [142, 162, 82], [163, 166, 96], [108, 142, 70], [176, 168, 104], [96, 128, 62]];
 const HAZE = [196, 210, 223], GRASS = [112, 146, 70];
 function shapeH(o, u) {
-  const rel = u - o.off, H = o.h, half = o.w / 2;
+  const rel = u, H = o.h, half = o.w / 2;
   if (Math.abs(rel) > half) return 0;
   const crown = (sp, wid) => { const p = ((rel + sp / 2) % sp + sp) % sp - sp / 2; return Math.sqrt(Math.max(0, 1 - (p / (sp * wid)) ** 2)); };
   const n = (sp, s) => hash(Math.floor((rel + sp / 2) / sp) + 1000, s);
@@ -1243,7 +1279,7 @@ function shapeH(o, u) {
   }
 }
 function obColor(o, u, hrow, col, row) {
-  const rel = u - o.off, n = hash(col, row), H = o.h;
+  const rel = u, n = hash(col, row), H = o.h;
   const sh = (c, f) => rgba(clamp(c[0] * f, 0, 255) | 0, clamp(c[1] * f, 0, 255) | 0, clamp(c[2] * f, 0, 255) | 0);
   switch (o.type) {
     case 'trees': case 'forest': { const base = o.type === 'trees' ? [56, 96, 42] : [42, 80, 36]; const f = 0.72 + 0.28 * clamp(hrow / H, 0, 1) + (n - 0.5) * 0.3; return sh(base, f); }
@@ -1315,13 +1351,13 @@ function renderPano(q = 1) {
   const ovl = winter ? new Uint8ClampedArray(W * H * 4) : null;
   const vis = AN.map((a, i) => ({ a, i })).filter(({ a }) => a.ok && Math.abs(wrapPi(a.az - az0)) < fov / 2 + Math.atan(m.R / a.D) + 0.02);
   vis.forEach(v => { v.clip = new Float32Array(W).fill(-1); });
-  const obs = state.obstacles.filter(o => o.h > 0);
+  const obs = state.obstacles.filter(o => o.h > 0).map(o => obGeom(o, fr));
   const hits = [];
   for (let col = 0; col < W; col++) {
     const az = az0 + ((col + 0.5) / W - 0.5) * fov, sx = Math.sin(az), sy = Math.cos(az);
     const dl = wrapPi(az - axisAz), cosd = Math.cos(dl), tand = Math.tan(dl);
     hits.length = 0;
-    if (Math.abs(dl) < 1.45) for (const o of obs) { const u = o.dist * tand; if (Math.abs(u - o.off) <= o.w / 2) hits.push({ r: o.dist / cosd, o, u }); }
+    for (const g of obs) { const ht = obHit(g, sx, sy); if (ht) hits.push({ r: ht.r, o: g.o, u: ht.u }); }
     hits.sort((p, q2) => p.r - q2.r);
     let hi = 0, ybuf = H, d = start, lastVis = 0, zPrev = NaN;
     const doHit = h => {
@@ -1450,8 +1486,8 @@ function renderProfile() {
   s += `<path d="${p}" fill="var(--terrain)" stroke="var(--terrain-edge)" stroke-width="1.2"/>`;
   // takarások
   let lastX = -1e9, lvl = 0;
-  a.obs.slice().sort((p1, p2) => p1.o.dist - p2.o.dist).forEach(ob => {
-    const col = OB[ob.o.type].col, x = X(ob.o.dist), w = Math.max(3, Math.min(10, ob.o.type === 'forest' ? 30 * sx : 4));
+  a.obs.slice().sort((p1, p2) => p1.d - p2.d).forEach(ob => {
+    const col = OB[ob.o.type].col, x = X(ob.d), w = Math.max(3, Math.min(10, ob.o.type === 'forest' ? 30 * sx : 4));
     s += `<rect x="${x - w / 2}" y="${Y(ob.top)}" width="${w}" height="${Math.max(1.5, Y(ob.g) - Y(ob.top))}" fill="${col}" ${state.season === 'winter' && OB[ob.o.type].leafy ? 'fill-opacity=".45"' : ''}/>`;
     lvl = x - lastX < 80 ? lvl + 1 : 0; lastX = x;
     const ly = Y(ob.top) - 8 - lvl * 14;
@@ -1529,8 +1565,9 @@ function renderResults() {
 const map = L.map('map', LOCAL ? { minZoom: 7, maxZoom: 16, maxBounds: [[45.2, 15.4], [49.1, 23.6]] } : {});
 /* Saját domborzat-árnyékolás az AWS domborzati csempékből: akkor is működik, ha a térképszolgáltatók nem érhetők el. */
 const shadeCache = new Map();
-function shadeParent(z, x, y) {
-  const key = z + '/' + x + '/' + y; if (shadeCache.has(key)) return shadeCache.get(key);
+const GRAY = sh => { const v = clamp(128 + (sh - 0.88) * 260, 0, 255); return [v, v, v]; };
+function shadeParent(z, x, y, gray) {
+  const key = z + '/' + x + '/' + y + (gray ? 'g' : ''); if (shadeCache.has(key)) return shadeCache.get(key);
   const p = new Promise((res, rej) => {
     const img = new Image(); img.crossOrigin = 'anonymous';
     img.onload = () => {
@@ -1548,6 +1585,7 @@ function shadeParent(z, x, y) {
         let sh = Math.sin(alt) * Math.cos(slope) + Math.cos(alt) * Math.sin(slope) * Math.cos(az - Math.PI / 2 - asp);
         sh = clamp(0.35 + 0.75 * sh, 0.25, 1.15);
         const t = clamp((el - 80) / 650, 0, 1), water = el < 1;
+        if (gray) { const g = GRAY(sh); d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = g[0]; d[i * 4 + 3] = 255; continue; }
         const base = water ? [170, 200, 225] : [196 + 40 * t, 214 + 10 * t - 40 * t * t, 168 - 10 * t];
         d[i * 4] = clamp(base[0] * sh, 0, 255); d[i * 4 + 1] = clamp(base[1] * sh, 0, 255); d[i * 4 + 2] = clamp(base[2] * sh, 0, 255); d[i * 4 + 3] = 255;
       }
@@ -1559,7 +1597,7 @@ function shadeParent(z, x, y) {
   shadeCache.set(key, p); if (shadeCache.size > 300) shadeCache.delete(shadeCache.keys().next().value);
   return p;
 }
-function shadeInto(tile, z, x, y, sample) {
+function shadeInto(tile, z, x, y, sample, gray) {
   // domborzat-árnyékolás egy 256×256-os csempébe; sample(i, j) az (i, j) képpont magassága
   const N = 258, E = new Float32Array(N * N);
   for (let r = 0; r < N; r++) for (let q = 0; q < N; q++) E[r * N + q] = sample(q - 1, r - 1);
@@ -1567,11 +1605,12 @@ function shadeInto(tile, z, x, y, sample) {
   const lat = latOfMy((y + 0.5) * 256 * 2 ** (DEM_Z - z)), mpp = 156543.03 * Math.cos(lat * RAD) / 2 ** z, az = 315 * RAD, alt = 45 * RAD;
   for (let r = 0; r < 256; r++) for (let q = 0; q < 256; q++) {
     const k = (r + 1) * N + q + 1, el = E[k], o = (r * 256 + q) * 4;
-    if (el !== el) { d[o] = 226; d[o + 1] = 229; d[o + 2] = 224; d[o + 3] = 255; continue; }
+    if (el !== el) { if (gray) { d[o] = d[o + 1] = d[o + 2] = 128; } else { d[o] = 226; d[o + 1] = 229; d[o + 2] = 224; } d[o + 3] = 255; continue; }
     const ex = (E[k + 1] - E[k - 1]) / (2 * mpp) * 3, ey = (E[k + N] - E[k - N]) / (2 * mpp) * 3;
     const slope = Math.atan(Math.hypot(ex || 0, ey || 0)), asp = Math.atan2(ey || 0, -(ex || 0));
     let sh = Math.sin(alt) * Math.cos(slope) + Math.cos(alt) * Math.sin(slope) * Math.cos(az - Math.PI / 2 - asp);
     sh = clamp(0.35 + 0.75 * sh, 0.25, 1.15);
+    if (gray) { const g = GRAY(sh); d[o] = d[o + 1] = d[o + 2] = g[0]; d[o + 3] = 255; continue; }
     const t = clamp((el - 80) / 650, 0, 1), base = el < 1 ? [170, 200, 225] : [196 + 40 * t, 214 + 10 * t - 40 * t * t, 168 - 10 * t];
     d[o] = clamp(base[0] * sh, 0, 255); d[o + 1] = clamp(base[1] * sh, 0, 255); d[o + 2] = clamp(base[2] * sh, 0, 255); d[o + 3] = 255;
   }
@@ -1588,23 +1627,58 @@ const ShadeLayer = L.GridLayer.extend({
         ps.push(ov ? loadChunk(8, tx >> 3, ty >> 3, 8, (x, y, a) => ovTiles.set(x * 65536 + y, a)) : loadTile(tx, ty));
       Promise.all(ps).then(() => {
         const f = ov ? ovElev : elevPx;
-        shadeInto(tile, c.z, c.x, c.y, (i, j) => f(gx0 + (i + 0.5) * s, gy0 + (j + 0.5) * s));
+        shadeInto(tile, c.z, c.x, c.y, (i, j) => f(gx0 + (i + 0.5) * s, gy0 + (j + 0.5) * s), this.options.gray);
         done(null, tile);
       });
       return tile;
     }
     const zz = Math.min(c.z, 14), k = 2 ** (c.z - zz), px = Math.floor(c.x / k), py = Math.floor(c.y / k);
-    shadeParent(zz, px, py).then(src => {
+    shadeParent(zz, px, py, this.options.gray).then(src => {
       const sz = 256 / k; tile.getContext('2d').drawImage(src, (c.x - px * k) * sz, (c.y - py * k) * sz, sz, sz, 0, 0, 256, 256); done(null, tile);
     }, err => done(err, tile));
     return tile;
   }
 });
-const BASES = LOCAL ? [['Domborzat', new ShadeLayer({ maxZoom: 16, attribution: 'Domborzat: AWS Terrain Tiles (SRTM) · Településnevek: GeoNames (CC BY 4.0)' })]] : [
+/* Beépített Sentinel-2 műholdkép: z12 (kb. 26 m/px) és z9 áttekintő, 2048×2048-as JPEG-blokkokban */
+const satImgs = new Map();
+function satChunk(kind, cx, cy) {
+  const key = kind + '_' + cx + '_' + cy; if (satImgs.has(key)) return satImgs.get(key);
+  const has = (LOCAL[kind] || []).some(([a, b]) => a === cx && b === cy);
+  const p = !has ? Promise.resolve(null) : new Promise(res => { const img = new Image(); img.onload = () => res(img); img.onerror = () => { satImgs.delete(key); res(null); }; img.src = LOCAL.base + `${key}.jpg`; });
+  satImgs.set(key, p); if (satImgs.size > 14) satImgs.delete(satImgs.keys().next().value);
+  return p;
+}
+const SatLayer = L.GridLayer.extend({
+  createTile(c, done) {
+    const tile = document.createElement('canvas'); tile.width = tile.height = 256;
+    const g = tile.getContext('2d'); g.fillStyle = '#e2e5e0'; g.fillRect(0, 0, 256, 256);
+    const lo = c.z <= 10, kind = lo ? 's9' : 's12', k = 2 ** ((lo ? 9 : 12) - c.z), CH = 2048;
+    const gx0 = c.x * 256 * k, gy0 = c.y * 256 * k, sz = 256 * k, jobs = [];
+    for (let cx = Math.floor(gx0 / CH); cx <= Math.floor((gx0 + sz - 1e-6) / CH); cx++)
+      for (let cy = Math.floor(gy0 / CH); cy <= Math.floor((gy0 + sz - 1e-6) / CH); cy++)
+        jobs.push(satChunk(kind, cx, cy).then(img => {
+          if (!img) return;
+          const x0 = Math.max(gx0, cx * CH), x1 = Math.min(gx0 + sz, cx * CH + CH), y0 = Math.max(gy0, cy * CH), y1 = Math.min(gy0 + sz, cy * CH + CH);
+          g.drawImage(img, x0 - cx * CH, y0 - cy * CH, x1 - x0, y1 - y0, (x0 - gx0) / k, (y0 - gy0) / k, (x1 - x0) / k, (y1 - y0) / k);
+        }));
+    Promise.all(jobs).then(() => done(null, tile));
+    return tile;
+  }
+});
+/* a domborzat-árnyékolás külön panelben, lágy fénykeveréssel kerül a műholdkép fölé */
+map.createPane('shadePane'); map.getPane('shadePane').style.zIndex = 250; map.getPane('shadePane').style.mixBlendMode = 'soft-light'; map.getPane('shadePane').style.pointerEvents = 'none';
+const grayShade = () => new ShadeLayer({ pane: 'shadePane', gray: true, maxZoom: LOCAL ? 16 : 18, opacity: 0.9 });
+const SAT_ATTR = 'Műholdkép: Copernicus Sentinel-2 (2023–2024), módosított adat';
+const BASES = LOCAL ? [
+  ['Domborzat', new ShadeLayer({ maxZoom: 16, attribution: 'Domborzat: AWS Terrain Tiles (SRTM) · Településnevek: GeoNames (CC BY 4.0)' })],
+  ['Műhold + domborzat', L.layerGroup([new SatLayer({ maxZoom: 16, attribution: SAT_ATTR }), grayShade()])],
+  ['Műhold', new SatLayer({ maxZoom: 16, attribution: SAT_ATTR })]
+] : [
   ['Topográfiai', L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Térkép: Esri, HERE, Garmin, © OpenStreetMap, USGS' })],
   ['OpenTopoMap', L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17, subdomains: 'abc', attribution: '© OpenStreetMap, SRTM · © OpenTopoMap (CC-BY-SA)' })],
   ['Utcatérkép', L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap közreműködők' })],
   ['Műhold', L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Esri, Maxar, Earthstar Geographics' })],
+  ['Műhold + domborzat', L.layerGroup([L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Esri, Maxar, Earthstar Geographics' }), grayShade()])],
   ['Csak domborzat', new ShadeLayer({ maxZoom: 18, attribution: 'Domborzat: AWS Terrain Tiles' })]
 ];
 const base = Object.fromEntries(BASES);
@@ -1612,13 +1686,14 @@ let activeBase = BASES[0][1], baseFails = new Set();
 const WARN = {};
 function warn(msg, kind = 'map') { WARN[kind] = msg; const t = Object.values(WARN).filter(Boolean), el = $('netStatus'); el.hidden = !t.length; el.innerHTML = t.join('<br>'); }
 BASES.forEach(([name, layer], i) => {
+  if (!layer.on || layer instanceof L.LayerGroup) return;
   let ok = 0, bad = 0;
   layer.on('tileload', () => { ok++; });
   layer.on('tileerror', () => {
     bad++;
     if (layer !== activeBase || ok > 0 || bad < 4 || baseFails.has(name)) return;
     baseFails.add(name);
-    const next = BASES.find(([n]) => !baseFails.has(n));
+    const next = BASES.find(([n, l]) => !baseFails.has(n) && !(l instanceof L.LayerGroup));
     if (!next) { warn('Egyik térképréteg sem töltődik be. Ellenőrizd az internetkapcsolatot. Ha a Claude alkalmazásban nyitottad meg, töltsd le a fájlt, és nyisd meg Chrome-ban vagy Edge-ben.'); return; }
     map.removeLayer(layer); next[1].addTo(map);
     warn(`A(z) „${name}” térkép nem töltődött be, átváltottam erre: „${next[0]}”. A jobb felső sarokban másik réteget is választhatsz.`);
@@ -1626,7 +1701,7 @@ BASES.forEach(([name, layer], i) => {
 });
 map.on('baselayerchange', e => { activeBase = e.layer; });
 activeBase.addTo(map);
-if (!LOCAL) L.control.layers(base, null, { position: 'topright' }).addTo(map);
+L.control.layers(base, null, { position: 'topright' }).addTo(map);
 /* Településnevek (helyi adat) */
 let SETTLE = [];
 const labelLayer = L.layerGroup().addTo(map);
@@ -1668,7 +1743,7 @@ function renderMapOverlays() {
   const a = AN[state.sel], t = state.turbines[state.sel];
   if (losLine) { losLine.remove(); losLine = null; }
   if (blockMk) { blockMk.remove(); blockMk = null; }
-  obLayer.clearLayers();
+  drawObstacles();
   if (!t) return;
   const col = a && a.ok ? getComputedStyle(document.documentElement).getPropertyValue(['--v0', '--v1', '--v2', '--v3'][classify(hiddenFor(a).h)]).trim() : '#555';
   losLine = L.polyline([[state.viewer.lat, state.viewer.lon], [t.lat, t.lon]], { color: col || '#d6336c', weight: 3, dashArray: '8 6', opacity: 0.95, interactive: false }).addTo(map);
@@ -1678,24 +1753,71 @@ function renderMapOverlays() {
   if (b.kind === 'terrain') {
     blockMk = L.circleMarker(fr.toLL(sx * b.d, sy * b.d), { radius: 6, color: '#fff', weight: 2, fillColor: '#d6453a', fillOpacity: 1 }).bindTooltip(`Takaró hajlat, ${km(b.d)}-re`, { direction: 'top' }).addTo(map);
   }
+}
+const OB_WEIGHT = { bush: 5, fence: 3, trees: 7, forest: 12, mound: 8 };
+function obCorners(o) {
+  const f = frame(o.lat, o.lon), h = o.w / 2, ex = Math.sin(o.rot), ey = Math.cos(o.rot);
+  if (LINEAR(o.type)) return [f.toLL(-ex * h, -ey * h), f.toLL(ex * h, ey * h)];
+  return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([i, j]) => f.toLL((i * ex + j * ey) * h, (i * ey - j * ex) * h));
+}
+function drawObstacles() {
+  obLayer.clearLayers();
   for (const o of state.obstacles) {
-    if (o.dist > a.D) continue;
-    const half = Math.min(o.w / 2, 250), c0 = o.off - half, c1 = o.off + half;
-    const P = u => fr.toLL(sx * o.dist + sy * u, sy * o.dist - sx * u);
-    L.polyline([P(c0), P(c1)], { color: OB[o.type].col, weight: 5, opacity: 0.9, interactive: false }).addTo(obLayer);
+    const P = obCorners(o), st = { color: OB[o.type].col, opacity: 0.95, interactive: false };
+    if (LINEAR(o.type)) L.polyline(P, { ...st, weight: OB_WEIGHT[o.type] || 5, lineCap: 'butt' }).addTo(obLayer);
+    else L.polygon(P, { ...st, weight: 2, fillOpacity: 0.75 }).addTo(obLayer);
+  }
+}
+/* fogantyúk: közép (mozgatás), végpontok (nyújtás, forgatás) */
+const obHandles = L.layerGroup().addTo(map);
+let obDragging = false;
+const hIcon = (cls, label) => L.divIcon({ className: '', iconSize: [22, 22], iconAnchor: [11, 11], html: `<div class="obh ${cls}" title="${label}"></div>` });
+function setFromEnds(o, F, P, movingB) {
+  const f = frame(F.lat, F.lng), [vx, vy] = f.fromLL(P.lat, P.lng), len = Math.max(2, Math.hypot(vx, vy));
+  o.w = Math.round(len); o.rot = movingB ? Math.atan2(vx, vy) : Math.atan2(-vx, -vy);
+  const [la, lo] = f.toLL(vx / 2, vy / 2); o.lat = la; o.lon = lo;
+}
+function buildObHandles() {
+  obHandles.clearLayers();
+  for (const o of state.obstacles) {
+    const name = OB[o.type].name;
+    const c = L.marker([o.lat, o.lon], { icon: hIcon('c', name + ': mozgatás'), draggable: true, zIndexOffset: 400, keyboard: true, title: name }).addTo(obHandles);
+    let ends = [];
+    const moveEnds = () => { if (ends.length) { const [A, B] = obCorners(o); ends[0].setLatLng(A); ends[1].setLatLng(B); } };
+    c.on('dragstart', () => { obDragging = true; });
+    c.on('drag', e => { const p = e.target.getLatLng(); o.lat = p.lat; o.lon = p.lng; moveEnds(); drawObstacles(); refresh(); });
+    c.on('dragend', () => { obDragging = false; renderObstacles(); update(); });
+    if (LINEAR(o.type)) {
+      ends = obCorners(o).map((P, k) => {
+        const m = L.marker(P, { icon: hIcon('e', name + ': vég húzása'), draggable: true, zIndexOffset: 300 }).addTo(obHandles);
+        let fixed = null;
+        m.on('dragstart', () => { obDragging = true; const [A, B] = obCorners(o); fixed = L.latLng(k ? A : B); });
+        m.on('drag', e => { setFromEnds(o, fixed, e.target.getLatLng(), k === 1); c.setLatLng([o.lat, o.lon]); drawObstacles(); refresh(); });
+        m.on('dragend', () => { obDragging = false; moveEnds(); renderObstacles(); update(); });
+        return m;
+      });
+    }
   }
 }
 map.on('click', e => {
   const p = { lat: e.latlng.lat, lon: e.latlng.lng };
   state.isExample = false;
   if (clickMode === 'view') { state.viewer = p; state.pan = 0; buildMarkers(); }
-  else { state.turbines.push(p); state.sel = state.turbines.length - 1; state.pan = 0; clearViewshed(true); buildMarkers(); }
+  else if (clickMode === 'ob') {
+    const type = $('obType').value, V = state.viewer, c0 = Math.cos(V.lat * RAD), az = Math.atan2((p.lon - V.lon) * c0, p.lat - V.lat);
+    state.obstacles.push({ id: uid++, type, h: OB[type].h, w: OB[type].w, rot: az + Math.PI / 2, lat: p.lat, lon: p.lon });
+    renderObstacles(); setMode('view');
+  } else { state.turbines.push(p); state.sel = state.turbines.length - 1; state.pan = 0; clearViewshed(true); buildMarkers(); }
   update();
 });
 function setMode(m) {
-  clickMode = m; $('modeView').setAttribute('aria-pressed', m === 'view'); $('modeTurb').setAttribute('aria-pressed', m === 'turb');
-  $('mapHint').textContent = m === 'view' ? 'Kattints a térképre: a nézőpont oda kerül.' : 'Kattints a térképre: oda kerül egy új turbina.';
+  clickMode = m; $('modeView').setAttribute('aria-pressed', m === 'view'); $('modeTurb').setAttribute('aria-pressed', m === 'turb'); $('modeOb').setAttribute('aria-pressed', m === 'ob');
+  $('obType').hidden = m !== 'ob';
+  $('mapHint').textContent = m === 'view' ? 'Kattints a térképre: a nézőpont oda kerül.' : m === 'turb' ? 'Kattints a térképre: oda kerül egy új turbina.' : 'Kattints a térképre: oda kerül a kiválasztott takarás, merőlegesen rád.';
 }
+$('modeOb').onclick = () => setMode('ob');
+$('obType').innerHTML = OB_ORDER.map(k => `<option value="${k}">${OB[k].name}</option>`).join('');
+$('obType').value = 'trees';
 $('modeView').onclick = () => setMode('view');
 $('centerView').onclick = () => { const c = map.getCenter(); state.viewer = { lat: c.lat, lon: c.lng }; state.pan = 0; buildMarkers(); update(); };
 $('centerTurb').onclick = () => { const c = map.getCenter(); state.turbines.push({ lat: c.lat, lon: c.lng }); state.sel = state.turbines.length - 1; state.pan = 0; clearViewshed(true); buildMarkers(); update(); };
@@ -1830,35 +1952,54 @@ $('sWinter').onclick = () => { state.season = 'winter'; syncControls(); update()
 document.querySelectorAll('[data-fov]').forEach(b => b.onclick = () => { state.fov = +b.dataset.fov; syncControls(); update(); });
 $('ghost').onchange = () => { state.ghost = $('ghost').checked; renderPano(); saveHash(); };
 const LOGD = v => Math.round(2 * Math.pow(1500, v / 1000));
-const ILOGD = d => Math.round(Math.log(d / 2) / Math.log(1500) * 1000);
-const WIDTHS = [2, 5, 8, 10, 12, 15, 20, 30, 40, 60, 80, 100, 150, 200, 300, 400, 600, 800, 1000, Infinity];
+const ILOGD = d => Math.round(Math.log(Math.max(2, d) / 2) / Math.log(1500) * 1000);
+const WIDTHS = [2, 5, 8, 10, 12, 15, 20, 30, 40, 60, 80, 100, 150, 200, 300, 400, 600, 800, 1000, 1500, 2000];
+function obPolar(o) { const [x, y] = frame(state.viewer.lat, state.viewer.lon).fromLL(o.lat, o.lon); return { d: Math.hypot(x, y), az: Math.atan2(x, y) }; }
+const rotTxt = o => { const d = Math.round(((o.rot / RAD) % 180 + 180) % 180); return `${d}°`; };
 function renderObstacles() {
   const box = $('obs');
-  if (!state.obstacles.length) { box.innerHTML = '<p class="empty">Nincs takarás megadva: most csak a domborzat takar. Adj hozzá elemet az alábbi gombokkal.</p>'; return; }
+  if (!obDragging) buildObHandles();
+  drawObstacles();
+  if (!state.obstacles.length) { box.innerHTML = '<p class="empty">Nincs takarás megadva: most csak a domborzat takar. Adj hozzá elemet az alábbi gombokkal, vagy a térkép feletti „Takarás” móddal.</p>'; return; }
   box.innerHTML = state.obstacles.map(o => {
-    const d = OB[o.type], wi = WIDTHS.indexOf(o.w) >= 0 ? WIDTHS.indexOf(o.w) : WIDTHS.findIndex(w => w >= o.w);
+    const d = OB[o.type], wi = WIDTHS.findIndex(w => w >= o.w), pd = obPolar(o).d, lin = LINEAR(o.type);
     return `<div class="ob" data-id="${o.id}">
       <div class="ob-head"><span class="sw" style="background:${d.col}"></span><b>${d.name}</b><button type="button" data-rm="${o.id}" aria-label="${d.name} törlése">×</button></div>
       <div class="ob-grid">
-        <label>Távolság tőled<span class="rng"><input type="range" data-k="dist" min="0" max="1000" step="1" value="${ILOGD(o.dist)}"><output>${km(o.dist)}</output></span></label>
+        <label>Távolság tőled<span class="rng"><input type="range" data-k="dist" min="0" max="1000" step="1" value="${ILOGD(pd)}"><output>${km(pd)}</output></span></label>
         <label>Magasság<span class="rng"><input type="range" data-k="h" min="0" max="${d.hmax}" step="${d.hmax <= 6 ? 0.25 : 0.5}" value="${o.h}"><output>${nf(o.h, o.h % 1 ? 1 : 0)} m</output></span></label>
-        <label>Szélesség<span class="rng"><input type="range" data-k="w" min="0" max="${WIDTHS.length - 1}" step="1" value="${wi}"><output>${isFinite(o.w) ? km(o.w) : 'végig'}</output></span></label>
-        <label>Oldalirányú eltolás<span class="rng"><input type="range" data-k="off" min="-300" max="300" step="1" value="${o.off}"><output>${o.off === 0 ? 'középen' : (o.off > 0 ? 'jobbra ' : 'balra ') + km(Math.abs(o.off))}</output></span></label>
-      </div></div>`;
+        <label>${lin ? 'Hossz' : 'Szélesség'}<span class="rng"><input type="range" data-k="w" min="0" max="${WIDTHS.length - 1}" step="1" value="${wi < 0 ? WIDTHS.length - 1 : wi}"><output>${km(o.w)}</output></span></label>
+        ${lin ? `<label>Irány<span class="rng"><input type="range" data-k="rot" min="0" max="179" step="1" value="${Math.round(((o.rot / RAD) % 180 + 180) % 180)}"><output>${rotTxt(o)}</output></span></label>` : '<span></span>'}
+      </div>
+      <p class="small" data-on></p></div>`;
   }).join('');
+  updateObReads();
+}
+function updateObReads() {
+  const a = AN[state.sel];
+  document.querySelectorAll('.ob[data-id]').forEach(el => {
+    const o = state.obstacles.find(x => x.id === +el.dataset.id), r = el.querySelector('[data-on]'); if (!o || !r) return;
+    const hit = a && a.obs ? a.obs.find(x => x.o === o) : null;
+    r.textContent = hit ? `A rálátás vonalában van, ${km(hit.d)}-re: ${nf(hit.a / RAD, 1)}°-ot takar.` : 'Nem esik a turbina felé néző rálátás vonalába, csak a képen látszik.';
+  });
 }
 $('obs').addEventListener('input', e => {
   const inp = e.target.closest('input[data-k]'); if (!inp) return;
   const id = +inp.closest('.ob').dataset.id, o = state.obstacles.find(x => x.id === id), k = inp.dataset.k, v = +inp.value, out = inp.nextElementSibling;
-  if (k === 'dist') { o.dist = LOGD(v); out.textContent = km(o.dist); }
+  if (k === 'dist') { const { az } = obPolar(o), dd = LOGD(v), V = state.viewer, c0 = Math.cos(V.lat * RAD); o.lat = V.lat + Math.cos(az) * dd / R_E / RAD; o.lon = V.lon + Math.sin(az) * dd / (R_E * c0) / RAD; out.textContent = km(dd); }
   if (k === 'h') { o.h = v; out.textContent = nf(v, v % 1 ? 1 : 0) + ' m'; }
-  if (k === 'w') { o.w = WIDTHS[v]; out.textContent = isFinite(o.w) ? km(o.w) : 'végig'; }
-  if (k === 'off') { o.off = v; out.textContent = v === 0 ? 'középen' : (v > 0 ? 'jobbra ' : 'balra ') + km(Math.abs(v)); }
+  if (k === 'w') { o.w = WIDTHS[v]; out.textContent = km(o.w); }
+  if (k === 'rot') { o.rot = v * RAD; out.textContent = rotTxt(o); }
+  if (k !== 'h') { buildObHandles(); drawObstacles(); }
   refresh();
 });
 $('obs').addEventListener('click', e => { const b = e.target.closest('[data-rm]'); if (!b) return; state.obstacles = state.obstacles.filter(o => o.id !== +b.dataset.rm); renderObstacles(); update(); });
 $('addrow').innerHTML = OB_ORDER.map(k => `<button class="btn" type="button" data-add="${k}">+ ${OB[k].name}</button>`).join('');
-$('addrow').addEventListener('click', e => { const b = e.target.closest('[data-add]'); if (!b) return; const d = OB[b.dataset.add]; state.obstacles.push({ id: uid++, type: b.dataset.add, dist: d.d, h: d.h, w: d.w, off: 0 }); state.obstacles.sort((p, q2) => p.dist - q2.dist); renderObstacles(); update(); });
+$('addrow').addEventListener('click', e => {
+  const b = e.target.closest('[data-add]'); if (!b) return; const t = b.dataset.add, d = OB[t];
+  state.obstacles.push(fromLOS({ id: uid++, type: t, dist: d.d, h: d.h, w: d.w, off: 0 }));
+  renderObstacles(); update();
+});
 function syncControls() {
   sel.value = state.model; $('customBox').hidden = state.model !== 'custom';
   $('cHub').value = state.custom.hub; $('cRot').value = state.custom.rotor;
@@ -1888,7 +2029,7 @@ let dragRaf = 0;
 
 /* ---------- Frissítés ---------- */
 let gen = 0, rafId = 0, fullTimer = 0;
-function recalc() { const ei = eyeInfo(); AN = state.turbines.map(t => analyze(t, ei)); if (state.sel >= AN.length) state.sel = Math.max(0, AN.length - 1); renderResults(); renderProfile(); renderMapOverlays(); }
+function recalc() { const ei = eyeInfo(); AN = state.turbines.map(t => analyze(t, ei)); if (state.sel >= AN.length) state.sel = Math.max(0, AN.length - 1); renderResults(); renderProfile(); renderMapOverlays(); updateObReads(); }
 function refresh() {
   cancelAnimationFrame(rafId);
   rafId = requestAnimationFrame(() => { recalc(); renderPano(0.5); });
@@ -1917,7 +2058,7 @@ async function update() {
 /* ---------- Megosztható link ---------- */
 function saveHash() {
   const r5 = v => Math.round(v * 1e5) / 1e5;
-  const s = { v: [r5(state.viewer.lat), r5(state.viewer.lon)], t: state.turbines.map(t => [r5(t.lat), r5(t.lon)]), i: state.sel, m: state.model, c: [state.custom.hub, state.custom.rotor], f: state.floor, s: state.season === 'winter' ? 1 : 0, o: state.obstacles.map(o => [o.type, o.dist, o.h, isFinite(o.w) ? o.w : -1, o.off]), a: state.fov, p: Math.round(state.pan * 10) / 10, g: state.ghost ? 1 : 0 };
+  const s = { v: [r5(state.viewer.lat), r5(state.viewer.lon)], t: state.turbines.map(t => [r5(t.lat), r5(t.lon)]), i: state.sel, m: state.model, c: [state.custom.hub, state.custom.rotor], f: state.floor, s: state.season === 'winter' ? 1 : 0, o: state.obstacles.map(o => [o.type, r5(o.lat), r5(o.lon), o.h, Math.round(o.w), Math.round(o.rot / RAD)]), a: state.fov, p: Math.round(state.pan * 10) / 10, g: state.ghost ? 1 : 0 };
   try { history.replaceState(null, '', '#' + btoa(JSON.stringify(s)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')); } catch (e) { /* nem kötelező */ }
 }
 function loadHash() {
@@ -1927,7 +2068,9 @@ function loadHash() {
     state.viewer = { lat: s.v[0], lon: s.v[1] }; state.turbines = s.t.map(([lat, lon]) => ({ lat, lon })); state.sel = s.i || 0;
     if (MODELS[s.m]) state.model = s.m; if (s.c) state.custom = { hub: s.c[0], rotor: s.c[1] };
     state.floor = +s.f || 0; state.season = s.s ? 'winter' : 'summer';
-    state.obstacles = (s.o || []).filter(o => OB[o[0]]).map(o => ({ id: uid++, type: o[0], dist: o[1], h: o[2], w: o[3] < 0 ? Infinity : o[3], off: o[4] || 0 }));
+    state.obstacles = (s.o || []).filter(o => OB[o[0]]).map(o => o.length === 6
+      ? { id: uid++, type: o[0], lat: o[1], lon: o[2], h: o[3], w: o[4], rot: o[5] * RAD }
+      : fromLOS({ id: uid++, type: o[0], dist: o[1], h: o[2], w: o[3] < 0 ? Infinity : o[3], off: o[4] || 0 }));
     state.fov = s.a || 40; state.pan = s.p || 0; state.ghost = s.g !== 0; state.isExample = false;
     return true;
   } catch (e) { return false; }
