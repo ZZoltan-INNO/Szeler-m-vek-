@@ -98,6 +98,11 @@ ott a Sentinel-2 marad.
   ráhúzható a falunevek vonala vagy (ha süt) a sárga Nap-jel a valódi helyére (az élő képen nincs modell-horizont vonal); két ujjal
   csippentve a kamera látószöge (a modell mérete) állítható, ezt a böngésző megjegyzi. A „Kész” után az igazítás rögzül:
   az iránytű ingadozása és a mágneses zavar (autó, kerítés) már nem mozdítja el, fordulás közben is a helyén marad.
+  A kamera látószögét a program mozgás közben magától méri (a giroszkóp szerinti elfordulást összeveti a kép
+  elmozdulásával, blokkillesztéssel), így a turbina a kép szélén is a tájhoz képest a helyén marad. A kép megállításakor
+  a képen megkeresi az ég és a táj határát, és a modell horizontjához igazítja a dőlést (tagolt tájon az irányt is); ehhez
+  azokat a részeket használja, ahol a horizontot 1,5 km-nél távolabbi domb vagy erdő adja. Nyugalomban tartott telefonnál
+  a dőlést élő képen is finomhangolja, amíg kézzel nem igazítasz. A dőlés-beállítást a böngésző megjegyzi.
   Az „Iránytű szerint újra” visszaáll. Alapból csak az látszik a turbinából, ami a valóságban is látszani fog; a takart
   rész kérésre (pirosan) bekapcsolható. Pillanatkép menthető. A claude.ai artifactban a kamera nem érhető el.
   A saját fotónál is van Nap-jel, ha a fotóban benne van a készítés ideje.

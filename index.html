@@ -4437,8 +4437,8 @@ function realMsg(html, err = true) { const n = $('realNote'); n.innerHTML = html
 const MONT = { mode: null, img: null, bg: null, hd0: 0, hd: 0, pt: 0, rl: 0, fov: 66, raf: 0, drag: null, msg: '' };
 const MONT_SUN = { t: null };   // a fotó készítésének ideje (EXIF), a Nap-jelhez
 const AR = { stream: null, watch: null, f: null, u: null, raw: null, rawT: 0, rate: 0, rel: false, abs: false, ios: false, yaw: null, yC: 0, yS: 0, yN: 0, sd: null,
-  lock: false, frozen: null, hdOff: 0, ptOff: 0, acc: null, gps: null, lastFix: null, fov: 66 };
-try { AR.fov = +localStorage.getItem('arFov') || 66; } catch (e) {}
+  lock: false, frozen: null, hdOff: 0, ptOff: 0, acc: null, gps: null, lastFix: null, fov: 66, fovManual: false, ptManual: false, hzT: 0, hzMsg: '' };
+try { AR.fov = +localStorage.getItem('arFov') || 66; AR.fovAuto = localStorage.getItem('arFovAuto') === '1'; } catch (e) {}
 const inRegion = (la, lo) => !REGION || Math.hypot((la - REGION.lat) * 111.2, (lo - REGION.lon) * 111.32 * Math.cos(REGION.lat * RAD)) <= REGION.km + 3;
 function montStatus(html) { $('montSt').innerHTML = html; }
 function openMont(mode) {
@@ -4494,6 +4494,7 @@ function montFrame() {
     g.drawImage(c, (W - c.width * s) / 2, (H - c.height * s) / 2, c.width * s, c.height * s);
     busy = drawReal(g, montCam(W, H), { sky: false, ghost: $('mGhost').checked, labels: $('mSky').checked, rot: rotorAngle(), sun: $('mSky').checked && AR.frozen.t });
   } else if (MONT.mode === 'ar' && arReady()) {
+    horizonLive();
     busy = drawReal(g, montCam(W, H), { sky: false, ghost: $('mGhost').checked, labels: $('mSky').checked, rot: rotorAngle(), sun: $('mSky').checked && Date.now() });
   }
   const left = skyWork(MONT.mode === 'ar' ? 7 : 12);
@@ -4514,11 +4515,11 @@ function montDrag(e) {
   const P1 = [...PTR.values()], m1 = mid(P1), d1 = spread(P1);
   const ar = MONT.mode === 'ar', dpr = Math.min(2, window.devicePixelRatio || 1), cam = montCam(st.clientWidth * dpr, st.clientHeight * dpr), k = dpr / cam.F / RAD;   // fok / CSS-képpont
   const dx = (m1[0] - m0[0]) * k, dy = (m1[1] - m0[1]) * k;
-  if (ar) { AR.hdOff = Math.max(-40, Math.min(40, AR.hdOff - dx)); AR.ptOff = Math.max(-15, Math.min(15, AR.ptOff + dy)); if (!AR.lock) { AR.lock = true; syncAR(); } }
+  if (ar) { AR.hdOff = Math.max(-40, Math.min(40, AR.hdOff - dx)); AR.ptOff = Math.max(-15, Math.min(15, AR.ptOff + dy)); if (dy) { AR.ptManual = true; savePt(); } if (!AR.lock) { AR.lock = true; syncAR(); } }
   else { MONT.hd -= dx; MONT.pt = Math.max(-25, Math.min(25, MONT.pt + dy)); if (Math.abs(MONT.hd - MONT.hd0) > 40) MONT.hd0 = MONT.hd; }
   if (P1.length >= 2 && d0 > 30 && d1 > 0) {
     const f0 = ar ? AR.fov : MONT.fov, f1 = Math.max(15, Math.min(110, 2 * Math.atan(Math.tan(f0 * RAD / 2) * d0 / d1) / RAD));
-    if (ar) { AR.fov = f1; try { localStorage.setItem('arFov', f1.toFixed(1)); } catch (e) {} } else MONT.fov = f1;
+    if (ar) { AR.fov = f1; AR.fovManual = true; try { localStorage.setItem('arFov', f1.toFixed(1)); } catch (e) {} } else MONT.fov = f1;
   }
   syncMontCtl();
 }
@@ -4652,6 +4653,7 @@ function freezeAR() {
     const vd = $('arVideo'); if (!vd.videoWidth || !arReady()) return;
     const cv = document.createElement('canvas'); cv.width = vd.videoWidth; cv.height = vd.videoHeight; cv.getContext('2d').drawImage(vd, 0, 0);
     AR.lock = true; AR.frozen = { cv, f: AR.f.slice(), u: AR.u.slice(), rel: AR.rel, yaw: AR.yaw, t: Date.now() };
+    AR.hzMsg = 'A horizont keresése a képen…'; horizonAuto(AR.frozen, 0);
   }
   syncAR();
 }
@@ -4662,10 +4664,129 @@ function syncAR() {
 }
 function arNote() {
   if (MONT.mode !== 'ar') return '';
-  if (AR.frozen) return 'Megállított kép: húzd a falunevek vonalát (vagy a Nap-jelet) a valódi helyére; két ujjal a méretet. ';
+  if (AR.frozen) return (AR.hzMsg ? AR.hzMsg + ' ' : '') + 'Ha kell, húzd a falunevek vonalát (vagy a Nap-jelet) a valódi helyére. ';
+  if (AR.rel && !AR.fovAuto && !AR.fovManual) return `A kamera látószögének mérése: fordítsd lassan jobbra-balra, majd fel-le a telefont (${Math.min(100, Math.round(FLOW.est.length / 8 * 100))}%). `;
   if (AR.lock) return 'Igazítás rögzítve: az iránytű ingadozása már nem mozdítja el. ';
   if (AR.rel && AR.sd > 8) return `Az iránytű most bizonytalan (±${AR.sd.toFixed(0)}°): igazíts a kép megállításával. `;
   return '';
+}
+function savePt() { try { localStorage.setItem('arPt', AR.ptOff.toFixed(2)); } catch (e) {} }
+const median = A => { const b = [...A].sort((x, y) => x - y), n = b.length; return n ? (n % 2 ? b[(n - 1) / 2] : (b[n / 2 - 1] + b[n / 2]) / 2) : NaN; };
+/* A kamera látószögének mérése mozgás közben: ha a telefon fordul, a kép tartalma F·tan(szög) képponttal tolódik el (F a
+   fókusztávolság képpontban). A szöget a giroszkóp adja, az eltolódást két kocka blokkillesztése (durva, majd finom keresés,
+   képpont alatti pontossággal); sok mérés mediánja a látószög. Így a turbina a kép szélén is a valódi tájhoz képest a helyén marad. */
+const FLOW = { cv: null, g: null, buf: [], est: [], last: 0 };
+function grayFrame(src, w, store) {
+  const sw = src.videoWidth || src.width, sh = src.videoHeight || src.height; if (!sw || !sh) return null;
+  const h = Math.max(30, Math.round(w * sh / sw));
+  if (!store.cv) store.cv = document.createElement('canvas');
+  if (store.cv.width !== w || store.cv.height !== h) { store.cv.width = w; store.cv.height = h; store.g = store.cv.getContext('2d', { willReadFrequently: true }); if (store.buf) store.buf.length = 0; }
+  store.g.drawImage(src, 0, 0, w, h);
+  return { d: store.g.getImageData(0, 0, w, h).data, w, h, sw, sh };
+}
+// eltolás (B(x + sx, y + sy) ≈ A(x, y)) a kép középső részére, a szomszédos eltolások közti legkisebb átlagos eltéréssel
+function blockSearch(A, B, w, h, cx, cy, rx, ry, step = 1) {
+  const x0 = Math.round(w * 0.3), x1 = Math.round(w * 0.7), y0 = Math.round(h * 0.3), y1 = Math.round(h * 0.7), cost = new Map();
+  let best = null;
+  for (let sy = cy - ry; sy <= cy + ry; sy++) for (let sx = cx - rx; sx <= cx + rx; sx++) {
+    if (x0 + sx < 0 || x1 + sx > w || y0 + sy < 0 || y1 + sy > h) continue;
+    let c = 0; for (let y = y0; y < y1; y += step) { const ra = y * w, rb = (y + sy) * w + sx; for (let x = x0; x < x1; x++) c += Math.abs(A[ra + x] - B[rb + x]); }
+    c /= (x1 - x0) * Math.ceil((y1 - y0) / step); cost.set(sx + ',' + sy, c); if (!best || c < best[2]) best = [sx, sy, c];
+  }
+  return { best, cost };
+}
+function blockShift(A, B, w, h) {
+  const w2 = w >> 1, h2 = h >> 1, half = I => { const o = new Float32Array(w2 * h2); for (let y = 0; y < h2; y++) for (let x = 0; x < w2; x++) { const i = 2 * y * w + 2 * x; o[y * w2 + x] = (I[i] + I[i + 1] + I[i + w] + I[i + w + 1]) / 4; } return o; };
+  const r = Math.floor(Math.min(w2, h2) * 0.25), c = blockSearch(half(A), half(B), w2, h2, 0, 0, r, r, 2); if (!c.best) return null;   // ±25% a rövidebb oldalból (kb. ±10°)
+  const all = [...c.cost.values()].sort((a, b) => a - b), med = all[all.length >> 1];
+  if (c.best[2] > med * 0.55) return null;   // nem egyértelmű (egyszínű vagy ismétlődő kép)
+  const f = blockSearch(A, B, w, h, 2 * c.best[0], 2 * c.best[1], 2, 2); if (!f.best) return null;
+  const [bx, by, bc] = f.best, at = (x, y) => f.cost.get(x + ',' + y);
+  const sub = (m, z, p) => m === undefined || p === undefined || m - 2 * z + p <= 0 ? 0 : 0.5 * (m - p) / (m - 2 * z + p);
+  return [bx + sub(at(bx - 1, by), bc, at(bx + 1, by)), by + sub(at(bx, by - 1), bc, at(bx, by + 1))];
+}
+function flowPush(src, t, o) {
+  if (!o || AR.frozen || !AR.rel) return;
+  const im = grayFrame(src, 160, FLOW); if (!im) return;
+  const { d, w, h } = im, Y = new Float32Array(w * h); let m = 0, q = 0;
+  for (let i = 0, j = 0; i < Y.length; i++, j += 4) { const v = d[j] * 0.3 + d[j + 1] * 0.59 + d[j + 2] * 0.11; Y[i] = v; m += v; q += v * v; }
+  m /= Y.length; const sd = Math.sqrt(Math.max(1e-6, q / Y.length - m * m)); for (let i = 0; i < Y.length; i++) Y[i] = (Y[i] - m) / sd;   // fényerő-független
+  const fr = { Y, w, h, t, f: o.f.slice(), u: o.u.slice() };
+  FLOW.buf.push(fr); while (FLOW.buf.length && t - FLOW.buf[0].t > 1200) FLOW.buf.shift();
+  if (t - FLOW.last < 150) return;
+  for (const a of FLOW.buf) {
+    if (t - a.t < 120) break;
+    const r = v3.norm(v3.cross(a.f, a.u)), z = v3.dot(fr.f, a.f), ax = Math.atan2(v3.dot(fr.f, r), z), ay = Math.atan2(v3.dot(fr.f, a.u), z);
+    if (Math.abs(v3.dot(v3.norm(v3.cross(fr.f, fr.u)), a.u)) > 0.03) continue;   // billenés nélkül
+    const H = Math.abs(ax) > Math.abs(ay), big = H ? ax : ay, small = H ? ay : ax;
+    if (Math.abs(big) < 2.5 * RAD || Math.abs(big) > (H ? 12 : 8) * RAD || Math.abs(small) > 0.3 * Math.abs(big)) continue;
+    FLOW.last = t;
+    const sh = blockShift(a.Y, fr.Y, w, h); if (!sh) break;
+    const F = H ? -sh[0] / Math.tan(ax) : sh[1] / Math.tan(ay), fov = 2 * Math.atan(Math.max(w, h) / 2 / F) / RAD;
+    if (!(fov > 20 && fov < 110)) break;
+    FLOW.est.push(fov); if (FLOW.est.length > 40) FLOW.est.shift();
+    if (FLOW.est.length >= 8) {
+      const md = median(FLOW.est), mad = median(FLOW.est.map(v => Math.abs(v - md)));
+      if (mad < md * 0.04 && !AR.fovManual) { AR.fov = md; AR.fovAuto = true; try { localStorage.setItem('arFov', md.toFixed(1)); localStorage.setItem('arFovAuto', '1'); } catch (e) {} syncMontCtl(); }
+    }
+    break;
+  }
+}
+/* Az ég és a táj határa a képen: oszloponként felülről lefelé az első hirtelen (nem fokozatos) színváltás. */
+const HZ = { cv: null, g: null };
+function skyEdge(src) {
+  const im = grayFrame(src, 200, HZ); if (!im) return [];
+  const { d, w, h, sw, sh } = im, pts = [];
+  for (let x = 0; x < w; x++) {
+    let i = x * 4, R = d[i], G = d[i + 1], B = d[i + 2], y = 1;
+    if (R + G + B < 200) continue;   // a kép teteje sötét: nem ég
+    for (; y < h - 3; y++) {
+      const j = (y * w + x) * 4, dist = (k) => Math.hypot(d[k] - R, d[k + 1] - G, d[k + 2] - B);
+      if (dist(j) > 34 && dist(j + w * 4) > 34 && dist(j + w * 8) > 34) break;
+      R += (d[j] - R) * 0.25; G += (d[j + 1] - G) * 0.25; B += (d[j + 2] - B) * 0.25;
+    }
+    if (y < h * 0.04 || y >= h - 3) continue;
+    pts.push([(x + 0.5) * sw / w, y * sh / h]);
+  }
+  return pts;
+}
+/* A látott horizont illesztése a modell horizontjára: dőlés (és ha a táj elég tagolt, irány). Ahol a modell szerint a
+   horizontot 1,5 km-nél távolabbi domb, erdő adja, azok az oszlopok számítanak (a közeli fák magassága bizonytalanabb). */
+function horizonFit(src, b) {
+  const vw = src.videoWidth || src.width, vh = src.videoHeight || src.height, F = Math.max(vw, vh) / 2 / Math.tan(AR.fov * RAD / 2), pts = skyEdge(src);
+  if (pts.length < 20) return { why: 'sky' };
+  const rays = pts.map(([x, y]) => { const q = v3.norm(b.f.map((v, i) => v * F + b.r[i] * (x - vw / 2) - b.u[i] * (y - vh / 2))); return [Math.atan2(q[0], q[1]), Math.asin(q[2])]; });
+  let pend = 0;
+  const fit = dy => {
+    const all = [], far = [], mod = [];
+    for (const [az, el] of rays) {
+      const m = skyAt(az + dy), n = skyAt(az + dy, 1500); if (m === undefined || n === undefined) { pend++; continue; }
+      all.push(el - m); mod.push(m); if (m - n > 0.05 * RAD) far.push(el - m);
+    }
+    const set = far.length >= Math.max(12, all.length * 0.25) ? far : all, med = median(set);
+    return { dy, med, cost: median(set.map(v => Math.abs(v - med))), n: set.length, far: set === far, relief: mod.length ? Math.max(...mod) - Math.min(...mod) : 0 };
+  };
+  const f0 = fit(0); if (pend > rays.length * 0.3) return { why: 'pending' };
+  let best = f0; for (let k = -30; k <= 30; k++) { if (!k) continue; const f = fit(k * 0.2 * RAD); if (f.n >= f0.n * 0.8 && f.cost < best.cost) best = f; }
+  const useYaw = f0.relief > 0.5 * RAD && best !== f0 && best.cost < f0.cost * 0.7;
+  const r = useYaw ? best : f0;
+  return r.n >= 15 && r.cost < (r.far ? 0.3 : 0.2) * RAD ? { pitch: r.med, yaw: useYaw ? r.dy : 0, cost: r.cost, n: r.n } : { why: 'unsure' };
+}
+// megállított képnél: illesztés (ha a modell horizontja még számolódik, kicsit később újra)
+function horizonAuto(fz, tries) {
+  if (AR.frozen !== fz) return;
+  const r = horizonFit(fz.cv, arBasis(fz));
+  if (r.why === 'pending' && tries < 20) { setTimeout(() => horizonAuto(fz, tries + 1), 400); return; }
+  if (r.why) { AR.hzMsg = r.why === 'sky' ? 'Nem találtam eget a képen: fordulj a nyílt táj felé, vagy igazíts kézzel.' : 'A horizontot nem tudtam biztosan felismerni: igazíts kézzel.'; return; }
+  AR.ptOff = Math.max(-15, Math.min(15, AR.ptOff - r.pitch / RAD)); AR.hdOff = Math.max(-40, Math.min(40, AR.hdOff + r.yaw / RAD)); AR.ptManual = false; savePt();
+  AR.hzMsg = `A látott horizonthoz igazítottam (dőlés ${(-r.pitch / RAD).toFixed(1)}°${r.yaw ? `, irány ${(r.yaw / RAD).toFixed(1)}°` : ''}).`; syncMontCtl();
+}
+// élő képnél, ha a telefon nyugalomban van: a dőlés folyamatos finomhangolása a látott horizonthoz (kézi igazításig)
+function horizonLive() {
+  const now = performance.now(); if (AR.frozen || AR.ptManual || !arReady() || now - AR.hzT < 1500 || AR.rate > 0.05) return;
+  AR.hzT = now;
+  const r = horizonFit($('arVideo'), arBasis(AR)); if (r.why || r.cost > 0.15 * RAD) return;
+  AR.ptOff = Math.max(-15, Math.min(15, AR.ptOff - Math.max(-1, Math.min(1, 0.5 * r.pitch / RAD)))); savePt(); syncMontCtl();
 }
 async function startAR() {
   const framed = window.top !== window, link = 'https://jak-szeleromu.netlify.app';
@@ -4677,10 +4798,14 @@ async function startAR() {
   try { AR.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false }); }
   catch (e) { return fail(e && e.name === 'NotAllowedError' ? 'A kamera használatát nem engedélyezted (vagy itt a böngésző nem engedi).' : 'A kamerát nem sikerült elindítani.'); }
   const vd = $('arVideo'); vd.srcObject = AR.stream; try { await vd.play(); } catch (e) {}
-  Object.assign(AR, { f: null, u: null, raw: null, rate: 0, rel: false, abs: false, ios: false, yaw: null, yC: 0, yS: 0, yN: 0, sd: null, lock: false, frozen: null, hdOff: 0, ptOff: 0, gps: null });
+  let pt0 = 0; try { pt0 = +localStorage.getItem('arPt') || 0; } catch (e) {}
+  Object.assign(AR, { f: null, u: null, raw: null, rate: 0, rel: false, abs: false, ios: false, yaw: null, yC: 0, yS: 0, yN: 0, sd: null, lock: false, frozen: null, hdOff: 0, ptOff: pt0, gps: null, fovManual: false, ptManual: false, hzT: 0, hzMsg: '' });
+  FLOW.buf.length = 0; FLOW.est.length = 0;
+  const tick = () => { if (!AR.stream) return; if (AR.raw) flowPush(vd, performance.now(), AR.raw); if (vd.requestVideoFrameCallback) vd.requestVideoFrameCallback(tick); else setTimeout(tick, 40); };
+  tick();
   window.addEventListener('deviceorientationabsolute', onOri); window.addEventListener('deviceorientation', onOri);
   MONT.msg = '';
-  montStatus('<b>Tartsd a telefont függőlegesen</b>, és fordulj a turbina felé. Az iránytű pár fokot tévedhet, ezért egyszer igazíts: nyomd meg az <b>„Igazítás: kép megállítása”</b> gombot, és a megállt képen húzd a falunevek függőleges vonalát a valódi falura, templomtoronyra, vagy ha süt, a sárga Nap-jelet a Napra. Ha a távoli dolgok közti távolság nem stimmel, két ujjal csippentve igazítsd a méretet (a látószöget a böngésző megjegyzi). A „Kész” után az igazítás rögzül, és fordulás közben is a helyén marad.');
+  montStatus('<b>1.</b> Tartsd a telefont függőlegesen, és <b>fordítsd lassan jobbra-balra, majd fel-le</b>: közben a program megméri a kamera látószögét (egyszer kell, megjegyzi). <b>2.</b> Fordulj a turbina felé, és nyomd meg az <b>„Igazítás: kép megállítása”</b> gombot: a program a képen megkeresi az ég és a táj határát, és ahhoz igazítja a dőlést (ahol a táj elég tagolt, az irányt is). Ha kell, a megállt képen húzd a falunevek vonalát vagy a sárga Nap-jelet a helyére. <b>3.</b> „Kész”: az igazítás rögzül, fordulás közben is a helyén marad. A dőlés-beállítást a telefon a következő alkalomra is megjegyzi.');
   if (navigator.geolocation) AR.watch = navigator.geolocation.watchPosition(onGps, () => { AR.gps = 'nincs'; }, { enableHighAccuracy: true, maximumAge: 3000, timeout: 30000 });
   openMont('ar'); prepReal();
   setTimeout(() => { if (MONT.mode === 'ar' && !arReady()) MONT.msg = ' Nem érkezik iránytű-adat: ez a böngésző vagy készülék nem adja meg, merre nézel.'; }, 4000);
@@ -4737,13 +4862,13 @@ $('montClose').onclick = closeMont;
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && MONT.mode) closeMont(); });
 for (const ev of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']) $('montStage').addEventListener(ev, montDrag);
 $('mHd').oninput = () => { const v = +$('mHd').value; if (MONT.mode === 'ar') { AR.hdOff = v; AR.lock = true; syncAR(); } else MONT.hd = MONT.hd0 + v; syncMontCtl(); };
-$('mPt').oninput = () => { const v = +$('mPt').value; if (MONT.mode === 'ar') AR.ptOff = v; else MONT.pt = v; syncMontCtl(); };
+$('mPt').oninput = () => { const v = +$('mPt').value; if (MONT.mode === 'ar') { AR.ptOff = v; AR.ptManual = true; savePt(); } else MONT.pt = v; syncMontCtl(); };
 $('mRl').oninput = () => { MONT.rl = +$('mRl').value; syncMontCtl(); };
-$('mFov').oninput = () => { const v = +$('mFov').value; if (MONT.mode === 'ar') { AR.fov = v; try { localStorage.setItem('arFov', v); } catch (e) {} } else MONT.fov = v; syncMontCtl(); };
+$('mFov').oninput = () => { const v = +$('mFov').value; if (MONT.mode === 'ar') { AR.fov = v; AR.fovManual = true; try { localStorage.setItem('arFov', v); } catch (e) {} } else MONT.fov = v; syncMontCtl(); };
 $('mSave').onclick = () => saveMontage(false);
 $('mShot').onclick = () => saveMontage(true);
 $('mFreeze').onclick = freezeAR;
-$('mUnlock').onclick = () => { Object.assign(AR, { lock: false, hdOff: 0, ptOff: 0, yN: 0 }); syncAR(); syncMontCtl(); };
+$('mUnlock').onclick = () => { Object.assign(AR, { lock: false, hdOff: 0, yN: 0 }); syncAR(); syncMontCtl(); };
 
 // a térkép a nézőpontra és a turbinákra; turbina nélkül a nézőpont környékére (Ják és a szomszéd falvak)
 function fitView() {
