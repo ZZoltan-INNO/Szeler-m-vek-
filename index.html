@@ -2203,8 +2203,8 @@ const LINEAR = t => t !== 'house' && t !== 'block';   // vonalas takarás (sor, 
 
 /* ---------- Állapot ---------- */
 const DEFAULT = {
-  // Ják főtere; turbina és kézi takarás nincs (a házak és a fák a beépített adatból jönnek)
-  viewer: { lat: 47.14105, lon: 16.58072 },
+  // Ják főtere (más régiónál a build --place pontja); turbina és kézi takarás nincs (a házak és a fák a beépített adatból jönnek)
+  viewer: window.LOCAL_DATA && window.LOCAL_DATA.home ? { lat: window.LOCAL_DATA.home.lat, lon: window.LOCAL_DATA.home.lon } : { lat: 47.14105, lon: 16.58072 },
   turbines: [],
   sel: 0, model: 'sg170', custom: { hub: 165, rotor: 170 }, floor: 0, season: 'summer',
   obstacles: [],

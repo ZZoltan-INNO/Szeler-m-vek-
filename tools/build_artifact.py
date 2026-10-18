@@ -12,6 +12,7 @@ Használat:
   --sites=<fájl>: lehetséges telepítési területek sokszögei (tools/build_sites.py), áttetsző kékkel a térképen.
   --forest=<mappa>: fák és erdők (tools/build_canopy.py: c14_*.png, t14_*.png, canopy_index.json).
   --esri-key=<kulcs>: (csak --web) nagy felbontású Esri légifotó a térképen és a 3D terepen a nézőpont 1 km-es körzetében.
+  --place=<név>,<szélesség>,<hosszúság>: más régiónál (tools/build_region.py) a kezdő nézőpont és a feliratok települése.
 A <dem_mappa> lehet a tools/build_region.py kimenete is (régiós kiadás: demZ, z12, z8, region).
 A <dem_mappa> a tools/build_dem.py kimenete (z11_*.png, z8_*.png, index.json, telepulesek.json),
 a <muhold_mappa> a tools/build_sat.py, a tools/build_sat13.py és a tools/build_buildings.py kimenete
@@ -24,6 +25,7 @@ web = '--web' in sys.argv
 base = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--base=')), '')
 bld = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--bld=')), None)
 esri = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--esri-key=')), None)
+place = next((a.split('=', 1)[1].split(',') for a in sys.argv[1:] if a.startswith('--place=')), None)   # más régió: név, szélesség, hosszúság
 forest = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--forest=')), None)
 villages = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--villages=')), None)
 sites = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--sites=')), None)
@@ -80,9 +82,14 @@ if forest:   # fák és erdők (tools/build_canopy.py)
 bdir = bld or sat
 if bdir and os.path.exists(os.path.join(bdir, 'bld_index.json')):   # valós épületek (tools/build_buildings.py)
     local.update(json.load(open(os.path.join(bdir, 'bld_index.json'))))
+if place:   # kezdő nézőpont és a feliratok a régió településével (alapból Ják)
+    local['home'] = {'name': place[0], 'lat': float(place[1]), 'lon': float(place[2])}
+    a = 'Látványvizsgálat · Ják és 30 km-es környéke'
+    assert s.count(a) == 1
+    s = s.replace(a, f"Látványvizsgálat · {place[0]} és {local['region']['km']:g} km-es környéke")
 s = s.replace('<script>\n"use strict";', '<script>window.LOCAL_DATA = ' + json.dumps(local, separators=(',', ':')) + ';</script>\n<script>\n"use strict";', 1)
 if web:
-    s = social(s, 'Honnan látszik a szélerőmű? Ják és környéke',
+    s = social(s, f"Honnan látszik a szélerőmű? {place[0] if place else 'Ják'} és környéke",
                'Húzd a 250 m magas turbinát oda, ahová tervezik, válaszd ki, honnan nézed (akár a házad elől), '
                'és nézd meg 3D-ben a valós domborzattal és házakkal, mennyi látszik belőle.', '')
     a = open(os.path.join(root, 'alap.html'), encoding='utf-8').read()
