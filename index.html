@@ -1117,7 +1117,7 @@ h_takart = z_szem + D · tan(α_max) − z_talppont</div>
       <label><span id="mFovL">Látószög</span><input type="range" id="mFov" min="15" max="110" step="0.5" value="66"><output id="mFovO"></output></label>
     </div>
     <div class="mont-row">
-      <label class="check"><input type="checkbox" id="mSky" checked> Modell-horizont és falunevek</label>
+      <label class="check"><input type="checkbox" id="mSky" checked> <span id="mSkyL">Modell-horizont és falunevek</span></label>
       <label class="check"><input type="checkbox" id="mGhost" checked> A takart rész pirosan</label>
       <button class="btn" type="button" id="mSave">Kép mentése</button>
       <button class="btn primary" type="button" id="mFreeze" hidden>Igazítás: kép megállítása</button>
@@ -4447,7 +4447,7 @@ function openMont(mode) {
   $('arVideo').hidden = mode !== 'ar';
   for (const id of ['mRlW', 'mSave']) $(id).hidden = mode === 'ar';
   $('mShot').hidden = mode !== 'ar'; $('mFreeze').hidden = mode !== 'ar'; syncAR();
-  $('mHdL').textContent = mode === 'ar' ? 'Iránytű-javítás' : 'Irány'; $('mFovL').textContent = mode === 'ar' ? 'A kamera látószöge' : 'Látószög';
+  $('mHdL').textContent = mode === 'ar' ? 'Iránytű-javítás' : 'Irány'; $('mSkyL').textContent = mode === 'ar' ? 'Falunevek, fokbeosztás és Nap' : 'Modell-horizont és falunevek'; $('mFovL').textContent = mode === 'ar' ? 'A kamera látószöge' : 'Látószög';
   syncMontCtl(); cancelAnimationFrame(MONT.raf); MONT.raf = requestAnimationFrame(montFrame);
   $('montClose').focus();
 }
@@ -4491,9 +4491,9 @@ function montFrame() {
   } else if (MONT.mode === 'ar' && AR.frozen) {
     const c = AR.frozen.cv, s = Math.max(W / c.width, H / c.height);
     g.drawImage(c, (W - c.width * s) / 2, (H - c.height * s) / 2, c.width * s, c.height * s);
-    busy = drawReal(g, montCam(W, H), { sky: $('mSky').checked, ghost: $('mGhost').checked, labels: $('mSky').checked, rot: rotorAngle(), sun: $('mSky').checked && AR.frozen.t });
+    busy = drawReal(g, montCam(W, H), { sky: false, ghost: $('mGhost').checked, labels: $('mSky').checked, rot: rotorAngle(), sun: $('mSky').checked && AR.frozen.t });
   } else if (MONT.mode === 'ar' && arReady()) {
-    busy = drawReal(g, montCam(W, H), { sky: $('mSky').checked, ghost: $('mGhost').checked, labels: $('mSky').checked, rot: rotorAngle(), sun: $('mSky').checked && Date.now() });
+    busy = drawReal(g, montCam(W, H), { sky: false, ghost: $('mGhost').checked, labels: $('mSky').checked, rot: rotorAngle(), sun: $('mSky').checked && Date.now() });
   }
   const left = skyWork(MONT.mode === 'ar' ? 7 : 12);
   $('montHint').textContent = (busy || left ? 'A takarás vonalának számítása… ' : '') + arNote() + MONT.msg;
@@ -4661,7 +4661,7 @@ function syncAR() {
 }
 function arNote() {
   if (MONT.mode !== 'ar') return '';
-  if (AR.frozen) return 'Megállított kép: húzd a sárga horizontot, a falunevek vonalát (vagy a Nap-jelet) a valódi helyére; két ujjal a méretet. ';
+  if (AR.frozen) return 'Megállított kép: húzd a falunevek vonalát (vagy a Nap-jelet) a valódi helyére; két ujjal a méretet. ';
   if (AR.lock) return 'Igazítás rögzítve: az iránytű ingadozása már nem mozdítja el. ';
   if (AR.rel && AR.sd > 8) return `Az iránytű most bizonytalan (±${AR.sd.toFixed(0)}°): igazíts a kép megállításával. `;
   return '';
@@ -4679,7 +4679,7 @@ async function startAR() {
   Object.assign(AR, { f: null, u: null, raw: null, rate: 0, rel: false, abs: false, ios: false, yaw: null, yC: 0, yS: 0, yN: 0, sd: null, lock: false, frozen: null, hdOff: 0, ptOff: 0, gps: null });
   window.addEventListener('deviceorientationabsolute', onOri); window.addEventListener('deviceorientation', onOri);
   MONT.msg = '';
-  montStatus('<b>Tartsd a telefont függőlegesen</b>, és fordulj a turbina felé. Az iránytű pár fokot tévedhet, ezért egyszer igazíts: nyomd meg az <b>„Igazítás: kép megállítása”</b> gombot, és a megállt képen húzd a sárga modell-horizontot, a falunevek vonalát, vagy ha süt, a sárga Nap-jelet a valódi helyére. Ha a távoli dolgok közti távolság nem stimmel, két ujjal csippentve igazítsd a méretet (a látószöget a böngésző megjegyzi). A „Kész” után az igazítás rögzül, és fordulás közben is a helyén marad.');
+  montStatus('<b>Tartsd a telefont függőlegesen</b>, és fordulj a turbina felé. Az iránytű pár fokot tévedhet, ezért egyszer igazíts: nyomd meg az <b>„Igazítás: kép megállítása”</b> gombot, és a megállt képen húzd a falunevek függőleges vonalát a valódi falura, templomtoronyra, vagy ha süt, a sárga Nap-jelet a Napra. Ha a távoli dolgok közti távolság nem stimmel, két ujjal csippentve igazítsd a méretet (a látószöget a böngésző megjegyzi). A „Kész” után az igazítás rögzül, és fordulás közben is a helyén marad.');
   if (navigator.geolocation) AR.watch = navigator.geolocation.watchPosition(onGps, () => { AR.gps = 'nincs'; }, { enableHighAccuracy: true, maximumAge: 3000, timeout: 30000 });
   openMont('ar'); prepReal();
   setTimeout(() => { if (MONT.mode === 'ar' && !arReady()) MONT.msg = ' Nem érkezik iránytű-adat: ez a böngésző vagy készülék nem adja meg, merre nézel.'; }, 4000);
