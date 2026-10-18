@@ -93,8 +93,13 @@ ott a Sentinel-2 marad.
   Igazításhoz a modell horizontja (sárga vonal), a falunevek és a fokbeosztás látszik; a kép húzható, és csúszkák is
   vannak. A kész kép menthető, a sarkában a forrás feltüntetésével.
 - **Élő kamera (AR, telefonon, a nyilvános weboldalon):** a hátsó kamera képére rajzolja a turbinát a GPS, az iránytű és
-  a dőlésérzékelő alapján. Az iránytű pár fokos hibáját a kép oldalra húzásával lehet javítani, a kamera látószögét
-  egyszer kell beállítani (a böngésző megjegyzi). Pillanatkép menthető. A claude.ai artifactban a kamera nem érhető el.
+  a giroszkóp alapján. A kép a giroszkópot követi (sima, nem ugrál), az égtájat az iránytűből csak lassan átlagolva veszi
+  át, így az iránytű remegése nem látszik. Igazítás: az „Igazítás: kép megállítása” gombbal a kép megáll, és nyugodtan
+  ráhúzható a sárga modell-horizont, a falunevek vonala vagy (ha süt) a sárga Nap-jel a valódi helyére; két ujjal
+  csippentve a kamera látószöge (a modell mérete) állítható, ezt a böngésző megjegyzi. A „Kész” után az igazítás rögzül:
+  az iránytű ingadozása és a mágneses zavar (autó, kerítés) már nem mozdítja el, fordulás közben is a helyén marad.
+  Az „Iránytű szerint újra” visszaáll. Pillanatkép menthető. A claude.ai artifactban a kamera nem érhető el.
+  A saját fotónál is van Nap-jel, ha a fotóban benne van a készítés ideje.
 
 ### Árnyékvetés és villódzás
 
