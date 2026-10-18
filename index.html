@@ -1118,7 +1118,7 @@ h_takart = z_szem + D · tan(α_max) − z_talppont</div>
     </div>
     <div class="mont-row">
       <label class="check"><input type="checkbox" id="mSky" checked> <span id="mSkyL">Modell-horizont és falunevek</span></label>
-      <label class="check"><input type="checkbox" id="mGhost" checked> A takart rész pirosan</label>
+      <label class="check"><input type="checkbox" id="mGhost"> A takart rész is látszódjon (pirosan)</label>
       <button class="btn" type="button" id="mSave">Kép mentése</button>
       <button class="btn primary" type="button" id="mFreeze" hidden>Igazítás: kép megállítása</button>
       <button class="btn" type="button" id="mUnlock" hidden>Iránytű szerint újra</button>
@@ -4448,6 +4448,7 @@ function openMont(mode) {
   for (const id of ['mRlW', 'mSave']) $(id).hidden = mode === 'ar';
   $('mShot').hidden = mode !== 'ar'; $('mFreeze').hidden = mode !== 'ar'; syncAR();
   $('mHdL').textContent = mode === 'ar' ? 'Iránytű-javítás' : 'Irány'; $('mSkyL').textContent = mode === 'ar' ? 'Falunevek, fokbeosztás és Nap' : 'Modell-horizont és falunevek'; $('mFovL').textContent = mode === 'ar' ? 'A kamera látószöge' : 'Látószög';
+  $('mGhost').checked = false;   // alapból csak az látszik, ami a valóságban is látszani fog
   syncMontCtl(); cancelAnimationFrame(MONT.raf); MONT.raf = requestAnimationFrame(montFrame);
   $('montClose').focus();
 }

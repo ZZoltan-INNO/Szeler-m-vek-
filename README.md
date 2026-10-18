@@ -98,7 +98,8 @@ ott a Sentinel-2 marad.
   ráhúzható a falunevek vonala vagy (ha süt) a sárga Nap-jel a valódi helyére (az élő képen nincs modell-horizont vonal); két ujjal
   csippentve a kamera látószöge (a modell mérete) állítható, ezt a böngésző megjegyzi. A „Kész” után az igazítás rögzül:
   az iránytű ingadozása és a mágneses zavar (autó, kerítés) már nem mozdítja el, fordulás közben is a helyén marad.
-  Az „Iránytű szerint újra” visszaáll. Pillanatkép menthető. A claude.ai artifactban a kamera nem érhető el.
+  Az „Iránytű szerint újra” visszaáll. Alapból csak az látszik a turbinából, ami a valóságban is látszani fog; a takart
+  rész kérésre (pirosan) bekapcsolható. Pillanatkép menthető. A claude.ai artifactban a kamera nem érhető el.
   A saját fotónál is van Nap-jel, ha a fotóban benne van a készítés ideje.
 
 ### Árnyékvetés és villódzás
