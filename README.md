@@ -67,6 +67,9 @@ python3 tools/build_artifact.py --web [--base=https://VÉGLEGES-CÍM/] --bld=<mu
     --villages=<munka>/villages.json [--esri-key=<kulcs>] <munka>/dem/out <kimenet> <munka>/sat
 ```
 
+Más régió (pl. tesztelésre) ugyanezekkel a lépésekkel készíthető; a `--place=<név>,<szélesség>,<hosszúság>` adja a kezdő
+nézőpontot és a feliratokat. Almappába építve (pl. `<kimenet>/gyorujbarat`) egy feltöltéssel több régió is közzétehető.
+
 A `<kimenet>` mappa (index.html, alap.html, dem/, assets/, kb. 63 MB) bármilyen statikus tárhelyre feltölthető.
 A legegyszerűbb a Netlify Drop (https://app.netlify.com/drop): ingyenes fiókkal be kell húzni a mappát vagy a ZIP-et.
 Ugyanez működik Cloudflare Pages vagy GitHub Pages alatt is. A webes kiadás Facebook-előnézetet (`assets/og.jpg`) és
