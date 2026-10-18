@@ -17,7 +17,7 @@ A <dem_mappa> a tools/build_dem.py kimenete (z11_*.png, z8_*.png, index.json, te
 a <muhold_mappa> a tools/build_sat.py, a tools/build_sat13.py és a tools/build_buildings.py kimenete
 (s13_*.webp, s12_*.jpg, s9_*.jpg, sat_index.json, b12_*.png, bld_index.json).
 """
-import json, re, shutil, sys, os
+import datetime, json, re, shutil, sys, os
 
 args = [a for a in sys.argv[1:] if not a.startswith('--')]
 web = '--web' in sys.argv
@@ -64,6 +64,7 @@ s, n = re.subn(r'<script>\n/\* @preserve\n \* Leaflet 1\.9\.4.*?</script>\n',
                '<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>\n', s, flags=re.S)
 assert n == 1
 local = {'base': 'dem/', **idx}   # z11 + z8 (országos) vagy demZ + z12 + z8 + region (régiós)
+local['built'] = datetime.date.today().isoformat()   # a térkép alatti feliratban: melyik kiadás fut
 if web:
     local['web'] = True
     if esri:   # Esri World Imagery légifotó (Location Platform API-kulcs; az Esri-felületen a weboldal címére korlátozva)

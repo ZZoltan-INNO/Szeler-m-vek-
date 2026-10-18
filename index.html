@@ -759,7 +759,6 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .sh-tog{font:700 .85rem var(--body);background:#fff;color:#222;border:2px solid rgba(0,0,0,.2);border-radius:6px;padding:6px 9px;cursor:pointer}
 .sh-tog[aria-pressed="true"]{background:#ffd23f}
 .sh-warn{color:#b3261e;font-weight:600}
-@media (max-width:600px){.leaflet-control-attribution{font-size:9px;line-height:1.25;max-height:2.6em;overflow:hidden}.leaflet-control-attribution:hover,.leaflet-control-attribution:focus-within,.leaflet-control-attribution:active{max-height:none}}
 .sh-hr span{display:inline-block;transform:translate(-50%,-50%);font:700 .66rem var(--body);color:#222;background:rgba(255,255,255,.85);padding:0 3px;border-radius:3px}
 .vlabel span{display:inline-block;transform:translate(-50%,-130%);white-space:nowrap;font:700 .78rem var(--body);color:#fff;background:#e8590c;padding:2px 6px;border-radius:4px}
 .share-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
@@ -795,6 +794,12 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend i{width:14px;height:14px;border-radius:3px;display:inline-block;opacity:.85}
 .vs-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.map-foot{margin:4px 2px 0}
+.base-info{font-size:.8rem;line-height:1.4;color:var(--muted,#667);margin:0}
+.map-attr .leaflet-control-attribution{font-size:.72rem;line-height:1.4;color:var(--muted,#667);background:none;padding:0;margin:2px 0 0;max-height:none;overflow:visible}
+.map-attr .leaflet-control-attribution a{color:inherit;text-decoration:underline}
+.base-info b{font-weight:600;color:inherit}
+.base-info .nowrap{white-space:nowrap}
 .netwarn{font-size:.88rem;line-height:1.45;border:1px solid var(--v2);background:var(--soft);border-radius:8px;padding:8px 10px}
 .leaflet-container{font-family:var(--body)}
 .pin{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45)}
@@ -926,6 +931,10 @@ footer a{color:var(--accent)}
       </div>
       <p class="netwarn" id="netStatus" role="status" hidden></p>
       <div id="map" role="application" aria-label="Domborzati térkép a nézőponttal és a turbinákkal"></div>
+      <div class="map-foot" id="mapFoot">
+        <p class="base-info" id="baseInfo" aria-live="polite"></p>
+        <div class="map-attr" id="mapAttr"></div>
+      </div>
       <div class="vs-row">
         <button class="btn" type="button" id="centerView">Nézőpont a térkép közepére</button>
         <button class="btn" type="button" id="centerTurb">+ Turbina a térkép közepére</button>
@@ -2971,8 +2980,10 @@ function renderTurbList() {
 
 /* ---------- Térkép ---------- */
 const MAXZ = ESRI_KEY ? 19 : REGION ? 18 : 16;
-const map = L.map('map', REGION ? { minZoom: 10, maxZoom: MAXZ, maxBounds: (() => { const dl = (REGION.km + 12) / 111.2, dn = (REGION.km + 12) / (111.32 * Math.cos(REGION.lat * RAD)); return [[REGION.lat - dl, REGION.lon - dn], [REGION.lat + dl, REGION.lon + dn]]; })() }
-  : LOCAL ? { minZoom: 7, maxZoom: 16, maxBounds: [[45.2, 15.4], [49.1, 23.6]] } : {});
+const map = L.map('map', REGION ? { attributionControl: false, minZoom: 10, maxZoom: MAXZ, maxBounds: (() => { const dl = (REGION.km + 12) / 111.2, dn = (REGION.km + 12) / (111.32 * Math.cos(REGION.lat * RAD)); return [[REGION.lat - dl, REGION.lon - dn], [REGION.lat + dl, REGION.lon + dn]]; })() }
+  : LOCAL ? { attributionControl: false, minZoom: 7, maxZoom: 16, maxBounds: [[45.2, 15.4], [49.1, 23.6]] } : { attributionControl: false });
+// a forrásmegjelölés a térkép alatt (nem takarja a térképet); a Leaflet ugyanúgy frissíti rétegváltáskor
+$('mapAttr').appendChild(L.control.attribution().addTo(map).getContainer());
 /* Saját domborzat-árnyékolás az AWS domborzati csempékből: akkor is működik, ha a térképszolgáltatók nem érhetők el. */
 const shadeCache = new Map();
 const GRAY = sh => { const v = clamp(128 + (sh - 0.88) * 260, 0, 255); return [v, v, v]; };
@@ -3492,12 +3503,36 @@ const SatLayer = L.GridLayer.extend({
 map.createPane('shadePane'); map.getPane('shadePane').style.zIndex = 250; map.getPane('shadePane').style.mixBlendMode = 'soft-light'; map.getPane('shadePane').style.pointerEvents = 'none';
 const grayShade = () => new ShadeLayer({ pane: 'shadePane', gray: true, maxZoom: LOCAL ? MAXZ : 18, opacity: 0.9 });
 const SAT_ATTR = 'Műholdkép: Copernicus Sentinel-2 (2023–2024), módosított adat';
+/* Esri-légifotó: ha egy csempe sem tölt be, egy próbacsempével kiderítjük, mit válaszol az Esri */
+let esriOk = 0, esriBad = 0, esriWhy = null;
+function esriLayer() {
+  const l = L.tileLayer(ESRI_URL, { maxZoom: MAXZ, maxNativeZoom: 19, attribution: ESRI_ATTR });
+  l.on('tileload', () => { esriOk++; if (esriWhy) { esriWhy = null; warn('', 'esri'); baseInfo(); } });
+  l.on('tileerror', () => { if (++esriBad === 4 && !esriOk) esriDiag(); });
+  return l;
+}
+async function esriDiag() {
+  const c = map.getCenter(), z = 14, n = 2 ** z, x = Math.floor((c.lng + 180) / 360 * n), s = Math.sin(c.lat * RAD);
+  const y = Math.floor((0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * n);
+  let why;
+  try {
+    const r = await fetch(ESRI_URL.replace('{z}', z).replace('{x}', x).replace('{y}', y), { cache: 'no-store' });
+    if (r.ok && /image/.test(r.headers.get('content-type') || '')) why = 'a próbacsempe most betöltött, valószínűleg átmeneti hálózati hiba volt, frissítsd az oldalt';
+    else {
+      let m = (await r.text()).slice(0, 400);
+      try { const e = JSON.parse(m).error; if (e) m = [e.message, ...(e.details || [])].filter(Boolean).join(' '); } catch (e) {}
+      why = `az Esri válasza: ${r.status}${m ? ` „${esc(m.slice(0, 160))}”` : ''}` + (r.status === 498 || r.status === 499 ? ' (érvénytelen vagy lejárt API-kulcs)' : r.status === 403 ? ' (a kulcs erről az oldalcímről nem használható, vagy nincs rá jogosultsága)' : '');
+    }
+  } catch (e) { why = 'a böngésző nem érte el az Esri szerverét, vagy az elutasította a kérést (hálózat, reklám- vagy tartalomblokkoló, illetve a kulcs beállítása)'; }
+  if (esriOk) return;
+  esriWhy = why; baseInfo();
+  warn(`A nagy felbontású légifotó (Esri) nem töltődik be: ${why}. Addig a 10 m-es Sentinel-2 műholdkép látszik. Ha Facebookból vagy Messengerből nyitottad meg, próbáld Chrome-ban vagy Safariban. (Az oldal gazdájának: az Esri API-kulcs „Referrers” beállításában legyen üres a lista, vagy szerepeljen benne a ${esc(location.origin)} cím.)`, 'esri');
+}
 const BASES = LOCAL ? [
   ['Domborzat', new ShadeLayer({ maxZoom: MAXZ, attribution: REGION ? 'Domborzat: AWS Terrain Tiles (SRTM, Ausztriában 10 m-es DGM) · Településnevek: Overture Maps (ODbL)' : 'Domborzat: AWS Terrain Tiles (SRTM) · Településnevek: GeoNames (CC BY 4.0)' })],
   ['Műhold + domborzat', L.layerGroup([new SatLayer({ maxZoom: MAXZ, attribution: SAT_ATTR }), grayShade()])],
   ['Műhold', new SatLayer({ maxZoom: MAXZ, attribution: SAT_ATTR })],
-  ...(ESRI_KEY ? [['Légifotó', L.tileLayer(ESRI_URL, { maxZoom: MAXZ, maxNativeZoom: 19, attribution: ESRI_ATTR })],
-                  ['Légifotó + domborzat', L.layerGroup([L.tileLayer(ESRI_URL, { maxZoom: MAXZ, maxNativeZoom: 19, attribution: ESRI_ATTR }), grayShade()])]] : [])
+  ...(ESRI_KEY ? [['Légifotó', esriLayer()], ['Légifotó + domborzat', L.layerGroup([esriLayer(), grayShade()])]] : [])
 ] : [
   ['Topográfiai', L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Térkép: Esri, HERE, Garmin, © OpenStreetMap, USGS' })],
   ['OpenTopoMap', L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17, subdomains: 'abc', attribution: '© OpenStreetMap, SRTM · © OpenTopoMap (CC-BY-SA)' })],
@@ -3521,12 +3556,27 @@ BASES.forEach(([name, layer], i) => {
     // beépített adatnál a műholdképes réteg (helyi adat, mindig betölt), egyébként a következő működő réteg
     const next = (LOCAL && BASES.find(([n]) => n === 'Műhold + domborzat')) || BASES.find(([n, l]) => !baseFails.has(n) && !(l instanceof L.LayerGroup));
     if (!next) { warn('Egyik térképréteg sem töltődik be. Ellenőrizd az internetkapcsolatot. Ha a Claude alkalmazásban nyitottad meg, töltsd le a fájlt, és nyisd meg Chrome-ban vagy Edge-ben.'); return; }
-    map.removeLayer(layer); next[1].addTo(map);
+    map.removeLayer(layer); next[1].addTo(map); activeName = next[0]; baseInfo();
+    if (/Légifotó/.test(name)) return;   // az okát az esriDiag írja ki
     warn(`A(z) „${name}” térkép nem töltődött be, átváltottam erre: „${next[0]}”. A jobb felső sarokban másik réteget is választhatsz.`);
   });
 });
-map.on('baselayerchange', e => { activeBase = e.layer; });
-activeBase.addTo(map);
+let activeName = BASES.find(b => b[1] === activeBase)[0];
+/* felirat a térkép alatt: melyik kép látszik, milyen részletes */
+function baseInfo() {
+  const n = activeName, link = 'https://jak-szeleromu.netlify.app';
+  const what = /Légifotó/.test(n) ? 'Esri légifotó, kb. 0,3–0,5 m-es felbontás'
+    : /Műhold/.test(n) ? (LOCAL ? 'Copernicus Sentinel-2 műholdkép, 10 m-es felbontás (közelről elmosódott)' : 'Esri műholdkép, kb. 0,5 m-es felbontás')
+    : /Domborzat|domborzat/.test(n) ? 'domborzat-árnyékolás' : n;
+  let t = `<b>Alaptérkép:</b> ${what}${/ \+ domborzat/.test(n) ? ', domborzat-árnyékolással' : ''}.`;
+  if (esriWhy) t += ' A légifotó most nem érhető el, lásd a térkép feletti üzenetet.';
+  else if (ESRI_KEY && !/Légifotó/.test(n)) t += ' Részletesebb kép: a jobb felső rétegválasztóban a „Légifotó”.';
+  else if (LOCAL && !ESRI_KEY && !LOCAL.web) t += ` Ebben a beágyazott változatban nincs részletes légifotó; a nyilvános oldalon kb. 0,5 m-es légifotó van: <a href="${link}" target="_blank" rel="noopener">${link.replace('https://', '')}</a>.`;
+  if (LOCAL && LOCAL.built) t += ` <span class="nowrap">Változat: ${esc(LOCAL.built)}</span>`;
+  $('baseInfo').innerHTML = t;
+}
+map.on('baselayerchange', e => { activeBase = e.layer; activeName = e.name; baseInfo(); });
+activeBase.addTo(map); baseInfo();
 L.control.layers(base, null, { position: 'topright' }).addTo(map);
 /* Településnevek (helyi adat) */
 let SETTLE = [];
@@ -3741,7 +3791,7 @@ const ShToggle = L.Control.extend({ options: { position: 'topright' }, onAdd() {
 let shCtlAdded = false;
 function setShadow(on) {
   SHADOW.on = on; $('shOn').checked = on;
-  if (!shCtlAdded) { $('map').after($('shCtl')); shCtlAdded = true; }
+  if (!shCtlAdded) { $('mapFoot').after($('shCtl')); shCtlAdded = true; }
   syncShadow(); renderPano(1);
   if (on && state.turbines.length) {   // a turbinák és a villódzási határ a képernyőn
     let b = null; for (const T of state.turbines) { const c = L.latLng(T.lat, T.lon).toBounds(2 * FLICK_MAX); b = b ? b.extend(c) : c; }
