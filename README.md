@@ -75,7 +75,10 @@ A `--base` a végleges címmel abszolút útvonalat ad az előnézeti képnek (a
 A `--esri-key=<kulcs>` nagy felbontású légifotót (Esri World Imagery, kb. 30–50 cm) kapcsol be a webes kiadásban:
 „Légifotó” alaptérkép 19-es nagyításig, és a 3D terepen a nézőpont kb. 2×2 km-es környezetében. A kulcs ingyenes
 (ArcGIS Location Platform, „Basemaps” jogosultság), és az Esri felületén a weboldal címére kell korlátozni.
-Érvénytelen kulcsnál az oldal magától a beépített Sentinel-2 képre vált. A claude.ai artifact külső képet nem tölthet be,
+Ha a kulcsos elérés nem működik (érvénytelen kulcs, hiányzó jogosultság, oldalcím-korlátozás), ugyanez a légifotó
+kulcs nélkül, a nyilvános Esri-szerverről (server.arcgisonline.com) töltődik; a kulcs hibájának oka a térkép alatti
+„Változat” felirat fölé víve látszik. Kulcs nélkül is ez a nyilvános elérés működik. Ha az Esri egyáltalán nem érhető el,
+az oldal a beépített Sentinel-2 képre vált, és szól. A claude.ai artifact külső képet nem tölthet be,
 ott a Sentinel-2 marad.
 
 ### A turbina a valódi képen

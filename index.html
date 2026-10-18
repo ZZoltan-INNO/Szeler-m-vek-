@@ -2233,8 +2233,12 @@ const DEM_Z = LOCAL ? LOCAL.demZ || 11 : 12, TS = 256, WORLD = TS * 2 ** DEM_Z;
 const REGION = LOCAL && LOCAL.region ? LOCAL.region : null;
 const SAT_LEVELS = LOCAL ? [9, 12, 13, 14].filter(z => LOCAL['s' + z]) : [];
 // nagy felbontású légifotó (Esri World Imagery, kb. 30–50 cm) a webes kiadásban, ha a build megkapta az API-kulcsot
-const ESRI_KEY = LOCAL && LOCAL.esriKey ? LOCAL.esriKey : null;
-const ESRI_URL = 'https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?token=' + encodeURIComponent(ESRI_KEY || '');
+// Ha a kulcsos elérés nem működik (kulcs, jogosultság, oldalcím-korlátozás), ugyanez a kép a nyilvános Esri-szerverről jön.
+const ESRI_KEY = LOCAL && LOCAL.esriKey ? LOCAL.esriKey : null, ESRI_ON = !!(LOCAL && (ESRI_KEY || LOCAL.web));
+const ESRI_KEYED = 'https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?token=' + encodeURIComponent(ESRI_KEY || '');
+const ESRI_OPEN = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+let esriUrl = ESRI_KEY ? ESRI_KEYED : ESRI_OPEN;
+const esriTile = (z, x, y, u = esriUrl) => u.replace('{z}', z).replace('{x}', x).replace('{y}', y);
 const ESRI_ATTR = 'Légifotó: Esri, Maxar, Earthstar Geographics és a GIS User Community · Powered by Esri';
 const tiles = new Map();
 let demFail = 0, demOk = 0, demOutside = false;
@@ -2549,7 +2553,7 @@ const satTexCache = { key: '', val: null, pending: '' };
 // légifotó (z17, kb. 0,8 m/px) a nézőpont körüli kb. 2×2 km-es négyzetre a 3D terephez; amíg töltődik: null
 const aerialCache = { key: '', val: null, pending: '' };
 function aerialNear(fr) {
-  if (!ESRI_KEY) return null;
+  if (!ESRI_ON) return null;
   const V = state.viewer, key = `${V.lat.toFixed(5)},${V.lon.toFixed(5)}`;
   if (aerialCache.key === key) return aerialCache.val;
   if (aerialCache.pending === key) return null;
@@ -2562,7 +2566,7 @@ function aerialNear(fr) {
   for (let x = tx0; x <= tx1; x++) for (let y = ty0; y <= ty1; y++) jobs.push(new Promise(res => {
     const img = new Image(); img.crossOrigin = 'anonymous';
     img.onload = () => { g.drawImage(img, (x - tx0) * 256, (y - ty0) * 256); res(true); }; img.onerror = () => res(false);
-    img.src = ESRI_URL.replace('{z}', Z).replace('{x}', x).replace('{y}', y);
+    img.src = esriTile(Z, x, y);
   }));
   Promise.all(jobs).then(ok => {
     if (aerialCache.pending !== key) return;
@@ -2979,7 +2983,7 @@ function renderTurbList() {
 }
 
 /* ---------- Térkép ---------- */
-const MAXZ = ESRI_KEY ? 19 : REGION ? 18 : 16;
+const MAXZ = ESRI_ON ? 19 : REGION ? 18 : 16;
 const map = L.map('map', REGION ? { attributionControl: false, minZoom: 10, maxZoom: MAXZ, maxBounds: (() => { const dl = (REGION.km + 12) / 111.2, dn = (REGION.km + 12) / (111.32 * Math.cos(REGION.lat * RAD)); return [[REGION.lat - dl, REGION.lon - dn], [REGION.lat + dl, REGION.lon + dn]]; })() }
   : LOCAL ? { attributionControl: false, minZoom: 7, maxZoom: 16, maxBounds: [[45.2, 15.4], [49.1, 23.6]] } : { attributionControl: false });
 // a forrásmegjelölés a térkép alatt (nem takarja a térképet); a Leaflet ugyanúgy frissíti rétegváltáskor
@@ -3503,36 +3507,54 @@ const SatLayer = L.GridLayer.extend({
 map.createPane('shadePane'); map.getPane('shadePane').style.zIndex = 250; map.getPane('shadePane').style.mixBlendMode = 'soft-light'; map.getPane('shadePane').style.pointerEvents = 'none';
 const grayShade = () => new ShadeLayer({ pane: 'shadePane', gray: true, maxZoom: LOCAL ? MAXZ : 18, opacity: 0.9 });
 const SAT_ATTR = 'Műholdkép: Copernicus Sentinel-2 (2023–2024), módosított adat';
-/* Esri-légifotó: ha egy csempe sem tölt be, egy próbacsempével kiderítjük, mit válaszol az Esri */
-let esriOk = 0, esriBad = 0, esriWhy = null;
+/* Esri-légifotó: ha a kulcsos elérésről egy csempe sem jön, átvált a nyilvános szerverre (a felhasználó ebből
+   semmit sem vesz észre); ha az sem megy, a beépített Sentinel-képre. A kulcsos hiba okát egy próbacsempe mondja meg. */
+let esriOk = 0, esriBad = 0, esriWhy = null, esriGone = false;
+const ESRI_LAYERS = [];
 function esriLayer() {
-  const l = L.tileLayer(ESRI_URL, { maxZoom: MAXZ, maxNativeZoom: 19, attribution: ESRI_ATTR });
-  l.on('tileload', () => { esriOk++; if (esriWhy) { esriWhy = null; warn('', 'esri'); baseInfo(); } });
-  l.on('tileerror', () => { if (++esriBad === 4 && !esriOk) esriDiag(); });
+  const l = L.tileLayer(esriUrl, { maxZoom: MAXZ, maxNativeZoom: 19, attribution: ESRI_ATTR });
+  l.esri = true; ESRI_LAYERS.push(l);
+  l.on('tileload', () => { esriOk++; });
+  l.on('tileerror', () => { if (++esriBad >= 3 && !esriOk) esriFailed(); });
   return l;
 }
+function esriFailed() {
+  if (esriUrl === ESRI_KEYED) {
+    esriDiag(); esriUrl = ESRI_OPEN; esriOk = esriBad = 0;
+    ESRI_LAYERS.forEach(l => l.setUrl(esriUrl));
+    const used = aerialCache.key || aerialCache.pending; aerialCache.key = aerialCache.pending = ''; aerialCache.val = null;
+    if (used) renderPano(1);
+    baseInfo(); return;
+  }
+  if (esriGone) return; esriGone = true;
+  const isEsri = l => l.esri || (l instanceof L.LayerGroup && l.getLayers().some(x => x.esri));
+  if (isEsri(activeBase)) {
+    const next = BASES.find(([n]) => n === 'Műhold + domborzat');
+    map.removeLayer(activeBase); next[1].addTo(map); activeBase = next[1]; activeName = next[0];
+  }
+  warn('A nagy felbontású légifotó (Esri) nem töltődik be, ezért a 10 m-es Sentinel-2 műholdkép látszik. Valószínűleg a hálózat, egy reklám- vagy tartalomblokkoló, vagy a Facebook/Messenger beépített böngészője akadályozza: próbáld Chrome-ban vagy Safariban, és frissítsd az oldalt.', 'esri');
+  baseInfo();
+}
+const tileXY = (lat, lon, z) => { const n = 2 ** z, s = Math.sin(lat * RAD); return [Math.floor((lon + 180) / 360 * n), Math.floor((0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * n)]; };
 async function esriDiag() {
-  const c = map.getCenter(), z = 14, n = 2 ** z, x = Math.floor((c.lng + 180) / 360 * n), s = Math.sin(c.lat * RAD);
-  const y = Math.floor((0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * n);
+  const c = map.getCenter(), z = 14, [x, y] = tileXY(c.lat, c.lng, z);
   let why;
   try {
-    const r = await fetch(ESRI_URL.replace('{z}', z).replace('{x}', x).replace('{y}', y), { cache: 'no-store' });
-    if (r.ok && /image/.test(r.headers.get('content-type') || '')) why = 'a próbacsempe most betöltött, valószínűleg átmeneti hálózati hiba volt, frissítsd az oldalt';
+    const r = await fetch(esriTile(z, x, y, ESRI_KEYED), { cache: 'no-store' });
+    if (r.ok && /image/.test(r.headers.get('content-type') || '')) why = 'a próbacsempe betöltött, átmeneti hiba lehetett';
     else {
       let m = (await r.text()).slice(0, 400);
       try { const e = JSON.parse(m).error; if (e) m = [e.message, ...(e.details || [])].filter(Boolean).join(' '); } catch (e) {}
-      why = `az Esri válasza: ${r.status}${m ? ` „${esc(m.slice(0, 160))}”` : ''}` + (r.status === 498 || r.status === 499 ? ' (érvénytelen vagy lejárt API-kulcs)' : r.status === 403 ? ' (a kulcs erről az oldalcímről nem használható, vagy nincs rá jogosultsága)' : '');
+      why = `${r.status}${m ? ` „${esc(m.slice(0, 160))}”` : ''}` + (r.status === 498 || r.status === 499 ? ' (érvénytelen vagy lejárt API-kulcs)' : r.status === 403 ? ' (a kulcsnak nincs Basemaps-jogosultsága, vagy erről az oldalcímről nem használható)' : '');
     }
-  } catch (e) { why = 'a böngésző nem érte el az Esri szerverét, vagy az elutasította a kérést (hálózat, reklám- vagy tartalomblokkoló, illetve a kulcs beállítása)'; }
-  if (esriOk) return;
-  esriWhy = why; baseInfo();
-  warn(`A nagy felbontású légifotó (Esri) nem töltődik be: ${why}. Addig a 10 m-es Sentinel-2 műholdkép látszik. Ha Facebookból vagy Messengerből nyitottad meg, próbáld Chrome-ban vagy Safariban. (Az oldal gazdájának: az Esri API-kulcs „Referrers” beállításában legyen üres a lista, vagy szerepeljen benne a ${esc(location.origin)} cím.)`, 'esri');
+  } catch (e) { why = 'nem érkezett olvasható válasz (hálózat vagy oldalcím-korlátozás)'; }
+  esriWhy = why; console.warn('Esri API-kulcs:', why); baseInfo();
 }
 const BASES = LOCAL ? [
   ['Domborzat', new ShadeLayer({ maxZoom: MAXZ, attribution: REGION ? 'Domborzat: AWS Terrain Tiles (SRTM, Ausztriában 10 m-es DGM) · Településnevek: Overture Maps (ODbL)' : 'Domborzat: AWS Terrain Tiles (SRTM) · Településnevek: GeoNames (CC BY 4.0)' })],
   ['Műhold + domborzat', L.layerGroup([new SatLayer({ maxZoom: MAXZ, attribution: SAT_ATTR }), grayShade()])],
   ['Műhold', new SatLayer({ maxZoom: MAXZ, attribution: SAT_ATTR })],
-  ...(ESRI_KEY ? [['Légifotó', esriLayer()], ['Légifotó + domborzat', L.layerGroup([esriLayer(), grayShade()])]] : [])
+  ...(ESRI_ON ? [['Légifotó', esriLayer()], ['Légifotó + domborzat', L.layerGroup([esriLayer(), grayShade()])]] : [])
 ] : [
   ['Topográfiai', L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Térkép: Esri, HERE, Garmin, © OpenStreetMap, USGS' })],
   ['OpenTopoMap', L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17, subdomains: 'abc', attribution: '© OpenStreetMap, SRTM · © OpenTopoMap (CC-BY-SA)' })],
@@ -3542,11 +3564,11 @@ const BASES = LOCAL ? [
   ['Csak domborzat', new ShadeLayer({ maxZoom: 18, attribution: 'Domborzat: AWS Terrain Tiles' })]
 ];
 const base = Object.fromEntries(BASES);
-let activeBase = (ESRI_KEY ? BASES.find(b => b[0] === 'Légifotó') : REGION ? BASES.find(b => b[0] === 'Műhold + domborzat') : BASES[0])[1], baseFails = new Set();
+let activeBase = (ESRI_ON ? BASES.find(b => b[0] === 'Légifotó') : REGION ? BASES.find(b => b[0] === 'Műhold + domborzat') : BASES[0])[1], baseFails = new Set();
 const WARN = {};
 function warn(msg, kind = 'map') { WARN[kind] = msg; const t = Object.values(WARN).filter(Boolean), el = $('netStatus'); el.hidden = !t.length; el.innerHTML = t.join('<br>'); }
 BASES.forEach(([name, layer], i) => {
-  if (!layer.on || layer instanceof L.LayerGroup) return;
+  if (!layer.on || layer instanceof L.LayerGroup || layer.esri) return;   // az Esri-rétegeket az esriFailed kezeli
   let ok = 0, bad = 0;
   layer.on('tileload', () => { ok++; });
   layer.on('tileerror', () => {
@@ -3557,7 +3579,6 @@ BASES.forEach(([name, layer], i) => {
     const next = (LOCAL && BASES.find(([n]) => n === 'Műhold + domborzat')) || BASES.find(([n, l]) => !baseFails.has(n) && !(l instanceof L.LayerGroup));
     if (!next) { warn('Egyik térképréteg sem töltődik be. Ellenőrizd az internetkapcsolatot. Ha a Claude alkalmazásban nyitottad meg, töltsd le a fájlt, és nyisd meg Chrome-ban vagy Edge-ben.'); return; }
     map.removeLayer(layer); next[1].addTo(map); activeName = next[0]; baseInfo();
-    if (/Légifotó/.test(name)) return;   // az okát az esriDiag írja ki
     warn(`A(z) „${name}” térkép nem töltődött be, átváltottam erre: „${next[0]}”. A jobb felső sarokban másik réteget is választhatsz.`);
   });
 });
@@ -3569,14 +3590,20 @@ function baseInfo() {
     : /Műhold/.test(n) ? (LOCAL ? 'Copernicus Sentinel-2 műholdkép, 10 m-es felbontás (közelről elmosódott)' : 'Esri műholdkép, kb. 0,5 m-es felbontás')
     : /Domborzat|domborzat/.test(n) ? 'domborzat-árnyékolás' : n;
   let t = `<b>Alaptérkép:</b> ${what}${/ \+ domborzat/.test(n) ? ', domborzat-árnyékolással' : ''}.`;
-  if (esriWhy) t += ' A légifotó most nem érhető el, lásd a térkép feletti üzenetet.';
-  else if (ESRI_KEY && !/Légifotó/.test(n)) t += ' Részletesebb kép: a jobb felső rétegválasztóban a „Légifotó”.';
-  else if (LOCAL && !ESRI_KEY && !LOCAL.web) t += ` Ebben a beágyazott változatban nincs részletes légifotó; a nyilvános oldalon kb. 0,5 m-es légifotó van: <a href="${link}" target="_blank" rel="noopener">${link.replace('https://', '')}</a>.`;
-  if (LOCAL && LOCAL.built) t += ` <span class="nowrap">Változat: ${esc(LOCAL.built)}</span>`;
+  if (esriGone) t += ' A légifotó most nem érhető el, lásd a térkép feletti üzenetet.';
+  else if (ESRI_ON && !/Légifotó/.test(n)) t += ' Részletesebb kép: a jobb felső rétegválasztóban a „Légifotó”.';
+  else if (LOCAL && !ESRI_ON) t += ` Ebben a beágyazott változatban nincs részletes légifotó; a nyilvános oldalon kb. 0,5 m-es légifotó van: <a href="${link}" target="_blank" rel="noopener">${link.replace('https://', '')}</a>.`;
+  if (LOCAL && LOCAL.built) t += ` <span class="nowrap" title="${esriWhy ? 'Esri API-kulcs: ' + esriWhy + (esriGone ? '' : '; a légifotó a nyilvános Esri-szerverről jön.') : ''}">Változat: ${esc(LOCAL.built)}${esriWhy && !esriGone ? ' · tartalék légifotó-elérés' : ''}</span>`;
   $('baseInfo').innerHTML = t;
 }
 map.on('baselayerchange', e => { activeBase = e.layer; activeName = e.name; baseInfo(); });
 activeBase.addTo(map); baseInfo();
+// a kulcsos elérés azonnali próbája: így a 3D kép sem a térképcsempék hibáira vár
+if (ESRI_KEY) {
+  const im = new Image(), c = REGION || { lat: 47.1, lon: 16.58 }, [x, y] = tileXY(c.lat, c.lon, 14);
+  im.onerror = () => { if (!esriOk && esriUrl === ESRI_KEYED) esriFailed(); };
+  im.src = esriTile(14, x, y, ESRI_KEYED);
+}
 L.control.layers(base, null, { position: 'topright' }).addTo(map);
 /* Településnevek (helyi adat) */
 let SETTLE = [];
