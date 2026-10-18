@@ -33,8 +33,10 @@ alakú régió adatait tartalmazza, jelenleg Ják 30 km-es környékét (kb. 63 
   lépcsőzetes kapuzat az apostolfülkékkel, ikerablakok, ívsoros frízek, három szentély, a kápolna hagymasisakja).
   Alaprajz, tájolás, a tornyok és a kápolna magassága OpenStreetMap szerint; a főhajó, a mellékhajók és a szentélyek
   magassága becsült. A 3D modell és a takarásszámítás ugyanabból a magasságmezőből dolgozik,
-- **lehetséges telepítési területek:** egy szélerőmű-telepítési átvilágítás 14 szabad területének középpontja és mérete
-  (a területrendezési terv mellékletei és a 700 m-es védőtávolság alapján); a területek határa nincs meg, csak a közepük,
+- **lehetséges telepítési területek:** egy szélerőmű-telepítési átvilágítás szabad (kék) területei áttetsző kékkel és a
+  táblázat 14 területe számozva (a területrendezési terv mellékletei és a 700 m-es védőtávolság alapján). A kék foltokat
+  `tools/build_sites.py` vágja ki az átvilágítás térképének képéből; a kép illesztése a számozott körökre és a táblázat
+  koordinátáira (kb. 50 m-es hiba), a feliratok és vonalak alatti részt a környezetből pótolja,
 
 Előállítás (a régió közepe és sugara paraméter):
 
@@ -50,7 +52,8 @@ python3 tools/clear_roads_buildings.py <munka>/bld <munka>/roads.json <munka>/bl
 #   https://dataforgood-fb-data.s3.amazonaws.com/forests/v1/alsgedi_global_v6_float/chm/<quadkey>.tif
 python3 tools/build_canopy.py <chm> <munka>/roads.json <munka>/forest 47.1425 16.5815 30 4   # fák és erdők
 python3 tools/build_villages.py <munka>/bld_r <munka>/dem/out/telepulesek.json <munka>/villages.json Ják Nárai
-python3 tools/build_artifact.py --bld=<munka>/bld_r --forest=<munka>/forest --villages=<munka>/villages.json \
+python3 tools/build_sites.py <kép.png> <illesztőpontok.json> <munka>/sites.json --frame=156,344,1256,1462   # átvilágítás kék területei
+python3 tools/build_artifact.py --bld=<munka>/bld_r --forest=<munka>/forest --villages=<munka>/villages.json --sites=<munka>/sites.json \
     <munka>/dem/out <kimenet> [alapváltozat_url] <munka>/sat
 ```
 

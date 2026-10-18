@@ -134,3 +134,12 @@ Hamis kamerakép, megadott GPS-hely és tájolás-események: a nézőpont a GPS
 turbina a kép közepén van (50%), 5°-kal balra fordulva 65%-nál (a vetítés szerint 64%), a kép húzásával az iránytű
 javítható, bezáráskor a kamera leáll. 7/7 rendben. Valódi készüléken az iránytű néhány fokot téved, ezért kell a kézi
 igazítás.
+
+## Lehetséges telepítési területek: a kép illesztése
+
+Az átvilágítás térképének képét a 13 számozott körre (a táblázat ±100 m-es koordinátái) illesztettük web-Mercator
+vetületben, affin leképezéssel: a hiba medián 54 m, legfeljebb 112 m. (A falvak piros pöttyeire illesztve medián
+1 km lett volna: a pöttyök a kép készítőjénél a feliratokhoz igazítva el vannak tolva.) Ellenőrzésként a házakból
+számolt jáki lakott terület 81%-ban fedi a képen a szürke „Települési terület” foltot (a legjobb eltolás 0–4 képpont,
+kb. 0–80 m). A kék szín (12, 89, 232) kivágása után 75 sokszög, összesen kb. 7600 ha (a táblázat 14 területe együtt
+8800 ha, egy része a kép keretén kívül esik).

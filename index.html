@@ -753,7 +753,9 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .vlabel span{display:inline-block;transform:translate(-50%,-130%);white-space:nowrap;font:700 .78rem var(--body);color:#fff;background:#e8590c;padding:2px 6px;border-radius:4px}
 .share-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
 .real-row{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap;margin-top:10px}
-.real-row .btn{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.real-row .btn{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);display:inline-block}
+.vh{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0);pointer-events:none}
+.real-msg{color:#b3261e;font-weight:600}
 .mont{position:fixed;inset:0;z-index:5000;display:flex;flex-direction:column;background:#000;color:#fff}
 .mont[hidden]{display:none}
 .mont-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top));background:#111}
@@ -978,8 +980,8 @@ footer a{color:var(--accent)}
         <p class="small" id="bldStat"></p>
       </div>
       <div class="field" id="siteField">
-        <label class="check"><input type="checkbox" id="sites" checked> <b>Lehetséges telepítési területek</b> egy átvilágítás szerint (kék számok a térképen)</label>
-        <p class="small">A Vas vármegyei területrendezési terv mellékletei és a 700 m-es lakóterületi védőtávolság alapján készült átvilágítás 14 szabad területének közepe és mérete (az 1–4. érinti Ják határát). A területek pontos határa nincs meg, ezért csak a középpontjukat jelöljük. A jelre koppintva egy turbinát is odatehetsz. Tájékoztató adat, nem hivatalos kijelölés.</p>
+        <label class="check"><input type="checkbox" id="sites" checked> <b>Lehetséges telepítési területek</b> egy átvilágítás szerint (áttetsző kék a térképen)</label>
+        <p class="small">A Vas vármegyei területrendezési terv mellékletei és a 700 m-es lakóterületi védőtávolság alapján készült átvilágítás szabad területei: a kék foltokat az átvilágítás térképéről vágtuk ki, és a térkép számozott köreire illesztettük (kb. 50–100 m pontossággal). A számok a táblázat 14 területe (az 1–4. érinti Ják határát); a számra koppintva egy turbinát is odatehetsz. Tájékoztató adat, nem hivatalos kijelölés.</p>
       </div>
       <div class="field" id="shadowField">
         <label class="check"><input type="checkbox" id="shOn"> <b>Árnyékvetés és villódzás</b> a térképen, a választott napon és időpontban</label>
@@ -1023,7 +1025,7 @@ footer a{color:var(--accent)}
         <span class="checks"><label class="check"><input type="checkbox" id="ghost" checked> A takart rész pirosan áttűnik</label>
         <label class="check"><input type="checkbox" id="spin" checked> Forgó lapátok</label></span>
       </div>
-      <div class="real-row"><button class="btn" type="button" id="photoBtn">Turbina a saját fotódon</button><button class="btn" type="button" id="arBtn" hidden>Élő kamera (AR)</button><input type="file" id="photoIn" accept="image/*" hidden><span class="small" id="realNote">Fotózd le a tájat onnan, ahonnan nézed, és a program valós méretben ráteszi a turbinát.</span></div>
+      <div class="real-row"><label class="btn" for="photoIn" id="photoBtn" tabindex="0">Turbina a saját fotódon</label><input type="file" id="photoIn" class="vh" accept="image/*"><button class="btn" type="button" id="arBtn" hidden>Élő kamera (AR)</button><span class="small" id="realNote" role="status" aria-live="polite">Fotózd le a tájat onnan, ahonnan nézed, és a program valós méretben ráteszi a turbinát.</span></div>
       <div class="bld-edit" id="bldEdit" hidden>
         <div class="be-head"><b>Kiválasztott épület</b><button type="button" id="beClose" aria-label="Bezárás">×</button></div>
         <p class="small" id="beInfo"></p>
@@ -3563,7 +3565,8 @@ if (VILLAGES.length) {
    Forrás: „Ják és környéke – szélerőmű-telepítési átvilágítás” (Vas vármegye területrendezési tervének mellékletei:
    ökológiai hálózat, kiváló szántók, erdők, tájképvédelem, honvédelmi terület, nagyvízi meder, vízminőség-védelem,
    valamint a 700 m-es lakóterületi védőtávolság alapján). A térkép táblázata a szabad területek középpontját
-   (±100 m) és méretét adja; a területek pontos határa ebben nincs benne, ezért csak a középpontjukat jelöljük.
+   (±100 m) és méretét adja; a kék területek határát a térkép képéről vágtuk ki (a számozott körökre illesztve,
+   kb. 50–100 m-es pontossággal).
    [sorszám, terület (ha), szélesség, hosszúság, legközelebbi települések, ebből Ják közigazgatási területén (ha)] */
 const SITES = [
   [1, 2725, 47.0996, 16.5659, 'Rádóckölked 2,3 km · Nagykölked 2,5 km', 1050], [2, 553, 47.1491, 16.5256, 'Pornóapáti 2,9 km · Ják 3,5 km', 364],
@@ -3576,11 +3579,13 @@ const SITES = [
 ];
 const siteLayer = L.layerGroup();
 if (REGION && Math.hypot(REGION.lat - 47.14, REGION.lon - 16.58) < 0.3) {
+  // a szabad (kék) területek az átvilágítás térképéről kivágva (tools/build_sites.py), áttetsző kékkel
+  if (LOCAL.sites) L.polygon(LOCAL.sites.polys, { color: '#1f5fd6', weight: 1, opacity: 0.8, fillColor: '#1f5fd6', fillOpacity: 0.32, interactive: false, smoothFactor: 0.5 }).addTo(siteLayer);
   for (const [n, ha, la, lo, near, jak] of SITES) {
     const m = L.marker([la, lo], { icon: L.divIcon({ className: 'site-ic' + (jak ? ' jak' : ''), html: `<b>${n}</b><span>${nf(ha)} ha</span>`, iconSize: null }), keyboard: true, title: `${n}. lehetséges terület` }).addTo(siteLayer);
     m.bindPopup(`<b>${n}. lehetséges telepítési terület</b><br>kb. ${nf(ha)} ha szabad terület${jak ? `, ebből ${nf(jak)} ha Ják közigazgatási területén` : ''}<br>Legközelebbi települések: ${near}<br>
       <button class="btn" type="button" data-site="${n}" style="margin-top:6px">Turbina ide (a terület közepére)</button>
-      <p class="small" style="margin:6px 0 0">Egy szélerőmű-telepítési átvilágítás térképéről (területrendezési terv mellékletei, 700 m-es védőtávolság). A jel a szabad terület közepe (±100 m); a terület határa ennél sokkal szabálytalanabb lehet. Tájékoztató adat, nem hivatalos kijelölés.</p>`);
+      <p class="small" style="margin:6px 0 0">Egy szélerőmű-telepítési átvilágítás térképéről (területrendezési terv mellékletei, 700 m-es védőtávolság). A kék folt a térkép képéről kivágott szabad terület (kb. 50–100 m pontossággal), a szám a táblázat szerinti középpont. Tájékoztató adat, nem hivatalos kijelölés.</p>`);
   }
   siteLayer.addTo(map);
   map.on('popupopen', e => {
@@ -4307,6 +4312,8 @@ function exifTiff(v, t) {
 }
 
 /* ---------- A közös teljes képernyős nézet ---------- */
+// üzenet a gombok alatt (beágyazott nézetben a felugró ablakot a böngésző elnyelheti)
+function realMsg(html, err = true) { const n = $('realNote'); n.innerHTML = html; n.classList.toggle('real-msg', err); if (err) n.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
 const MONT = { mode: null, img: null, bg: null, hd0: 0, hd: 0, pt: 0, rl: 0, fov: 66, raf: 0, drag: null, msg: '' };
 const AR = { stream: null, watch: null, f: null, u: null, abs: false, ios: false, hdOff: 0, ptOff: 0, acc: null, gps: null, lastFix: null, fov: 66 };
 try { AR.fov = +localStorage.getItem('arFov') || 66; } catch (e) {}
@@ -4381,7 +4388,7 @@ function montDrag(e) {
 async function openPhoto(file) {
   let ex = null; try { ex = readExif(await file.arrayBuffer()); } catch (e) {}
   const img = new Image(), url = URL.createObjectURL(file);
-  img.onerror = () => { URL.revokeObjectURL(url); alert('Ezt a képet a böngésző nem tudja megnyitni (például HEIC). Mentsd vagy küldd el JPEG-ként, és próbáld újra.'); };
+  img.onerror = () => { URL.revokeObjectURL(url); realMsg('Ezt a képet a böngésző nem tudja megnyitni (például HEIC formátum). Mentsd el vagy küldd el magadnak JPEG-ként, és próbáld újra.'); };
   img.onload = async () => {
     if (MONT.img) URL.revokeObjectURL(MONT.img.src);
     MONT.img = img; const notes = [];
@@ -4465,7 +4472,9 @@ function arBasis() {
 }
 async function startAR() {
   const framed = window.top !== window, link = 'https://jak-szeleromu.netlify.app';
-  const fail = t => alert(t + (framed && !(LOCAL && LOCAL.web) ? `\n\nAz élő kamera a nyilvános oldalon működik: ${link}` : ''));
+  const fail = t => { realMsg(t + (framed || !(LOCAL && LOCAL.web) ? ` Az élő kamera a nyilvános oldalon működik: <a href="${link}" target="_blank" rel="noopener">${link.replace('https://', '')}</a>` : '')); return false; };
+  if (!(LOCAL && LOCAL.web)) return fail('Ebben a beágyazott nézetben a böngésző nem engedi a kamerát és az iránytűt.');
+  realMsg('Engedélyezd a kamerát, a helymeghatározást és a mozgásérzékelőt…', false);
   try { if (DeviceOrientationEvent.requestPermission && await DeviceOrientationEvent.requestPermission() !== 'granted') return fail('Az iránytű és a dőlésérzékelő használatát nem engedélyezted, enélkül nem tudom, merre nézel.'); }
   catch (e) { return fail('Az iránytűt ez az oldal nem érheti el.'); }
   try { AR.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false }); }
@@ -4522,8 +4531,8 @@ async function shareLink(msg) {
 }
 $('copyLink').onclick = () => shareLink($('copyMsg'));
 $('shareBtn').onclick = () => shareLink($('shareMsg'));
-$('photoBtn').onclick = () => $('photoIn').click();
-$('photoIn').onchange = () => { const f = $('photoIn').files[0]; $('photoIn').value = ''; if (f) openPhoto(f); };
+$('photoBtn').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('photoIn').click(); } };
+$('photoIn').onchange = () => { const f = $('photoIn').files[0]; $('photoIn').value = ''; if (f) { realMsg('A fotó betöltése…', false); openPhoto(f); } };
 if (AR_OK && matchMedia('(pointer: coarse)').matches) $('arBtn').hidden = false;
 else $('realNote').textContent += ' Telefonon élő kamerás nézet is van.';
 $('arBtn').onclick = startAR;

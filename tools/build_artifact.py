@@ -9,6 +9,7 @@ Használat:
       A --base a végleges cím; nélküle az előnézeti kép relatív útvonalú.
   --bld=<mappa>: a valós épületek (tools/build_buildings.py) külön mappából (b12_*.png, bld_index.json).
   --villages=<fájl>: települések lakott területének határa (tools/build_villages.py), a térképen és a turbinák távolságához.
+  --sites=<fájl>: lehetséges telepítési területek sokszögei (tools/build_sites.py), áttetsző kékkel a térképen.
   --forest=<mappa>: fák és erdők (tools/build_canopy.py: c14_*.png, t14_*.png, canopy_index.json).
   --esri-key=<kulcs>: (csak --web) nagy felbontású Esri légifotó a térképen és a 3D terepen a nézőpont 1 km-es körzetében.
 A <dem_mappa> lehet a tools/build_region.py kimenete is (régiós kiadás: demZ, z12, z8, region).
@@ -25,6 +26,7 @@ bld = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--bld=')),
 esri = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--esri-key=')), None)
 forest = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--forest=')), None)
 villages = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--villages=')), None)
+sites = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--sites=')), None)
 if base and not base.endswith('/'):
     base += '/'
 src, out = args[0], args[1]
@@ -70,6 +72,8 @@ if sat:
     local.update(json.load(open(os.path.join(sat, 'sat_index.json'))))
 if villages:   # lakott területek határa (tools/build_villages.py), kicsi: a lapba ágyazva
     local['villages'] = json.load(open(villages))
+if sites:   # lehetséges telepítési területek (tools/build_sites.py)
+    local['sites'] = json.load(open(sites))
 if forest:   # fák és erdők (tools/build_canopy.py)
     local.update(json.load(open(os.path.join(forest, 'canopy_index.json'))))
 bdir = bld or sat
