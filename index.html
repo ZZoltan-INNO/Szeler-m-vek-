@@ -1119,6 +1119,39 @@ input,select,textarea{background:var(--soft);color:var(--ink);border-color:rgba(
 .vl-btn::before{display:none}
 .eyebrow{font:600 .9rem/1.2 var(--body);letter-spacing:0;text-transform:none}
 .leaflet-container{background:#2b2c31}
+
+/* ---- nyitókép-jelenetek: VisionLens (InnoLens) és HorizonLens ---- */
+.hx-stage{display:grid;grid-template-columns:minmax(0,560px) minmax(0,1fr);gap:24px 48px;align-items:end}
+.hx-stack{display:grid}
+.hx-stack>.hx-copy{grid-area:1/1}
+.hx-h{margin:0;font:640 clamp(40px,5vw,76px)/.98 var(--display);letter-spacing:-.045em;color:#f5f5f7;text-wrap:balance}
+.hx-h em{font-style:normal;color:#ec651d}
+.hx-vl,.hx-hl{transition:opacity .7s ease,visibility .7s}
+[data-scene="vl"] .hx-hl,[data-scene="hl"] .hx-vl{opacity:0;visibility:hidden;pointer-events:none}
+.hx-chip.hx-hl{transition:opacity .7s ease .2s,visibility .7s}
+.hx-scene img,.hx-scene video{transition:filter 1s ease,opacity .8s ease}
+[data-scene="vl"] .hx-scene img,[data-scene="vl"] .hx-scene video{filter:brightness(.55) saturate(.85)}
+.hx-frame{align-self:center;justify-self:end;width:100%;max-width:720px;aspect-ratio:16/9;border-radius:20px;overflow:hidden;padding:0;position:relative;border:1px solid rgba(255,255,255,.16);box-shadow:0 30px 80px -30px rgba(0,0,0,.8),0 0 0 6px rgba(72,73,79,.35)}
+.hx-frame video{width:100%;height:100%;display:block;object-fit:cover;background:#1d1e22}
+.hx-statstack{display:grid}
+.hx-statstack>.hx-stats{grid-area:1/1}
+.hx-by{display:grid;grid-template-columns:minmax(0,1fr) auto}
+.hx-by>.hx-vl,.hx-by>.hx-hl{grid-area:1/1}
+.hx-tabs{position:relative;z-index:3;display:flex;gap:10px;margin:0 0 14px}
+.hx-tabs button{position:relative;overflow:hidden;display:grid;gap:2px;text-align:left;min-width:0;padding:10px 16px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(72,73,79,.32);color:#c0c1c8;font:500 12px/1.25 var(--body);cursor:pointer;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.hx-tabs button b{font:600 14px/1.2 var(--body);color:#f5f5f7}
+.hx-tabs button[aria-selected="true"]{border-color:rgba(236,101,29,.6);background:rgba(236,101,29,.14)}
+.hx-tabs button i{position:absolute;left:0;bottom:0;height:2px;width:0;background:#ec651d}
+.hx-tabs button.run i{animation:hxbar var(--dur,9s) linear forwards}
+@keyframes hxbar{to{width:100%}}
+@media (max-width:980px){
+  .hx-stage{grid-template-columns:minmax(0,1fr)}
+  .hx-frame{order:-1;justify-self:stretch;max-width:none;margin-bottom:56px}
+  .hx-copywrap{padding-top:calc(88px + env(safe-area-inset-top,0px))!important}
+  .hx-tabs button span{display:none}
+  .hx-by{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:reduce){.hx-vl,.hx-hl,.hx-scene img,.hx-scene video{transition:none}}
 </style>
 </head>
 <body>
@@ -1127,28 +1160,51 @@ input,select,textarea{background:var(--soft);color:var(--ink);border-color:rgba(
   <div class="hx-links"><button type="button" data-scroll="eszkoz">Az eszköz</button><button type="button" data-scroll="modszer">Hogyan számol</button><button type="button" data-scroll="miert">Miért készült</button><button type="button" data-scroll="visionlens">VisionLens</button></div>
   <button type="button" class="hx-btn hx-pri" data-scroll="eszkoz">Indítás</button>
 </div></div></nav>
-<header class="hx-hero">
+<header class="hx-hero" id="hxHero" data-scene="vl">
   <div class="hx-scene" aria-hidden="true">
     <img src="assets/hero_poster.jpg" alt=""><video id="heroVid" muted loop playsinline preload="none" poster="assets/hero_poster.jpg"></video>
-    <div class="hx-chip hx-glass" data-jak style="left:48.29%;top:37.07%"><b>63%<i> látszik</i></b><span>4,6 km a főtértől</span></div>
-    <div class="hx-chip hx-glass" data-jak style="left:68.38%;top:40.06%"><b>52%<i> látszik</i></b><span>4,7 km</span></div>
-    <div class="hx-chip hx-glass" data-jak style="left:81.91%;top:41.47%"><b>51%<i> látszik</i></b><span>4,9 km</span></div>
+    <div class="hx-chip hx-glass hx-hl" data-jak style="left:48.29%;top:37.07%"><b>63%<i> látszik</i></b><span>4,6 km a főtértől</span></div>
+    <div class="hx-chip hx-glass hx-hl" data-jak style="left:68.38%;top:40.06%"><b>52%<i> látszik</i></b><span>4,7 km</span></div>
+    <div class="hx-chip hx-glass hx-hl" data-jak style="left:81.91%;top:41.47%"><b>51%<i> látszik</i></b><span>4,9 km</span></div>
   </div>
-  <div class="hx-in hx-copywrap"><div class="hx-copy">
-    <span class="hx-badge hx-glass"><i>HorizonLens</i><span class="eyebrow">Ják és 30 km-es környéke</span></span>
-    <h1>Honnan látszik <em>a szélerőmű?</em></h1>
-    <p class="hx-lede">Tedd le a 250 méteres turbinát oda, ahová tervezik, és nézd meg a saját utcádból. <b>Valós domborzat, minden ház és minden fa</b> benne van, és az eszköz kiszámolja, mennyi marad takarásban.</p>
-    <div class="hx-cta"><button type="button" class="hx-btn hx-pri" data-scroll="eszkoz">Nézőpont kiválasztása</button><button type="button" class="hx-btn hx-sec" data-scroll="modszer">Hogyan számol</button></div>
-    <p class="hx-hint">Térkép nélkül, sík terepen egyszerűbb: <a href="alap.html">alapváltozat</a>.</p>
+  <div class="hx-in hx-copywrap"><div class="hx-stage">
+    <div class="hx-stack">
+      <div class="hx-copy hx-vl">
+        <span class="hx-badge hx-glass"><i>VisionLens AOI</i>az InnoLens terméke</span>
+        <h2 class="hx-h">Amit a szem lát, <em>azt mi megmérjük.</em></h2>
+        <p class="hx-lede">Automatikus optikai ellenőrzés gyártósorra. A mérnök elmondja, mit kell ellenőrizni, az AI összerakja a lépéseket, a gép melletti PC pedig <b>darabonként dönt: OK vagy NOK, okkal együtt</b>.</p>
+        <div class="hx-cta"><button type="button" class="hx-btn hx-pri" data-scroll="visionlens">Kérjen próbát</button><button type="button" class="hx-btn hx-sec" data-scene-go="hl">Új projektünk: HorizonLens</button></div>
+      </div>
+      <div class="hx-copy hx-hl">
+        <span class="hx-badge hx-glass"><i>Új projektünk: HorizonLens</i><span class="eyebrow">Ják és 30 km-es környéke</span></span>
+        <h1 class="hx-h">Honnan látszik <em>a szélerőmű?</em></h1>
+        <p class="hx-lede">Tedd le a 250 méteres turbinát oda, ahová tervezik, és nézd meg a saját utcádból. <b>Valós domborzat, minden ház és minden fa</b> benne van, és az eszköz kiszámolja, mennyi marad takarásban.</p>
+        <div class="hx-cta"><button type="button" class="hx-btn hx-pri" data-scroll="eszkoz">Nézőpont kiválasztása</button><button type="button" class="hx-btn hx-sec" data-scroll="modszer">Hogyan számol</button></div>
+        <p class="hx-hint">Térkép nélkül, sík terepen egyszerűbb: <a href="alap.html">alapváltozat</a>.</p>
+      </div>
+    </div>
+    <div class="hx-frame hx-vl"><video id="vlVid" muted loop playsinline preload="none" poster="assets/vl_poster.jpg" aria-label="VisionLens AOI bemutató: kódolvasás, méretmérés, felületi hiba, OK vagy NOK döntés"></video></div>
   </div></div>
   <div class="hx-in">
-    <dl class="hx-stats hx-glass" id="hlStats">
-      <div><dd data-stat="km">30<small>km</small></dd><dt>vizsgált körzet</dt></div>
-      <div><dd data-stat="bld">–</dd><dt>épület a modellben</dt></div>
-      <div><dd data-stat="trees">–</dd><dt>egyedi fa, kb. 1 m-es felbontás</dt></div>
-      <div><dd>AR</dd><dt>élő kamerakép a telefonon</dt></div>
-    </dl>
-    <p class="hx-by"><span data-jak>A háttér Ják valódi domborzata (magasságban 2,5× nagyítva), három példa-turbinával az 1. lehetséges területen. Narancs pont: innen a turbina töve is látszik.</span><span><b>HorizonLens</b> · az InnoLens (<span data-grp="name">InnoGroupe</span>) fejlesztése, díjmentes, semleges eszköz</span></p>
+    <div class="hx-tabs" role="tablist" aria-label="Bemutató">
+      <button type="button" role="tab" data-scene-go="vl"><b>VisionLens AOI</b><span>gyártósori képelemzés</span><i></i></button>
+      <button type="button" role="tab" data-scene-go="hl"><b>HorizonLens</b><span>új projekt: szélerőmű-látványvizsgálat</span><i></i></button>
+    </div>
+    <div class="hx-statstack">
+      <dl class="hx-stats hx-glass hx-vl">
+        <div><dd>OK / NOK</dd><dt>döntés darabonként, okkóddal</dt></div>
+        <div><dd>20–50<small>kép/s</small></dd><dt>kameránként</dt></div>
+        <div><dd>1–4</dd><dt>kamera egy ellenőrző állomáson</dt></div>
+        <div><dd>OPC UA</dd><dt>vagy 24 V-os I/O a PLC felé</dt></div>
+      </dl>
+      <dl class="hx-stats hx-glass hx-hl" id="hlStats">
+        <div><dd data-stat="km">30<small>km</small></dd><dt>vizsgált körzet</dt></div>
+        <div><dd data-stat="bld">–</dd><dt>épület a modellben</dt></div>
+        <div><dd data-stat="trees">–</dd><dt>egyedi fa, kb. 1 m-es felbontás</dt></div>
+        <div><dd>AR</dd><dt>élő kamerakép a telefonon</dt></div>
+      </dl>
+    </div>
+    <p class="hx-by"><span class="hx-hl" data-jak>A háttér Ják valódi domborzata (magasságban 2,5× nagyítva), három példa-turbinával az 1. lehetséges területen. Narancs pont: innen a turbina töve is látszik.</span><span class="hx-vl">Küldjön 5–10 képet a darabjáról, jót és hibásat vegyesen: megmutatjuk rajta.</span><span><b>InnoLens</b> · az <span data-grp="name">InnoGroupe</span> vizuális és képelemzési cége</span></p>
   </div>
 </header>
 <script>
@@ -1166,11 +1222,23 @@ document.addEventListener('DOMContentLoaded', function () {
   document.addEventListener('DOMContentLoaded', () => {   // a beépített adat a lap végén töltődik be
     const L = window.LOCAL_DATA; if (L && L.home && L.home.name !== 'Ják') document.querySelectorAll('[data-jak]').forEach(e => e.hidden = true);
   });
-  const v = document.getElementById('heroVid');
-  if (!v || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const sz = innerWidth * devicePixelRatio > 1400 ? '' : '_720';
-  for (const [ext, type] of [['webm', 'video/webm; codecs=vp9'], ['mp4', 'video/mp4']]) { const s = document.createElement('source'); s.src = `assets/hero_loop${sz}.${ext}`; s.type = type; v.appendChild(s); }
-  const go = () => { v.preload = 'auto'; v.play().then(() => v.classList.add('on')).catch(() => {}); };
+  /* nyitókép: VisionLens (InnoLens) és HorizonLens jelenet váltakozik; a fülekkel a látogató is válthat */
+  const hero = document.getElementById('hxHero'), bg = document.getElementById('heroVid'), vl = document.getElementById('vlVid');
+  if (!hero) return;
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches, big = innerWidth * devicePixelRatio > 1400;
+  const DUR = { vl: 16000, hl: 9000 }; let timer = 0;
+  const src = (v, list) => { for (const [f, type] of list) { const s = document.createElement('source'); s.src = 'assets/' + f; s.type = type; v.appendChild(s); } };
+  const play = v => { if (still || !v) return; v.preload = 'auto'; v.play().then(() => v.classList.add('on')).catch(() => {}); };
+  const set = (sc, auto) => {
+    hero.dataset.scene = sc; clearTimeout(timer);
+    hero.querySelectorAll('.hx-tabs [data-scene-go]').forEach(t => { const on = t.dataset.sceneGo === sc; t.setAttribute('aria-selected', on); t.classList.remove('run'); if (on && !still) { void t.offsetWidth; t.style.setProperty('--dur', DUR[sc] + 'ms'); t.classList.add('run'); } });
+    if (sc === 'vl') play(vl); else if (vl) vl.pause();
+    if (!still && auto !== false) timer = setTimeout(() => set(sc === 'vl' ? 'hl' : 'vl'), DUR[sc]);
+  };
+  hero.querySelectorAll('[data-scene-go]').forEach(b => b.addEventListener('click', () => set(b.dataset.sceneGo)));
+  if (bg) src(bg, [[`hero_loop${big ? '' : '_720'}.webm`, 'video/webm; codecs=vp9'], [`hero_loop${big ? '' : '_720'}.mp4`, 'video/mp4']]);
+  if (vl) src(vl, big ? [['vl_loop.webm', 'video/webm; codecs=vp9'], ['visionlens.mp4', 'video/mp4']] : [['vl_loop_720.webm', 'video/webm; codecs=vp9'], ['vl_loop_720.mp4', 'video/mp4']]);
+  const go = () => { play(bg); set('vl'); };
   if (document.readyState === 'complete') go(); else addEventListener('load', go);
 })();
 document.querySelectorAll('[data-scroll]').forEach(b => { b.addEventListener('click', () => { const t = document.getElementById(b.dataset.scroll); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); });
