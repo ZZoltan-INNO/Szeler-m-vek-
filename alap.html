@@ -98,6 +98,14 @@ main{display:grid;gap:20px;padding-bottom:20px}
 #side{width:100%;height:auto;display:block}
 #side text{font-family:var(--body);fill:var(--muted)}
 .formula{font:400 .86rem/1.6 var(--mono);background:var(--soft);border-radius:7px;padding:10px 12px;overflow-x:auto;white-space:pre;color:var(--ink)}
+.legal{margin:6px 0 0}
+.legal summary{cursor:pointer;font-weight:600;color:var(--ink,#222)}
+.legal-body{font-size:.8rem;line-height:1.5;color:var(--muted,#555);max-width:900px}
+.legal-body p{margin:.5em 0}
+.legal-bar{position:fixed;left:0;right:0;bottom:0;z-index:4000;display:flex;gap:10px 14px;align-items:center;justify-content:center;flex-wrap:wrap;padding:10px 16px;padding-bottom:max(10px,env(safe-area-inset-bottom));background:var(--card,#fff);color:var(--ink,#222);border-top:1px solid var(--line,#ccc);box-shadow:0 -4px 16px rgba(0,0,0,.12);font-size:.85rem}
+.legal-bar[hidden]{display:none}
+.legal-bar p{margin:0;max-width:760px}
+.linklike{background:none;border:0;padding:0;font:inherit;color:var(--accent,#1a5fb4);text-decoration:underline;cursor:pointer}
 footer{padding-block:4px 32px;font-size:.8rem;color:var(--muted)}
 
 @media (max-width:860px){ .two{grid-template-columns:1fr} .facts{grid-template-columns:repeat(2,minmax(0,1fr))} }
@@ -166,7 +174,41 @@ h_takart = 1,7 + D · tan(α_max)</div>
     </section>
   </div>
 </main>
-<footer class="wrap"><p>Feltételezések: sík terep, lombos (átlátszatlan) fák, a lapát a legmagasabb állásban, a rotor szemből látszik. Télen a lombhullató fák áttetszőek, magasabb nézőpontról (emelet, domb) a takarás gyorsan csökken.</p><p>Levél-, kéreg- és fűfotók: ez-tree (MIT, © Daniel Greenheck); égbolt-fény: Poly Haven (CC0).</p></footer>
+<footer class="wrap">
+  <p><b>Tájékoztató modell, nem hivatalos látványterv; használata saját felelősségre.</b> <button type="button" class="linklike legal-link">Jogi nyilatkozat, felelősségkizárás és adatkezelés</button></p><p>Feltételezések: sík terep, lombos (átlátszatlan) fák, a lapát a legmagasabb állásban, a rotor szemből látszik. Télen a lombhullató fák áttetszőek, magasabb nézőpontról (emelet, domb) a takarás gyorsan csökken.</p><p>Levél-, kéreg- és fűfotók: ez-tree (MIT, © Daniel Greenheck); égbolt-fény: Poly Haven (CC0).</p>
+<section class="legal" id="jogi">
+  <details id="jogiDet">
+    <summary>Jogi nyilatkozat, felelősségkizárás és adatkezelés</summary>
+    <div class="legal-body">
+      <p><b>1. Az oldal jellege.</b> Az oldal magánkezdeményezésű, nem kereskedelmi célú, tájékoztató és szemléltető számítási eszköz. Nem hatósági, szakhatósági vagy igazságügyi szakértői vélemény, nem látványterv és nem környezeti hatásvizsgálat, és nem helyettesíti a hivatalos eljárásokban készülő dokumentációt. Az oldal nem a beruházó, nem hatóság és nem önkormányzat kiadványa.</p>
+      <p><b>2. Pontosság.</b> Az eredmények modellszámítások, közelítésekkel és feltételezésekkel (domborzat; az épületek és fák magasságának gépi becslése; a turbinák helye, száma, típusa és mérete; a lehetséges telepítési területek kézi illesztése; az árnyék és a villódzás legrosszabb esetre számolt becslése). A felhasznált adatok hibásak, hiányosak vagy elavultak lehetnek. A tervezett turbinák pontos helye, száma és típusa nem ismert: a megjelenített turbinák a felhasználó által elhelyezett, feltételezett szemléltetések. Az élő kamerás és a fotós nézet pontossága a készülék érzékelőitől, a kalibrációtól és a használat módjától függ. A valóság a modelltől jelentősen eltérhet.</p>
+      <p><b>3. Szavatosság és jótállás kizárása.</b> Az oldalt „ahogy van” és „ahogy elérhető” állapotában bocsátjuk rendelkezésre, mindenféle kifejezett vagy hallgatólagos szavatosság és jótállás nélkül, különösen az eredmények pontosságára, teljességére, naprakészségére, egy adott célra való alkalmasságára és az oldal folyamatos elérhetőségére vonatkozóan.</p>
+      <p><b>4. Felelősség kizárása.</b> A jogszabályok által megengedett legteljesebb mértékben az oldal készítője, üzemeltetője és közreműködői semmilyen felelősséget nem vállalnak semmilyen közvetlen vagy közvetett kárért, elmaradt haszonért, költségért vagy egyéb hátrányért, amely az oldal használatából vagy használhatatlanságából, az eredmények és a képek felhasználásából, megosztásából, az ezek alapján hozott döntésekből (például ingatlanvásárlás, beruházás, észrevétel, jogi lépés), illetve harmadik felek adataiból vagy szolgáltatásaiból ered. Ez a kizárás nem terjed ki azokra az esetekre, amelyekben jogszabály a felelősség kizárását vagy korlátozását nem engedi (így különösen a szándékosan vagy súlyos gondatlansággal okozott, illetve az életet, a testi épséget vagy az egészséget megsértő károkra).</p>
+      <p><b>5. Saját felelősség és biztonság.</b> Az oldalt mindenki saját felelősségére használja. Járművezetés vagy a forgalomban való közlekedés közben ne használd; figyelj a környezetedre, és engedély nélkül ne lépj magánterületre.</p>
+      <p><b>6. Az eredmények felhasználása.</b> A számítások és a képek tájékoztató jellegűek; hivatalos eljárásban, szerződésben vagy döntés alapjaként csak szakember ellenőrzése után használhatók. A mentett képek forrásjelölését ne távolítsd el; a képek megosztásáért és felhasználásáért a megosztó felel.</p>
+      <p><b>7. Harmadik felek.</b> Az oldal harmadik felek adatait és szolgáltatásait használja (térképek, légi- és műholdképek, domborzat, épület- és famagasság-adatok, programkönyvtárak, tárhely). Ezek tartalmáért, pontosságáért és elérhetőségéért nem vállalunk felelősséget; a forrásokat és a licenceket a lap alján soroljuk fel.</p>
+      <p><b>8. Adatkezelés.</b> A helyadatot, a kamera képét és a mozgásérzékelők adatait az oldal kizárólag a készülékeden, a böngészőben dolgozza fel; ezeket nem rögzítjük és nem továbbítjuk. A beállításokat (például a kalibrációt) a böngésző helyi tárolója őrzi a készülékeden, a megosztható link pedig a címsorban hordozza a beállításokat. A tárhelyszolgáltató és a térkép- és adatszolgáltatók a kérések kiszolgálásához technikai adatokat (például IP-címet) kezelhetnek, a saját adatkezelési tájékoztatójuk szerint.</p>
+      <p><b>9. Módosítás, irányadó jog.</b> Az oldalt és ezt a nyilatkozatot bármikor, előzetes értesítés nélkül módosíthatjuk vagy megszüntethetjük. Az oldal használatával a nyilatkozatot elfogadod. Irányadó jog: a magyar jog. Hatályos: 2026. október 19-től.</p>
+    </div>
+  </details>
+</section>
+<div class="legal-bar" id="legalBar" hidden role="region" aria-label="Jogi tájékoztatás">
+  <p>Ez egy <b>tájékoztató, szemléltető modell</b>, nem hivatalos látványterv vagy szakvélemény; használata saját felelősségre. Az oldal használatával elfogadod a <button type="button" class="linklike" id="legalOpen">jogi nyilatkozatot</button>.</p>
+  <button type="button" class="btn" id="legalOk">Rendben</button>
+</div>
+<script>
+/* jogi nyilatkozat: első látogatáskor sáv az oldal alján; a lenyitható teljes szöveg a lábléc alatt (gombbal, mert a címsor a beállításokat hordozza) */
+(function () {
+  const bar = document.getElementById('legalBar'), det = document.getElementById('jogiDet');
+  let seen = false; try { seen = localStorage.getItem('jogiOk') === '1'; } catch (e) {}
+  bar.hidden = seen;
+  const open = () => { det.open = true; det.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  document.getElementById('legalOpen').onclick = open;
+  document.querySelectorAll('.legal-link').forEach(b => { b.onclick = open; });
+  document.getElementById('legalOk').onclick = () => { bar.hidden = true; try { localStorage.setItem('jogiOk', '1'); } catch (e) {} };
+})();
+</script>
+</footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>/* REALVIEW:BEGIN – forrás: src/realview.js */
