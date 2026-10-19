@@ -89,7 +89,7 @@ if place:   # kezdő nézőpont és a feliratok a régió településével (alap
     s = s.replace(a, f"Látványvizsgálat · {place[0]} és {local['region']['km']:g} km-es környéke")
 s = s.replace('<script>\n"use strict";', '<script>window.LOCAL_DATA = ' + json.dumps(local, separators=(',', ':')) + ';</script>\n<script>\n"use strict";', 1)
 if web:
-    s = social(s, f"Honnan látszik a szélerőmű? {place[0] if place else 'Ják'} és környéke",
+    s = social(s, f"HorizonLens · Honnan látszik a szélerőmű? {place[0] if place else 'Ják'} és környéke",
                'Húzd a 250 m magas turbinát oda, ahová tervezik, válaszd ki, honnan nézed (akár a házad elől), '
                'és nézd meg 3D-ben a valós domborzattal és házakkal, mennyi látszik belőle.', '')
     a = open(os.path.join(root, 'alap.html'), encoding='utf-8').read()
@@ -104,7 +104,7 @@ else:
     for t in SKELETON:
         assert s.count(t) == 1, t
         s = s.replace(t, '')
-    s = s.replace('<title>Szélerőmű-rálátás</title>', '<title>Szélerőmű-rálátás</title>\n<meta name="claude:viewport-fit-sides" content="cover">', 1)
+    s = s.replace('<title>HorizonLens</title>', '<title>HorizonLens</title>\n<meta name="claude:viewport-fit-sides" content="cover">', 1)
 os.makedirs(os.path.join(out, 'dem'), exist_ok=True)
 open(os.path.join(out, 'index.html'), 'w', encoding='utf-8').write(s)
 for f in os.listdir(src):
@@ -126,6 +126,6 @@ if bdir:
 adir = os.path.join(root, 'assets')
 os.makedirs(os.path.join(out, 'assets'), exist_ok=True)
 for f in os.listdir(adir):
-    if f.endswith(('.png', '.jpg')) or (web and f.startswith('LICENSE')):
+    if f.endswith(('.png', '.jpg', '.mp4')) or (web and f.startswith('LICENSE')):
         shutil.copy(os.path.join(adir, f), os.path.join(out, 'assets', f))
 print('kész:', out, len(os.listdir(os.path.join(out, 'dem'))), 'adatfájl', '(weboldal)' if web else '(artifact)')

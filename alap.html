@@ -3,35 +3,37 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Szélerőmű takarása</title>
+<title>HorizonLens Alap</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="description" content="Egyszerű kalkulátor: mennyi látszik egy szélturbinából, ha előtted bokor, épület, fák vagy domb áll.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap">
 <style>
 /* Elrendezés: felül a szemmagasságú kép és az eredmény, alatta két oszlopban a beállítások és az oldalnézet; mobilon egy oszlop. */
+/* VisionLens-arculat: a fejléc, a bemutató és a lábléc mindig sötét márkasáv (--b-*), a munkafelület a néző témáját követi. */
 :root{
-  --paper:#eef1ec; --card:#ffffff; --ink:#17221d; --muted:#56655d; --line:#d3dbd2; --soft:#e4e9e2;
-  --accent:#1d5fa6; --accent-ink:#ffffff;
+  --paper:#f1f1ef; --card:#ffffff; --ink:#16181b; --muted:#5b6168; --line:#dcdddf; --soft:#ebeced;
+  --accent:#c4500a; --accent-ink:#ffffff;
   --terrain:#b9c99b; --terrain-edge:#6f8a4f; --shadow:#d6453a;
   --v0:#5f7f6b; --v1:#e3b52b; --v2:#ea8227; --v3:#d6336c;
-  --display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
-  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --b-bg:#141518; --b-bg2:#1d1f23; --b-ink:#f3f2ef; --b-muted:#a4a9b0; --b-line:#30333a; --b-orange:#e8620c; --b-orange-hi:#f5934a; --b-ok:#3cc46b;
+  --display:"Geist",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --body:"Geist",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"Geist Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --paper:#111815; --card:#19221e; --ink:#e5ebe6; --muted:#9aaaa1; --line:#2d3a33; --soft:#222d28;
-    --accent:#6ea8ea; --accent-ink:#0d1a28;
+    --paper:#121316; --card:#1b1d20; --ink:#ecebe7; --muted:#9da2a9; --line:#2d3035; --soft:#24272b;
+    --accent:#ef7426; --accent-ink:#16181b;
     --terrain:#3f5532; --terrain-edge:#8fae6a; --shadow:#ff6b5e;
     --v0:#8fb39c; --v1:#f0c63f; --v2:#f39a45; --v3:#f0588a;
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --paper:#111815; --card:#19221e; --ink:#e5ebe6; --muted:#9aaaa1; --line:#2d3a33; --soft:#222d28;
-  --accent:#6ea8ea; --accent-ink:#0d1a28;
+  --paper:#121316; --card:#1b1d20; --ink:#ecebe7; --muted:#9da2a9; --line:#2d3035; --soft:#24272b;
+  --accent:#ef7426; --accent-ink:#16181b;
   --terrain:#3f5532; --terrain-edge:#8fae6a; --shadow:#ff6b5e;
   --v0:#8fb39c; --v1:#f0c63f; --v2:#f39a45; --v3:#f0588a;
   color-scheme:dark;
@@ -106,6 +108,127 @@ main{display:grid;gap:20px;padding-bottom:20px}
 .legal-bar[hidden]{display:none}
 .legal-bar p{margin:0;max-width:760px}
 .linklike{background:none;border:0;padding:0;font:inherit;color:var(--accent,#1a5fb4);text-decoration:underline;cursor:pointer}
+
+/* ---- VisionLens márkasávok ---- */
+.brand-band{background:var(--b-bg);color:var(--b-ink);position:relative;overflow:hidden}
+.brand-band::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background-image:linear-gradient(var(--b-line) 1px,transparent 1px),linear-gradient(90deg,var(--b-line) 1px,transparent 1px);background-size:44px 44px;
+  -webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.55),transparent 85%);mask-image:linear-gradient(180deg,rgba(0,0,0,.55),transparent 85%)}
+.brand-band>.wrap{position:relative}
+.brand-band .eyebrow{color:var(--b-orange-hi);letter-spacing:.14em}
+.brand-band .lede{color:var(--b-muted)}
+.brand-band .lede b{color:var(--b-ink)}
+.brand-band .hint{color:var(--b-muted)}
+.brand-band a{color:var(--b-orange-hi)}
+.brand-band .btn{background:var(--b-bg2);color:var(--b-ink);border-color:var(--b-line)}
+.brand-band .btn:hover{border-color:var(--b-orange)}
+.brand-band h1{font-weight:800;letter-spacing:-.015em}
+.hl{color:var(--b-orange-hi)}
+.brandbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-bottom:14px;margin-bottom:6px;border-bottom:1px solid var(--b-line)}
+.vl-logo{display:inline-flex;align-items:center;gap:9px;font:700 1.08rem/1 var(--display);color:var(--b-ink);letter-spacing:-.005em}
+.vl-logo svg{width:26px;height:26px;flex:none}
+.vl-sep{width:1px;height:18px;background:var(--b-line)}
+.vl-fam{font-size:.85rem;color:var(--b-muted)}
+.vl-jump{margin-left:auto;font:500 .72rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--b-orange-hi);background:none;border:1px solid var(--b-line);border-radius:6px;padding:7px 10px;cursor:pointer}
+.vl-jump:hover,.vl-jump:focus-visible{border-color:var(--b-orange);outline:none}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:28px;align-items:end}
+.hero-copy{display:grid;gap:10px;min-width:0}
+.hero-art{width:390px;max-width:100%;height:auto;display:block}
+@media (max-width:980px){.hero{grid-template-columns:minmax(0,1fr)}.hero-art{display:none}}
+/* ---- VisionLens bemutató ---- */
+.vl-band{margin-top:28px;padding-block:44px 48px}
+.vl-wrap{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:28px 40px;align-items:start}
+.vl-head{display:grid;gap:12px;min-width:0}
+.vl-head h2{font:800 clamp(1.7rem,3.4vw,2.6rem)/1.08 var(--display);letter-spacing:-.015em;color:var(--b-ink)}
+.vl-lede{color:var(--b-muted);font-size:1.02rem;max-width:60ch}
+.vl-lede b{color:var(--b-orange-hi);font-weight:600}
+.vl-media{min-width:0;border:1px solid var(--b-line);border-radius:10px;overflow:hidden;background:#000;aspect-ratio:16/9;max-width:100%}
+.vl-media video{display:block;width:100%;height:100%;object-fit:cover;background:#000}
+.vl-steps{grid-column:1/-1;list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.vl-steps li{background:var(--b-bg2);border:1px solid var(--b-line);border-top:3px solid var(--b-orange);border-radius:8px;padding:14px 16px;display:grid;gap:6px;align-content:start}
+.vl-num{font:500 .78rem/1 var(--mono);color:var(--b-orange-hi);letter-spacing:.08em}
+.vl-steps h3{font:700 1.06rem/1.2 var(--display);color:var(--b-ink)}
+.vl-steps p{font-size:.9rem;color:var(--b-muted)}
+.vl-tasks{grid-column:1/-1;list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.vl-tasks li{font:500 .85rem/1 var(--body);color:var(--b-ink);background:var(--b-bg2);border-left:3px solid var(--b-orange);padding:9px 12px;border-radius:2px}
+.vl-cta{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px 28px;align-items:center;border-top:1px solid var(--b-line);padding-top:22px}
+.vl-cta p{color:var(--b-ink);font-size:1.02rem;max-width:56ch}
+.vl-btn{display:inline-flex;align-items:center;gap:10px;background:var(--b-orange);color:#fff;font:700 1rem/1 var(--body);text-decoration:none;border-radius:8px;padding:14px 20px;border:0;cursor:pointer}
+.vl-btn::before{content:"";width:9px;height:9px;border-radius:50%;background:#fff}
+.vl-btn:hover,.vl-btn:focus-visible{background:#ff7420;outline:2px solid var(--b-orange-hi);outline-offset:2px}
+.vl-contact{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:4px 24px;margin:0;border:1px dashed var(--b-line);border-radius:10px;padding:12px 16px}
+.vl-contact div{display:grid;gap:3px;padding:6px 0;min-width:0}
+.vl-contact dt{font:500 .68rem/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--b-muted)}
+.vl-contact dd{margin:0;font:600 1rem/1.3 var(--body);color:var(--b-ink);overflow-wrap:anywhere;user-select:all}
+@media (max-width:860px){.vl-wrap{grid-template-columns:minmax(0,1fr)}.vl-steps{grid-template-columns:minmax(0,1fr)}.vl-cta{grid-template-columns:minmax(0,1fr)}}
+/* ---- lábléc ---- */
+.foot-band{padding-block:26px 36px;font-size:.8rem}
+.foot-band .wrap{display:grid;gap:10px}
+.foot-band p{color:var(--b-muted)}
+.foot-band b{color:var(--b-ink)}
+.foot-brand{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid var(--b-line)}
+.foot-band .legal summary{color:var(--b-ink)}
+.foot-band .legal-body{color:var(--b-muted)}
+.foot-band .linklike{color:var(--b-orange-hi)}
+@media (prefers-reduced-motion:no-preference){.hero-art .beam{animation:vlpulse 3.2s ease-in-out infinite}}
+@keyframes vlpulse{0%,100%{opacity:.55}50%{opacity:.9}}
+
+/* ---- HorizonLens: menüsor, hero, szakaszok (amerikai high-tech termékoldal) ---- */
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:1301;background:var(--b-bg)}
+.topnav{position:sticky;top:env(safe-area-inset-top,0px);z-index:1300;background:rgba(20,21,24,.82);-webkit-backdrop-filter:saturate(1.4) blur(14px);backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid var(--b-line);color:var(--b-ink)}
+.nav-in{display:flex;align-items:center;gap:22px;min-height:60px}
+.hl-mark{display:inline-flex;align-items:center;gap:10px;font:700 1.08rem/1 var(--display);letter-spacing:-.02em;color:var(--b-ink);white-space:nowrap}
+.hl-mark svg{width:28px;height:28px;flex:none}
+.hl-mark .by{font:500 .7rem/1 var(--mono);letter-spacing:.06em;color:var(--b-muted);text-transform:uppercase;margin-left:2px}
+.nav-links{display:flex;gap:4px;margin-left:auto}
+.nav-links button{font:500 .88rem/1 var(--body);color:var(--b-muted);background:none;border:0;border-radius:8px;padding:9px 11px;cursor:pointer}
+.nav-links button:hover,.nav-links button:focus-visible{color:var(--b-ink);background:var(--b-bg2);outline:none}
+.nav-cta{font:600 .88rem/1 var(--body);color:#fff;background:var(--b-orange);border:0;border-radius:9px;padding:10px 15px;cursor:pointer;white-space:nowrap}
+.nav-cta:hover,.nav-cta:focus-visible{background:#ff7420;outline:2px solid var(--b-orange-hi);outline-offset:2px}
+@media (max-width:900px){.nav-links{display:none}.nav-cta{margin-left:auto}}
+@media (max-width:420px){.hl-mark .by{display:none}}
+[id]{scroll-margin-top:calc(76px + env(safe-area-inset-top,0px))}
+.hero-band{padding-block:56px 34px}
+.hero-band::after{content:"";position:absolute;inset:-30% -10% auto auto;width:62%;height:120%;pointer-events:none;background:radial-gradient(closest-side,rgba(232,98,12,.22),transparent 72%)}
+.hero-band h1{font:700 clamp(2.3rem,5.6vw,4.5rem)/1.02 var(--display);letter-spacing:-.04em}
+.hero-band .lede{font-size:clamp(1rem,1.5vw,1.18rem);line-height:1.6;max-width:60ch}
+.hero-band .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:.74rem}
+.hero-band .eyebrow::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--b-orange);box-shadow:0 0 0 4px rgba(232,98,12,.18)}
+.hero-cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.ghost-btn{font:600 1rem/1 var(--body);color:var(--b-ink);background:transparent;border:1px solid var(--b-line);border-radius:8px;padding:13px 18px;cursor:pointer}
+.ghost-btn:hover,.ghost-btn:focus-visible{border-color:var(--b-muted);outline:none}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:36px 0 0;border-top:1px solid var(--b-line)}
+.stats div{padding:18px 18px 4px 0;display:grid;gap:6px;min-width:0}
+.stats div+div{padding-left:18px;border-left:1px solid var(--b-line)}
+.stats dt{font:500 .7rem/1.2 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--b-muted)}
+.stats dd{margin:0;font:600 clamp(1.4rem,2.6vw,2.1rem)/1 var(--display);letter-spacing:-.03em;color:var(--b-ink);font-variant-numeric:tabular-nums}
+.stats dd small{font-size:.55em;color:var(--b-muted);font-weight:500;letter-spacing:0;margin-left:3px}
+@media (max-width:700px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.stats div:nth-child(3){padding-left:0;border-left:0}.stats div:nth-child(n+3){border-top:1px solid var(--b-line)}}
+.sec-head{display:grid;gap:10px;max-width:760px;margin-bottom:22px}
+.sec-head .kicker{font:500 .74rem/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.sec-head h2{font:700 clamp(1.7rem,3.4vw,2.6rem)/1.08 var(--display);letter-spacing:-.035em}
+.sec-head p{color:var(--muted);font-size:1.05rem;line-height:1.6}
+.tool-head{padding-block:34px 0}
+.why{padding-block:56px 24px}
+.why-grid{display:grid;grid-template-columns:minmax(0,6fr) minmax(0,5fr);gap:20px 48px;align-items:start}
+.why-text{display:grid;gap:14px;font-size:1.05rem;line-height:1.65;color:var(--ink);max-width:62ch}
+.why-text p:last-child{font-weight:600}
+.principles{display:grid;gap:12px}
+.principles div{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:var(--card);display:grid;gap:5px}
+.principles b{font:600 1.05rem/1.2 var(--display);letter-spacing:-.01em}
+.principles span{color:var(--muted);font-size:.95rem}
+@media (max-width:860px){.why-grid{grid-template-columns:minmax(0,1fr)}}
+.method{padding-block:8px 8px}
+.co-band{padding-block:48px 52px;border-top:1px solid var(--b-line)}
+.co-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:24px 48px;align-items:start}
+.co-grid h2{font:700 clamp(1.7rem,3.4vw,2.6rem)/1.08 var(--display);letter-spacing:-.035em;color:var(--b-ink)}
+.co-text{display:grid;gap:14px;color:var(--b-muted);font-size:1.02rem;line-height:1.65}
+.co-text b{color:var(--b-ink);font-weight:600}
+.co-facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.co-facts span{font:500 .78rem/1 var(--mono);letter-spacing:.06em;color:var(--b-ink);border:1px solid var(--b-line);border-radius:999px;padding:8px 12px}
+.co-tie{border-left:2px solid var(--b-orange);padding:4px 0 4px 16px;color:var(--b-ink);font-size:1.15rem;line-height:1.5;font-weight:500;letter-spacing:-.01em}
+@media (max-width:860px){.co-grid{grid-template-columns:minmax(0,1fr)}}
+.brand-band .vl-head h2,.vl-head h2{letter-spacing:-.035em;font-weight:700}
 footer{padding-block:4px 32px;font-size:.8rem;color:var(--muted)}
 
 @media (max-width:860px){ .two{grid-template-columns:1fr} .facts{grid-template-columns:repeat(2,minmax(0,1fr))} }
@@ -113,16 +236,65 @@ footer{padding-block:4px 32px;font-size:.8rem;color:var(--muted)}
 </head>
 <body>
 
-<header>
+<nav class="topnav brand-band" aria-label="Fő menü">
+  <div class="wrap nav-in">
+    <span class="hl-mark"><svg viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#e8620c"/><path d="M5 18.5 H23" stroke="#16181b" stroke-width="2.2" stroke-linecap="round"/><circle cx="14" cy="12" r="4.6" fill="#16181b"/></svg>HorizonLens <span class="by">by VisionLens</span></span>
+    <div class="nav-links"><button type="button" data-scroll="visionlens">VisionLens</button><button type="button" data-scroll="innomotion">Innomotion</button></div>
+    <button type="button" class="nav-cta" data-scroll="eszkoz">Indítás</button>
+  </div>
+</nav>
+<header class="brand-band hero-band">
   <div class="wrap">
-    <p class="eyebrow">Szélerőmű · látványszámítás sík terepen</p>
-    <h1>Mennyi látszik a turbinából?</h1>
-    <p class="lede">Add meg, milyen messze és milyen magas a szélerőmű, aztán tegyél elé bokrot, épületet, fákat vagy dombot. A csúszkákkal mozgathatod őket, és azonnal látod, mennyit takarnak 1,7 m-es szemmagasságból.</p>
-    <p class="hint">Valós domborzattal, térképen: <a href="index.html" style="color:var(--accent);font-weight:600">térképes változat</a>.</p>
+    <div class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Szélerőmű · látványszámítás sík terepen</p>
+        <h1>Mennyi látszik <span class="hl">a turbinából?</span></h1>
+        <p class="lede">Add meg, milyen messze és milyen magas a szélerőmű, aztán tegyél elé bokrot, épületet, fákat vagy dombot. A csúszkákkal mozgathatod őket, és azonnal látod, mennyit takarnak 1,7 m-es szemmagasságból.</p>
+        <p class="hint">Valós domborzattal, térképen: <a href="index.html" style="color:var(--accent);font-weight:600">térképes változat</a>.</p>
+      </div>
+      <svg class="hero-art" viewBox="0 0 390 236" role="img" aria-label="Rálátás: a szemtől a háztetőn át húzott látóvonal fölötti turbinarész látszik, az alatta lévő takarásban marad">
+        <g fill="none" stroke="#30333a" stroke-width="1">
+          <path d="M0 214 L390 214"/><path d="M0 226 L390 226"/><path d="M30 236 L110 196"/><path d="M130 236 L210 196"/><path d="M230 236 L310 196"/><path d="M330 236 L390 206"/>
+        </g>
+        <polygon class="beam" points="44,200 316,6 338,124" fill="url(#vlbeam)"/>
+        <defs><linearGradient id="vlbeam" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#e8620c" stop-opacity=".05"/><stop offset="1" stop-color="#e8620c" stop-opacity=".45"/></linearGradient></defs>
+        <path d="M44 200 L338 124" stroke="#f5934a" stroke-width="1.4" stroke-dasharray="5 4"/>
+        <g stroke="#d6d7d9" stroke-width="1.4" fill="#1d1f23" stroke-linejoin="round">
+          <path d="M150 214 L150 168 L186 150 L222 168 L222 214 Z"/><path d="M186 150 L186 132 M150 168 L186 132 L222 168"/>
+          <path d="M232 214 L232 172"/><circle cx="232" cy="160" r="14"/>
+        </g>
+        <g stroke-linecap="round">
+          <path d="M326 214 L326 127" stroke="#8a8f96" stroke-width="2.4" stroke-dasharray="4 4"/>
+          <path d="M326 124 L326 64" stroke="#f5934a" stroke-width="3"/>
+          <path d="M326 64 L326 10 M326 64 L280 92 M326 64 L372 92" stroke="#f5934a" stroke-width="2.2"/>
+          <circle cx="326" cy="64" r="4" fill="#f5934a"/>
+        </g>
+        <circle cx="44" cy="200" r="7" fill="#16181b" stroke="#e8620c" stroke-width="2.4"/><circle cx="44" cy="200" r="2.4" fill="#e8620c"/>
+        <g font-family="IBM Plex Mono, monospace" font-size="10" letter-spacing="1">
+          <rect x="236" y="20" width="76" height="22" rx="4" fill="#1d1f23" stroke="#e8620c"/><text x="246" y="35" fill="#f5934a" font-weight="600">LÁTSZIK</text>
+          <rect x="248" y="178" width="70" height="22" rx="4" fill="#1d1f23" stroke="#5a5f66"/><text x="257" y="193" fill="#a4a9b0">TAKARVA</text>
+          <text x="16" y="230" fill="#a4a9b0">SZEMMAGASSÁG</text>
+        </g>
+      </svg>
+    </div>
   </div>
 </header>
+<script>
+/* a hero mérőszámai a beépített adatból (régiónként más) */
+document.addEventListener('DOMContentLoaded', function () {
+  const L = window.LOCAL_DATA, el = k => document.querySelector('[data-stat="' + k + '"]'), nf = n => n.toLocaleString('hu-HU');
+  const st = document.getElementById('hlStats'); if (!st) return;
+  if (!L) { st.hidden = true; return; }
+  const sum = a => (a || []).reduce((s, x) => s + (x[2] || 0), 0), b = sum(L.b12), t = sum(L.t14);
+  if (L.region) el('km').innerHTML = L.region.km + '<small>km</small>';
+  if (b) el('bld').textContent = nf(b); else el('bld').parentElement.hidden = true;
+  if (t) el('trees').textContent = nf(t); else el('trees').parentElement.hidden = true;
+});
+document.querySelectorAll('[data-scroll]').forEach(b => { b.addEventListener('click', () => { const t = document.getElementById(b.dataset.scroll); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); });
+</script>
 
-<main class="wrap">
+
+<main class="wrap" id="eszkoz">
   <section class="card" aria-labelledby="h-view">
     <div class="card-head"><h2 id="h-view">Amit szemmagasságból látsz</h2><span class="hint">Mint egy fénykép: a fokbeosztás a valódi emelkedési szögeket mutatja.</span></div>
     <div class="view-wrap" id="viewWrap"><svg id="view" class="view" viewBox="0 0 720 340" role="img" aria-label="A néző által látott kép a szélturbináról és az előtte álló takarásokról"></svg></div>
@@ -174,13 +346,81 @@ h_takart = 1,7 + D · tan(α_max)</div>
     </section>
   </div>
 </main>
-<footer class="wrap">
+<section class="brand-band vl-band" id="visionlens" aria-labelledby="vl-h">
+  <div class="wrap vl-wrap">
+    <div class="vl-head">
+      <p class="eyebrow">VisionLens AOI · <span data-vl="family">InnoLens termékcsalád</span></p>
+      <h2 id="vl-h">Amit a szem lát, <span class="hl">azt mi megmérjük.</span></h2>
+      <p class="vl-lede">Ezt a látványvizsgálót a VisionLens csapata készítette. Ugyanezzel a tudással dolgozunk a gyártósoron is: kamera, objektív, fény és szögek. A <b>VisionLens AOI</b> automatikus optikai ellenőrzés, amelyet a saját mérnöke tanít be, és darabonként megmondja: OK vagy NOK, és miért.</p>
+    </div>
+    <div class="vl-media"><video id="vlVideo" controls preload="none" playsinline poster="assets/vl-poster.jpg" aria-label="VisionLens AOI bemutatóvideó, 46 másodperc"><source src="assets/visionlens.mp4" type="video/mp4"></video></div>
+    <ol class="vl-steps">
+      <li><span class="vl-num">01</span><h3>Beállítás: Studio</h3><p>A feladatot szövegesen és a képen jelölve adja meg. Az ellenőrzési lépéseket az AI agent állítja össze, a mérnök hagyja jóvá.</p></li>
+      <li><span class="vl-num">02</span><h3>Futtatás: Inspector</h3><p>A gép melletti ipari PC-n fut, hálózat nélkül is. Képtár és napló minden döntésről.</p></li>
+      <li><span class="vl-num">03</span><h3>Döntés a PLC-nek</h3><p>OK, NOK vagy HIBA, okkóddal: Etherneten (OPC UA) vagy 24 V-os digitális I/O-n.</p></li>
+    </ol>
+    <ul class="vl-tasks" aria-label="Feladattípusok">
+      <li>alkatrész megléte és helyzete</li><li>méret</li><li>kód- és feliratolvasás</li><li>számlálás és válogatás</li><li>felületi hiba</li><li>helyzet és szög</li>
+    </ul>
+    <div class="vl-cta">
+      <p>Küldjön 5–10 képet a darabjáról, jót és hibásat vegyesen: <b>megmutatjuk rajta.</b></p>
+      <a class="vl-btn" id="vlCta" href="#" hidden target="_blank" rel="noopener">Kérjen próbát</a>
+      <dl class="vl-contact" id="vlContact" hidden></dl>
+    </div>
+  </div>
+</section>
+<script>
+/* VisionLens elérhetőségek: itt kell kitölteni (az üres mezők nem jelennek meg) */
+window.VL_INFO = {
+  family: 'InnoLens termékcsalád',
+  name: '', role: '', phone: '', email: '', web: '',
+  operator: '',   // üzemeltető (cégnév, székhely, cégjegyzékszám) – a jogi nyilatkozatba kerül
+  company: { name: 'Innomotion', about: 'győrújbaráti mérnöki fejlesztőcég', facts: ['Győrújbarát', '2012 óta', 'Mérnöki fejlesztés', 'Gépi látás'] }
+};
+(function () {
+  const I = window.VL_INFO, $id = id => document.getElementById(id);
+  document.querySelectorAll('[data-vl="family"]').forEach(e => { e.textContent = I.family; });
+  const rows = [['Kapcsolattartó', I.name], ['Beosztás', I.role], ['Telefon', I.phone], ['E-mail', I.email], ['Web', I.web]].filter(r => r[1]);
+  const dl = $id('vlContact');
+  if (rows.length) { dl.hidden = false; rows.forEach(([k, v]) => { const d = document.createElement('div'); d.innerHTML = '<dt></dt><dd></dd>'; d.firstChild.textContent = k; d.lastChild.textContent = v; dl.appendChild(d); }); }
+  const cta = $id('vlCta');
+  if (I.email) { cta.href = 'mailto:' + I.email + '?subject=' + encodeURIComponent('VisionLens AOI – próbát kérek'); cta.hidden = false; }
+  else if (I.web) { cta.href = I.web; cta.hidden = false; }
+  document.querySelectorAll('[data-scroll]').forEach(b => { b.onclick = () => { const t = $id(b.dataset.scroll); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }; });
+  const op = $id('vlOperator'); if (op && I.operator) { op.hidden = false; op.querySelector('span').textContent = I.operator; }
+})();
+</script>
+<section class="brand-band co-band" id="innomotion" aria-labelledby="h-co">
+  <div class="wrap co-grid">
+    <div class="vl-head">
+      <p class="eyebrow">A csapat mögötte</p>
+      <h2 id="h-co"><span data-co="name">Innomotion</span></h2>
+      <div class="co-facts" id="coFacts"></div>
+    </div>
+    <div class="co-text">
+      <p>Az <b data-co="name">Innomotion</b> <span data-co="about">mérnöki fejlesztőcég</span>. Új irányunk a <b>VisionLens</b>: kamerás, mesterséges intelligenciával támogatott minőségellenőrzés a gyártósorra, az <b data-vl="family">InnoLens termékcsalád</b> részeként.</p>
+      <p>A HorizonLens ugyanabból a tudásból született, amit a gyártósoron használunk: kamera, objektív, kalibráció és szögek. Itt a saját környezetünk kérdésére alkalmaztuk.</p>
+      <p class="co-tie">Ami a gyártósoron egy tized milliméter, az itt egy tized fok.</p>
+    </div>
+  </div>
+</section>
+<script>
+(function () {
+  const C = Object.assign({ name: 'Innomotion', about: 'mérnöki fejlesztőcég', facts: ['Győrújbarát', '2012 óta', 'Mérnöki fejlesztés', 'Gépi látás'] }, (window.VL_INFO || {}).company || {});
+  document.querySelectorAll('[data-co="name"]').forEach(e => { e.textContent = C.name; });
+  document.querySelectorAll('[data-co="about"]').forEach(e => { e.textContent = C.about; });
+  const f = document.getElementById('coFacts'); C.facts.forEach(t => { const s = document.createElement('span'); s.textContent = t; f.appendChild(s); });
+})();
+</script>
+<footer class="brand-band foot-band"><div class="wrap">
+  <div class="foot-brand"><span class="hl-mark"><svg viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#e8620c"/><path d="M5 18.5 H23" stroke="#16181b" stroke-width="2.2" stroke-linecap="round"/><circle cx="14" cy="12" r="4.6" fill="#16181b"/></svg>HorizonLens <span class="by">by VisionLens</span></span><span class="vl-sep" aria-hidden="true"></span><span class="vl-logo"><svg viewBox="0 0 26 26" aria-hidden="true"><rect width="26" height="26" rx="6" fill="#e8620c"/><circle cx="13" cy="13" r="5.6" fill="#16181b"/></svg>VisionLens</span><span class="vl-sep" aria-hidden="true"></span><span class="vl-fam" data-vl="family">InnoLens termékcsalád</span></div>
   <p><b>Tájékoztató modell, nem hivatalos látványterv; használata saját felelősségre.</b> <button type="button" class="linklike legal-link">Jogi nyilatkozat, felelősségkizárás és adatkezelés</button></p><p>Feltételezések: sík terep, lombos (átlátszatlan) fák, a lapát a legmagasabb állásban, a rotor szemből látszik. Télen a lombhullató fák áttetszőek, magasabb nézőpontról (emelet, domb) a takarás gyorsan csökken.</p><p>Levél-, kéreg- és fűfotók: ez-tree (MIT, © Daniel Greenheck); égbolt-fény: Poly Haven (CC0).</p>
 <section class="legal" id="jogi">
   <details id="jogiDet">
     <summary>Jogi nyilatkozat, felelősségkizárás és adatkezelés</summary>
     <div class="legal-body">
-      <p><b>1. Az oldal jellege.</b> Az oldal magánkezdeményezésű, nem kereskedelmi célú, tájékoztató és szemléltető számítási eszköz. Nem hatósági, szakhatósági vagy igazságügyi szakértői vélemény, nem látványterv és nem környezeti hatásvizsgálat, és nem helyettesíti a hivatalos eljárásokban készülő dokumentációt. Az oldal nem a beruházó, nem hatóság és nem önkormányzat kiadványa.</p>
+      <p id="vlOperator" hidden><b>Üzemeltető:</b> <span></span></p>
+      <p><b>1. Az oldal jellege.</b> Az oldalt (HorizonLens) a VisionLens csapata díjmentes, tájékoztató és szemléltető célú számítási eszközként készítette. Semleges eszköz: nem foglal állást a szélerőmű-beruházások mellett vagy ellen. Nem hatósági, szakhatósági vagy igazságügyi szakértői vélemény, nem látványterv és nem környezeti hatásvizsgálat, és nem helyettesíti a hivatalos eljárásokban készülő dokumentációt. Az oldal nem a beruházó, nem hatóság és nem önkormányzat kiadványa.</p>
       <p><b>2. Pontosság.</b> Az eredmények modellszámítások, közelítésekkel és feltételezésekkel (domborzat; az épületek és fák magasságának gépi becslése; a turbinák helye, száma, típusa és mérete; a lehetséges telepítési területek kézi illesztése; az árnyék és a villódzás legrosszabb esetre számolt becslése). A felhasznált adatok hibásak, hiányosak vagy elavultak lehetnek. A tervezett turbinák pontos helye, száma és típusa nem ismert: a megjelenített turbinák a felhasználó által elhelyezett, feltételezett szemléltetések. Az élő kamerás és a fotós nézet pontossága a készülék érzékelőitől, a kalibrációtól és a használat módjától függ. A valóság a modelltől jelentősen eltérhet.</p>
       <p><b>3. Szavatosság és jótállás kizárása.</b> Az oldalt „ahogy van” és „ahogy elérhető” állapotában bocsátjuk rendelkezésre, mindenféle kifejezett vagy hallgatólagos szavatosság és jótállás nélkül, különösen az eredmények pontosságára, teljességére, naprakészségére, egy adott célra való alkalmasságára és az oldal folyamatos elérhetőségére vonatkozóan.</p>
       <p><b>4. Felelősség kizárása.</b> A jogszabályok által megengedett legteljesebb mértékben az oldal készítője, üzemeltetője és közreműködői semmilyen felelősséget nem vállalnak semmilyen közvetlen vagy közvetett kárért, elmaradt haszonért, költségért vagy egyéb hátrányért, amely az oldal használatából vagy használhatatlanságából, az eredmények és a képek felhasználásából, megosztásából, az ezek alapján hozott döntésekből (például ingatlanvásárlás, beruházás, észrevétel, jogi lépés), illetve harmadik felek adataiból vagy szolgáltatásaiból ered. Ez a kizárás nem terjed ki azokra az esetekre, amelyekben jogszabály a felelősség kizárását vagy korlátozását nem engedi (így különösen a szándékosan vagy súlyos gondatlansággal okozott, illetve az életet, a testi épséget vagy az egészséget megsértő károkra).</p>
@@ -208,7 +448,7 @@ h_takart = 1,7 + D · tan(α_max)</div>
   document.getElementById('legalOk').onclick = () => { bar.hidden = true; try { localStorage.setItem('jogiOk', '1'); } catch (e) {} };
 })();
 </script>
-</footer>
+</div></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>/* REALVIEW:BEGIN – forrás: src/realview.js */
