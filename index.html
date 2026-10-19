@@ -676,27 +676,28 @@ svg.leaflet-image-layer.leaflet-interactive path {
 /* Elrendezés: bal oldalon a térkép és a beállítások, jobb oldalon a szemmagasságú kép, az eredmény és az oldalnézet; mobilon egy oszlop. */
 /* VisionLens-arculat: a fejléc, a bemutató és a lábléc mindig sötét márkasáv (--b-*), a munkafelület a néző témáját követi. */
 :root{
-  --paper:#f1f1ef; --card:#ffffff; --ink:#16181b; --muted:#5b6168; --line:#dcdddf; --soft:#ebeced;
-  --accent:#c4500a; --accent-ink:#ffffff;
-  --terrain:#b9c99b; --terrain-edge:#6f8a4f; --shadow:#d6453a;
-  --v0:#5f7f6b; --v1:#e3b52b; --v2:#ea8227; --v3:#d6336c;
-  --b-bg:#2b2c31; --b-bg2:#36373d; --b-ink:#f5f5f7; --b-muted:#c0c1c8; --b-line:#46474e; --b-orange:#ec651d; --b-orange-hi:#ff8a45; --b-ok:#3cc46b;
+  color-scheme:dark;
+  --paper:#2b2c31; --card:#34353b; --ink:#f5f5f7; --muted:#b4b6bd; --line:#47484f; --soft:#3d3e45;
+  --accent:#ec651d; --accent-ink:#ffffff;
+  --terrain:#3f5532; --terrain-edge:#8fae6a; --shadow:#ff6b5e;
+  --v0:#8fb39c; --v1:#f0c63f; --v2:#f39a45; --v3:#f0588a;
+  --b-bg:#26272b; --b-bg2:#34353b; --b-ink:#f5f5f7; --b-muted:#c0c1c8; --b-line:#46474e; --b-orange:#ec651d; --b-orange-hi:#ff8a45; --b-ok:#3cc46b;
   --display:"Geist",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --body:"Geist",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --mono:"Geist Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --paper:#121316; --card:#1b1d20; --ink:#ecebe7; --muted:#9da2a9; --line:#2d3035; --soft:#24272b;
-    --accent:#ef7426; --accent-ink:#16181b;
-    --terrain:#3f5532; --terrain-edge:#8fae6a; --shadow:#ff6b5e;
-    --v0:#8fb39c; --v1:#f0c63f; --v2:#f39a45; --v3:#f0588a;
+    --paper:#2b2c31; --card:#34353b; --ink:#f5f5f7; --muted:#b4b6bd; --line:#47484f; --soft:#3d3e45;
+  --accent:#ec651d; --accent-ink:#ffffff;
+  --terrain:#3f5532; --terrain-edge:#8fae6a; --shadow:#ff6b5e;
+  --v0:#8fb39c; --v1:#f0c63f; --v2:#f39a45; --v3:#f0588a;
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --paper:#121316; --card:#1b1d20; --ink:#ecebe7; --muted:#9da2a9; --line:#2d3035; --soft:#24272b;
-  --accent:#ef7426; --accent-ink:#16181b;
+  --paper:#2b2c31; --card:#34353b; --ink:#f5f5f7; --muted:#b4b6bd; --line:#47484f; --soft:#3d3e45;
+  --accent:#ec651d; --accent-ink:#ffffff;
   --terrain:#3f5532; --terrain-edge:#8fae6a; --shadow:#ff6b5e;
   --v0:#8fb39c; --v1:#f0c63f; --v2:#f39a45; --v3:#f0588a;
   color-scheme:dark;
@@ -1100,6 +1101,24 @@ footer a{color:var(--accent)}
   .hx-scene::after{background:linear-gradient(0deg,#2b2c31 0%,rgba(43,44,49,0) 32%)}
   .hx-chip{padding:5px 9px}.hx-chip span,.hx-chip b i{display:none}.hx-copywrap{padding-top:46svh}}
 @media (max-width:480px){.hx-mark small{display:none}}
+
+/* ---- egységes grafit-narancs arculat (Innomotion: grafit #48494F, narancs #EC651D) ---- */
+body{background:radial-gradient(1200px 500px at 85% -120px,rgba(236,101,29,.10),transparent 70%),var(--paper)}
+.card{border-radius:18px;border-color:rgba(255,255,255,.09);background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0)) ,var(--card);box-shadow:0 18px 50px -28px rgba(0,0,0,.55)}
+.btn{border-radius:10px;border-color:rgba(255,255,255,.12)}
+.btn.primary,.real-row .btn{box-shadow:0 10px 24px -12px rgba(236,101,29,.8)}
+.seg{border-radius:10px;border-color:rgba(255,255,255,.12)}
+input,select,textarea{background:var(--soft);color:var(--ink);border-color:rgba(255,255,255,.12)}
+.sec-head .kicker{font:600 .9rem/1.2 var(--body);letter-spacing:0;text-transform:none;color:var(--accent)}
+.sec-head h2{color:var(--ink)}
+.principles div{border-radius:18px;border-color:rgba(255,255,255,.09)}
+.brand-band::before{display:none}
+.vl-band,.foot-band{border-top:1px solid rgba(255,255,255,.07)}
+.vl-media{border-radius:18px;border-color:rgba(255,255,255,.1)}
+.vl-btn{border-radius:12px}
+.vl-btn::before{display:none}
+.eyebrow{font:600 .9rem/1.2 var(--body);letter-spacing:0;text-transform:none}
+.leaflet-container{background:#2b2c31}
 </style>
 </head>
 <body>
