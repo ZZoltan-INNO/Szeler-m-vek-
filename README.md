@@ -103,6 +103,12 @@ ott a Sentinel-2 marad.
   a képen megkeresi az ég és a táj határát, és a modell horizontjához igazítja a dőlést (tagolt tájon az irányt is); ehhez
   azokat a részeket használja, ahol a horizontot 1,5 km-nél távolabbi domb vagy erdő adja. Nyugalomban tartott telefonnál
   a dőlést élő képen is finomhangolja, amíg kézzel nem igazítasz. A dőlés-beállítást a böngésző megjegyzi.
+  Telefon-kalibráció (egyszer kell, a böngésző megjegyzi): „Vízszint”: a telefon asztalon kijelzővel felfelé, majd a
+  hosszanti tengelye körül megfordítva kijelzővel lefelé; a gyorsulásmérő tengelyenkénti eltolódása a két mérés átlaga (a
+  gravitáció előjelet vált, az eltolódás nem, az asztal ferdesége kiesik), ezzel javítja a tájolást (0,1 m/s² ≈ 0,6°).
+  „Lépték”: a középső kereszttel megcélzott távoli tárgyat elfordulással a szaggatott jelhez visszük; a giroszkóp szerinti
+  szög és a jel képponttávolsága adja a látószöget, eszköz és távolságmérés nélkül. Kalibrált vízszintnél az automatikus
+  horizontkeresés a dőlést nem állítja, csak jelzi az eltérést. Az élő képen a fehér szaggatott vonal a valódi vízszintes.
   Az „Iránytű szerint újra” visszaáll. Alapból csak az látszik a turbinából, ami a valóságban is látszani fog; a takart
   rész kérésre (pirosan) bekapcsolható. Pillanatkép menthető. A claude.ai artifactban a kamera nem érhető el.
   A saját fotónál is van Nap-jel, ha a fotóban benne van a készítés ideje.
