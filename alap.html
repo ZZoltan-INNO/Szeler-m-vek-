@@ -188,6 +188,9 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 @media (max-width:900px){.nav-links{display:none}.nav-cta{margin-left:auto}}
 @media (max-width:420px){.hl-mark .by{display:none}}
 [id]{scroll-margin-top:calc(76px + env(safe-area-inset-top,0px))}
+.hero-by{color:var(--b-muted);font-size:.95rem;max-width:62ch}
+.hero-by b{color:var(--b-ink);font-weight:600}
+.hero-band .eyebrow .prod{color:var(--b-ink);font-weight:600;letter-spacing:.14em}
 .hero-band{padding-block:56px 34px}
 .hero-band::after{content:"";position:absolute;inset:-30% -10% auto auto;width:62%;height:120%;pointer-events:none;background:radial-gradient(closest-side,rgba(232,98,12,.22),transparent 72%)}
 .hero-band h1{font:700 clamp(2.3rem,5.6vw,4.5rem)/1.02 var(--display);letter-spacing:-.04em}
@@ -212,7 +215,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .why{padding-block:56px 24px}
 .why-grid{display:grid;grid-template-columns:minmax(0,6fr) minmax(0,5fr);gap:20px 48px;align-items:start}
 .why-text{display:grid;gap:14px;font-size:1.05rem;line-height:1.65;color:var(--ink);max-width:62ch}
-.why-text p:last-child{font-weight:600}
+
 .principles{display:grid;gap:12px}
 .principles div{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:var(--card);display:grid;gap:5px}
 .principles b{font:600 1.05rem/1.2 var(--display);letter-spacing:-.01em}
@@ -246,8 +249,8 @@ footer{padding-block:4px 32px;font-size:.8rem;color:var(--muted)}
 
 <nav class="topnav brand-band" aria-label="Fő menü">
   <div class="wrap nav-in">
-    <span class="hl-mark"><svg viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#e8620c"/><path d="M5 18.5 H23" stroke="#16181b" stroke-width="2.2" stroke-linecap="round"/><circle cx="14" cy="12" r="4.6" fill="#16181b"/></svg>HorizonLens <span class="by">by InnoLens</span></span>
-    <div class="nav-links"><button type="button" data-scroll="visionlens">VisionLens</button><button type="button" data-scroll="innogroupe">InnoGroupe</button></div>
+    <span class="hl-mark"><svg viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#e8620c"/><path d="M5 18.5 H23" stroke="#16181b" stroke-width="2.2" stroke-linecap="round"/><circle cx="14" cy="12" r="4.6" fill="#16181b"/></svg>InnoLens <span class="by">az <span data-grp="name">InnoGroupe</span> tagja</span></span>
+    <div class="nav-links"><button type="button" data-scroll="visionlens">VisionLens</button></div>
     <button type="button" class="nav-cta" data-scroll="eszkoz">Indítás</button>
   </div>
 </nav>
@@ -255,9 +258,10 @@ footer{padding-block:4px 32px;font-size:.8rem;color:var(--muted)}
   <div class="wrap">
     <div class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">Szélerőmű · látványszámítás sík terepen</p>
+        <p class="eyebrow"><span class="prod">HorizonLens</span> · Szélerőmű · látványszámítás sík terepen</p>
         <h1>Mennyi látszik <span class="hl">a turbinából?</span></h1>
         <p class="lede">Add meg, milyen messze és milyen magas a szélerőmű, aztán tegyél elé bokrot, épületet, fákat vagy dombot. A csúszkákkal mozgathatod őket, és azonnal látod, mennyit takarnak 1,7 m-es szemmagasságból.</p>
+        <p class="hero-by">Az <b>InnoLens</b>, az <b data-grp="name">InnoGroupe</b> vizuális és képelemzési cégének fejlesztése. Díjmentes, semleges eszköz.</p>
         <p class="hint">Valós domborzattal, térképen: <a href="index.html" style="color:var(--accent);font-weight:600">térképes változat</a>.</p>
       </div>
       <svg class="hero-art" viewBox="0 0 390 236" role="img" aria-label="Rálátás: a szemtől a háztetőn át húzott látóvonal fölötti turbinarész látszik, az alatta lévő takarásban marad">
@@ -362,14 +366,6 @@ h_takart = 1,7 + D · tan(α_max)</div>
       <p class="vl-lede">Ezt a látványvizsgálót az InnoLens csapata készítette. Ugyanezzel a tudással dolgozunk a gyártósoron is: kamera, objektív, fény és szögek. A <b>VisionLens AOI</b> automatikus optikai ellenőrzés, amelyet a saját mérnöke tanít be, és darabonként megmondja: OK vagy NOK, és miért.</p>
     </div>
     <div class="vl-media"><video id="vlVideo" controls preload="none" playsinline poster="assets/vl-poster.jpg" aria-label="VisionLens AOI bemutatóvideó, 46 másodperc"><source src="assets/visionlens.mp4" type="video/mp4"></video></div>
-    <ol class="vl-steps">
-      <li><span class="vl-num">01</span><h3>Beállítás: Studio</h3><p>A feladatot szövegesen és a képen jelölve adja meg. Az ellenőrzési lépéseket az AI agent állítja össze, a mérnök hagyja jóvá.</p></li>
-      <li><span class="vl-num">02</span><h3>Futtatás: Inspector</h3><p>A gép melletti ipari PC-n fut, hálózat nélkül is. Képtár és napló minden döntésről.</p></li>
-      <li><span class="vl-num">03</span><h3>Döntés a PLC-nek</h3><p>OK, NOK vagy HIBA, okkóddal: Etherneten (OPC UA) vagy 24 V-os digitális I/O-n.</p></li>
-    </ol>
-    <ul class="vl-tasks" aria-label="Feladattípusok">
-      <li>alkatrész megléte és helyzete</li><li>méret</li><li>kód- és feliratolvasás</li><li>számlálás és válogatás</li><li>felületi hiba</li><li>helyzet és szög</li>
-    </ul>
     <div class="vl-cta">
       <p>Küldjön 5–10 képet a darabjáról, jót és hibásat vegyesen: <b>megmutatjuk rajta.</b></p>
       <a class="vl-btn" id="vlCta" href="#" hidden target="_blank" rel="noopener">Kérjen próbát</a>
@@ -403,38 +399,6 @@ window.VL_INFO = {
   else if (I.web) { cta.href = I.web; cta.hidden = false; }
   document.querySelectorAll('[data-scroll]').forEach(b => { b.onclick = () => { const t = $id(b.dataset.scroll); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }; });
   const op = $id('vlOperator'); if (op && I.operator) { op.hidden = false; op.querySelector('span').textContent = I.operator; }
-})();
-</script>
-<section class="brand-band co-band" id="innogroupe" aria-labelledby="h-co">
-  <div class="wrap">
-    <div class="co-grid">
-      <div class="vl-head">
-        <p class="eyebrow">A csoport mögötte</p>
-        <h2 id="h-co"><span data-grp="name">InnoGroupe</span></h2>
-      </div>
-      <div class="co-text">
-        <p>A HorizonLens az <b>InnoLens</b> fejlesztése. Az InnoLens az <b data-grp="name">InnoGroupe</b> legújabb tagja: vizuális és képelemzési megoldásokat fejleszt, a gyártósori kamerás ellenőrzéstől (VisionLens AOI) az ilyen látványszámításokig.</p>
-        <p>A HorizonLens ugyanabból a tudásból született, amit a gyártósoron használunk: kamera, objektív, kalibráció és szögek. Itt a saját környezetünk kérdésére alkalmaztuk.</p>
-        <p class="co-tie">Ami a gyártósoron egy tized milliméter, az itt egy tized fok.</p>
-      </div>
-    </div>
-    <ul class="grp" id="grpList" aria-label="Az InnoGroupe cégei"></ul>
-  </div>
-</section>
-<script>
-(function () {
-  const G = Object.assign({ name: 'InnoGroupe', members: [] }, (window.VL_INFO || {}).group || {});
-  document.querySelectorAll('[data-grp="name"]').forEach(e => { e.textContent = G.name; });
-  const ul = document.getElementById('grpList');
-  G.members.forEach(m => {
-    const li = document.createElement('li'); if (m.current) li.className = 'cur';
-    li.innerHTML = '<span class="grp-tag"></span><b></b><span class="grp-role"></span><span class="grp-note"></span>';
-    li.children[0].textContent = m.current ? 'A HorizonLens gazdája' : (m.tag || '');
-    li.children[1].textContent = m.name; li.children[2].textContent = m.role || ''; li.children[3].textContent = m.note || '';
-    if (!li.children[0].textContent) li.children[0].remove();
-    if (!m.note) li.children[li.children.length - 1].remove();
-    ul.appendChild(li);
-  });
 })();
 </script>
 <footer class="brand-band foot-band"><div class="wrap">
