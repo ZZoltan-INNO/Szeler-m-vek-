@@ -680,7 +680,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   --accent:#c4500a; --accent-ink:#ffffff;
   --terrain:#b9c99b; --terrain-edge:#6f8a4f; --shadow:#d6453a;
   --v0:#5f7f6b; --v1:#e3b52b; --v2:#ea8227; --v3:#d6336c;
-  --b-bg:#141518; --b-bg2:#1d1f23; --b-ink:#f3f2ef; --b-muted:#a4a9b0; --b-line:#30333a; --b-orange:#e8620c; --b-orange-hi:#f5934a; --b-ok:#3cc46b;
+  --b-bg:#2b2c31; --b-bg2:#36373d; --b-ink:#f5f5f7; --b-muted:#c0c1c8; --b-line:#46474e; --b-orange:#ec651d; --b-orange-hi:#ff8a45; --b-ok:#3cc46b;
   --display:"Geist",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --body:"Geist",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --mono:"Geist Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
@@ -892,6 +892,7 @@ td:last-child{white-space:normal}
 .legal-body p{margin:.5em 0}
 .legal-bar{position:fixed;left:0;right:0;bottom:0;z-index:4000;display:flex;gap:10px 14px;align-items:center;justify-content:center;flex-wrap:wrap;padding:10px 16px;padding-bottom:max(10px,env(safe-area-inset-bottom));background:var(--card,#fff);color:var(--ink,#222);border-top:1px solid var(--line,#ccc);box-shadow:0 -4px 16px rgba(0,0,0,.12);font-size:.85rem}
 .legal-bar[hidden]{display:none}
+.legal-bar b{color:inherit}
 .legal-bar p{margin:0;max-width:760px}
 .linklike{background:none;border:0;padding:0;font:inherit;color:var(--accent,#1a5fb4);text-decoration:underline;cursor:pointer}
 
@@ -960,7 +961,7 @@ td:last-child{white-space:normal}
 @keyframes vlpulse{0%,100%{opacity:.55}50%{opacity:.9}}
 
 /* ---- HorizonLens: menüsor, hero, szakaszok (amerikai high-tech termékoldal) ---- */
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:1301;background:var(--b-bg)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:1301;background:#2b2c31}
 .topnav{position:sticky;top:env(safe-area-inset-top,0px);z-index:1300;background:rgba(20,21,24,.82);-webkit-backdrop-filter:saturate(1.4) blur(14px);backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid var(--b-line);color:var(--b-ink)}
 .nav-in{display:flex;align-items:center;gap:22px;min-height:60px}
 .hl-mark{display:inline-flex;align-items:center;gap:10px;font:700 1.08rem/1 var(--display);letter-spacing:-.02em;color:var(--b-ink);white-space:nowrap}
@@ -1045,58 +1046,90 @@ footer a{color:var(--accent)}
   .seg button{padding:9px 9px;font-size:.84rem}
 }
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+/* ---- HorizonLens hero (grafit-alkonyat, Innomotion-színek: grafit #48494F, narancs #EC651D) ---- */
+.hx-in{max-width:1320px;margin:0 auto;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))}
+.hx-glass{background:rgba(72,73,79,.38);border:1px solid rgba(255,255,255,.14);-webkit-backdrop-filter:blur(18px) saturate(1.3);backdrop-filter:blur(18px) saturate(1.3);box-shadow:0 18px 50px -24px rgba(0,0,0,.6)}
+.hx-nav{position:fixed;inset:0 0 auto;z-index:1300;padding-top:calc(14px + env(safe-area-inset-top,0px));pointer-events:none}
+.hx-bar{pointer-events:auto;background:rgba(43,44,49,.86)!important;display:flex;align-items:center;gap:26px;height:58px;padding:0 10px 0 18px;border-radius:16px;color:#f5f5f7}
+.hx-mark{display:flex;align-items:center;gap:10px;font:650 17px/1 var(--body);letter-spacing:-.01em;white-space:nowrap}
+.hx-mark svg{width:26px;height:26px}
+.hx-mark small{font-weight:400;font-size:13px;color:#c0c1c8}
+.hx-links{display:flex;gap:4px;margin-left:auto}
+.hx-links button{font:500 14px/1 var(--body);color:#c0c1c8;background:none;border:0;border-radius:10px;padding:9px 12px;cursor:pointer}
+.hx-links button:hover,.hx-links button:focus-visible{color:#fff;background:rgba(255,255,255,.1);outline:none}
+.hx-btn{display:inline-flex;align-items:center;font:600 15px/1 var(--body);border-radius:12px;padding:14px 20px;border:0;cursor:pointer;white-space:nowrap;color:#f5f5f7}
+.hx-bar .hx-btn{padding:11px 16px;font-size:14px}
+.hx-pri{background:#ec651d;color:#fff;box-shadow:0 10px 26px -10px rgba(236,101,29,.8)}
+.hx-pri:hover,.hx-pri:focus-visible{background:#f2732e;outline:2px solid #ff8a45;outline-offset:2px}
+.hx-sec{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14)}
+.hx-hero{position:relative;min-height:min(100svh,900px);overflow:hidden;display:flex;flex-direction:column;background:#2b2c31;color:#f5f5f7}
+.hx-scene{position:absolute;left:50%;top:50%;width:max(100vw,min(177.78svh,1600px));height:max(min(100svh,900px),56.25vw);transform:translate(-50%,-50%)}
+.hx-scene img,.hx-scene video{width:100%;height:100%;display:block;object-fit:cover}
+.hx-scene video{position:absolute;inset:0;opacity:0;transition:opacity .8s ease}
+.hx-scene video.on{opacity:1}
+.hx-scene::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(43,44,49,.85) 0%,rgba(43,44,49,.45) 36%,rgba(43,44,49,0) 58%),linear-gradient(0deg,#2b2c31 0%,rgba(43,44,49,0) 26%)}
+.hx-chip{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 13px;border-radius:12px;white-space:nowrap;z-index:2}
+.hx-chip b{font:650 15px/1.2 var(--body);color:#ff8a45}
+.hx-chip b i{font-style:normal}
+.hx-chip span{font-size:12px;color:#c0c1c8}
+.hx-copywrap{position:relative;z-index:3;margin-top:auto;width:100%;padding-top:150px;padding-bottom:40px}
+.hx-copy{display:grid;gap:24px;max-width:560px}
+.hx-badge{justify-self:start;display:inline-flex;align-items:center;gap:10px;padding:7px 14px 7px 8px;border-radius:999px;font-size:13px;color:#c0c1c8}
+.hx-badge i{font-style:normal;font-weight:600;color:#fff;background:#ec651d;border-radius:999px;padding:3px 10px}
+.hx-badge .eyebrow{font:inherit;letter-spacing:0;text-transform:none;color:inherit}
+.hx-hero h1{margin:0;font:640 clamp(42px,5.4vw,80px)/.98 var(--display);letter-spacing:-.045em;color:#f5f5f7;text-wrap:balance}
+.hx-hero h1 em{font-style:normal;color:#ec651d}
+.hx-lede{margin:0;font-size:clamp(17px,1.5vw,20px);line-height:1.55;color:#c0c1c8;max-width:52ch}
+.hx-lede b{color:#f5f5f7;font-weight:500}
+.hx-cta{display:flex;gap:12px;flex-wrap:wrap}
+.hx-hint{margin:0;font-size:14px;color:#9a9ba3}
+.hx-hint a{color:#ff8a45;font-weight:600}
+.hx-stats{position:relative;z-index:3;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-radius:18px;margin:0 0 26px;overflow:hidden}
+.hx-stats div{padding:20px 24px;display:grid;gap:4px;min-width:0}
+.hx-stats div+div{border-left:1px solid rgba(255,255,255,.14)}
+.hx-stats dd{margin:0;font:600 clamp(24px,2.4vw,34px)/1.1 var(--display);letter-spacing:-.03em;color:#f5f5f7;font-variant-numeric:tabular-nums}
+.hx-stats dd small{font-size:.5em;color:#c0c1c8;font-weight:500;margin-left:4px;letter-spacing:0}
+.hx-stats dt{font-size:13px;color:#c0c1c8}
+.hx-by{position:relative;z-index:3;display:flex;justify-content:space-between;gap:8px 24px;flex-wrap:wrap;margin:0;padding-bottom:28px;font-size:13px;color:#9a9ba3}
+.hx-by b{color:#c0c1c8;font-weight:500}
+[id]{scroll-margin-top:calc(84px + env(safe-area-inset-top,0px))}
+@media (max-width:980px){.hx-links{display:none}.hx-bar .hx-btn{margin-left:auto}
+  .hx-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.hx-stats div:nth-child(3){border-left:0}.hx-stats div:nth-child(n+3){border-top:1px solid rgba(255,255,255,.14)}
+  .hx-scene{top:0;left:50%;height:56svh;width:99.6svh;transform:translateX(-68.3%)}
+  .hx-scene::after{background:linear-gradient(0deg,#2b2c31 0%,rgba(43,44,49,0) 32%)}
+  .hx-chip{padding:5px 9px}.hx-chip span,.hx-chip b i{display:none}.hx-copywrap{padding-top:46svh}}
+@media (max-width:480px){.hx-mark small{display:none}}
 </style>
 </head>
 <body>
-<nav class="topnav brand-band" aria-label="Fő menü">
-  <div class="wrap nav-in">
-    <span class="hl-mark"><svg viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#e8620c"/><path d="M5 18.5 H23" stroke="#16181b" stroke-width="2.2" stroke-linecap="round"/><circle cx="14" cy="12" r="4.6" fill="#16181b"/></svg>InnoLens <span class="by">az <span data-grp="name">InnoGroupe</span> tagja</span></span>
-    <div class="nav-links"><button type="button" data-scroll="eszkoz">Az eszköz</button><button type="button" data-scroll="miert">Miért készült</button><button type="button" data-scroll="modszer">Hogyan számol</button><button type="button" data-scroll="visionlens">VisionLens</button></div>
-    <button type="button" class="nav-cta" data-scroll="eszkoz">Indítás</button>
+<nav class="hx-nav" aria-label="Fő menü"><div class="hx-in"><div class="hx-bar hx-glass">
+  <span class="hx-mark"><svg viewBox="0 0 26 26" aria-hidden="true"><path d="M13 2.2 22.4 7.6v10.8L13 23.8 3.6 18.4V7.6Z" fill="none" stroke="#ec651d" stroke-width="2.2" stroke-linejoin="round"/><circle cx="13" cy="13" r="4.2" fill="#f5f5f7"/></svg>InnoLens <small>az <span data-grp="name">InnoGroupe</span> tagja</small></span>
+  <div class="hx-links"><button type="button" data-scroll="eszkoz">Az eszköz</button><button type="button" data-scroll="modszer">Hogyan számol</button><button type="button" data-scroll="miert">Miért készült</button><button type="button" data-scroll="visionlens">VisionLens</button></div>
+  <button type="button" class="hx-btn hx-pri" data-scroll="eszkoz">Indítás</button>
+</div></div></nav>
+<header class="hx-hero">
+  <div class="hx-scene" aria-hidden="true">
+    <img src="assets/hero_poster.jpg" alt=""><video id="heroVid" muted loop playsinline preload="none" poster="assets/hero_poster.jpg"></video>
+    <div class="hx-chip hx-glass" data-jak style="left:48.29%;top:37.07%"><b>63%<i> látszik</i></b><span>4,6 km a főtértől</span></div>
+    <div class="hx-chip hx-glass" data-jak style="left:68.38%;top:40.06%"><b>52%<i> látszik</i></b><span>4,7 km</span></div>
+    <div class="hx-chip hx-glass" data-jak style="left:81.91%;top:41.47%"><b>51%<i> látszik</i></b><span>4,9 km</span></div>
   </div>
-</nav>
-<header class="top brand-band hero-band">
-  <div class="wrap">
-    <div class="hero">
-      <div class="hero-copy">
-        <div class="top-row"><p class="eyebrow"><span class="prod">HorizonLens</span> · Látványvizsgálat · Ják és 30 km-es környéke</p></div>
-        <h1>Honnan látszik <span class="hl">a szélerőmű?</span></h1>
-        <p class="lede">Húzd a turbinákat oda, ahová tervezik, kattints oda, ahonnan nézed (például a házad elé), és nézd meg szemmagasságból. A <b>domborzat, a házak és a fák</b> már benne vannak; bokrot, kerítést, új fasort te adhatsz hozzá. Az oldal kiszámolja, mekkora rész takarásban van.</p>
-        <div class="hero-cta"><button type="button" class="vl-btn" data-scroll="eszkoz">Nézőpont kiválasztása</button><button type="button" class="ghost-btn" data-scroll="miert">Miért készült?</button></div>
-        <p class="hero-by">Az <b>InnoLens</b>, az <b data-grp="name">InnoGroupe</b> vizuális és képelemzési cégének fejlesztése. Díjmentes, semleges eszköz.</p>
-        <p class="hint">Térkép nélkül, sík terepen egyszerűbb: <a href="alap.html" style="color:var(--accent);font-weight:600">alapváltozat</a>.</p>
-      </div>
-      <svg class="hero-art" viewBox="0 0 390 236" role="img" aria-label="Rálátás: a szemtől a háztetőn át húzott látóvonal fölötti turbinarész látszik, az alatta lévő takarásban marad">
-        <g fill="none" stroke="#30333a" stroke-width="1">
-          <path d="M0 214 L390 214"/><path d="M0 226 L390 226"/><path d="M30 236 L110 196"/><path d="M130 236 L210 196"/><path d="M230 236 L310 196"/><path d="M330 236 L390 206"/>
-        </g>
-        <polygon class="beam" points="44,200 316,6 338,124" fill="url(#vlbeam)"/>
-        <defs><linearGradient id="vlbeam" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#e8620c" stop-opacity=".05"/><stop offset="1" stop-color="#e8620c" stop-opacity=".45"/></linearGradient></defs>
-        <path d="M44 200 L338 124" stroke="#f5934a" stroke-width="1.4" stroke-dasharray="5 4"/>
-        <g stroke="#d6d7d9" stroke-width="1.4" fill="#1d1f23" stroke-linejoin="round">
-          <path d="M150 214 L150 168 L186 150 L222 168 L222 214 Z"/><path d="M186 150 L186 132 M150 168 L186 132 L222 168"/>
-          <path d="M232 214 L232 172"/><circle cx="232" cy="160" r="14"/>
-        </g>
-        <g stroke-linecap="round">
-          <path d="M326 214 L326 127" stroke="#8a8f96" stroke-width="2.4" stroke-dasharray="4 4"/>
-          <path d="M326 124 L326 64" stroke="#f5934a" stroke-width="3"/>
-          <path d="M326 64 L326 10 M326 64 L280 92 M326 64 L372 92" stroke="#f5934a" stroke-width="2.2"/>
-          <circle cx="326" cy="64" r="4" fill="#f5934a"/>
-        </g>
-        <circle cx="44" cy="200" r="7" fill="#16181b" stroke="#e8620c" stroke-width="2.4"/><circle cx="44" cy="200" r="2.4" fill="#e8620c"/>
-        <g font-family="IBM Plex Mono, monospace" font-size="10" letter-spacing="1">
-          <rect x="236" y="20" width="76" height="22" rx="4" fill="#1d1f23" stroke="#e8620c"/><text x="246" y="35" fill="#f5934a" font-weight="600">LÁTSZIK</text>
-          <rect x="248" y="178" width="70" height="22" rx="4" fill="#1d1f23" stroke="#5a5f66"/><text x="257" y="193" fill="#a4a9b0">TAKARVA</text>
-          <text x="16" y="230" fill="#a4a9b0">SZEMMAGASSÁG</text>
-        </g>
-      </svg>
-    </div>
-    <dl class="stats" id="hlStats">
-      <div><dt>Vizsgált körzet</dt><dd data-stat="km">30<small>km</small></dd></div>
-      <div><dt>Épület a modellben</dt><dd data-stat="bld">–</dd></div>
-      <div><dt>Egyedi fa</dt><dd data-stat="trees">–</dd></div>
-      <div><dt>Fák felbontása</dt><dd>≈ 1<small>m</small></dd></div>
+  <div class="hx-in hx-copywrap"><div class="hx-copy">
+    <span class="hx-badge hx-glass"><i>HorizonLens</i><span class="eyebrow">Ják és 30 km-es környéke</span></span>
+    <h1>Honnan látszik <em>a szélerőmű?</em></h1>
+    <p class="hx-lede">Tedd le a 250 méteres turbinát oda, ahová tervezik, és nézd meg a saját utcádból. <b>Valós domborzat, minden ház és minden fa</b> benne van, és az eszköz kiszámolja, mennyi marad takarásban.</p>
+    <div class="hx-cta"><button type="button" class="hx-btn hx-pri" data-scroll="eszkoz">Nézőpont kiválasztása</button><button type="button" class="hx-btn hx-sec" data-scroll="modszer">Hogyan számol</button></div>
+    <p class="hx-hint">Térkép nélkül, sík terepen egyszerűbb: <a href="alap.html">alapváltozat</a>.</p>
+  </div></div>
+  <div class="hx-in">
+    <dl class="hx-stats hx-glass" id="hlStats">
+      <div><dd data-stat="km">30<small>km</small></dd><dt>vizsgált körzet</dt></div>
+      <div><dd data-stat="bld">–</dd><dt>épület a modellben</dt></div>
+      <div><dd data-stat="trees">–</dd><dt>egyedi fa, kb. 1 m-es felbontás</dt></div>
+      <div><dd>AR</dd><dt>élő kamerakép a telefonon</dt></div>
     </dl>
+    <p class="hx-by"><span data-jak>A háttér Ják valódi domborzata (magasságban 2,5× nagyítva), három példa-turbinával az 1. lehetséges területen. Narancs pont: innen a turbina töve is látszik.</span><span><b>HorizonLens</b> · az InnoLens (<span data-grp="name">InnoGroupe</span>) fejlesztése, díjmentes, semleges eszköz</span></p>
   </div>
 </header>
 <script>
@@ -1110,6 +1143,17 @@ document.addEventListener('DOMContentLoaded', function () {
   if (b) el('bld').textContent = nf(b); else el('bld').parentElement.hidden = true;
   if (t) el('trees').textContent = nf(t); else el('trees').parentElement.hidden = true;
 });
+(function () {
+  document.addEventListener('DOMContentLoaded', () => {   // a beépített adat a lap végén töltődik be
+    const L = window.LOCAL_DATA; if (L && L.home && L.home.name !== 'Ják') document.querySelectorAll('[data-jak]').forEach(e => e.hidden = true);
+  });
+  const v = document.getElementById('heroVid');
+  if (!v || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const sz = innerWidth * devicePixelRatio > 1400 ? '' : '_720';
+  for (const [ext, type] of [['webm', 'video/webm; codecs=vp9'], ['mp4', 'video/mp4']]) { const s = document.createElement('source'); s.src = `assets/hero_loop${sz}.${ext}`; s.type = type; v.appendChild(s); }
+  const go = () => { v.preload = 'auto'; v.play().then(() => v.classList.add('on')).catch(() => {}); };
+  if (document.readyState === 'complete') go(); else addEventListener('load', go);
+})();
 document.querySelectorAll('[data-scroll]').forEach(b => { b.addEventListener('click', () => { const t = document.getElementById(b.dataset.scroll); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); });
 </script>
 
@@ -1362,7 +1406,7 @@ window.VL_INFO = {
 })();
 </script>
 <footer class="brand-band foot-band"><div class="wrap">
-  <div class="foot-brand"><span class="hl-mark"><svg viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#e8620c"/><path d="M5 18.5 H23" stroke="#16181b" stroke-width="2.2" stroke-linecap="round"/><circle cx="14" cy="12" r="4.6" fill="#16181b"/></svg>HorizonLens <span class="by">by InnoLens</span></span><span class="vl-sep" aria-hidden="true"></span><span class="vl-fam">az <b data-grp="name">InnoGroupe</b> tagja</span></div>
+  <div class="foot-brand"><span class="hl-mark"><svg viewBox="0 0 26 26" aria-hidden="true"><path d="M13 2.2 22.4 7.6v10.8L13 23.8 3.6 18.4V7.6Z" fill="none" stroke="#ec651d" stroke-width="2.2" stroke-linejoin="round"/><circle cx="13" cy="13" r="4.2" fill="#f5f5f7"/></svg>HorizonLens <span class="by">by InnoLens</span></span><span class="vl-sep" aria-hidden="true"></span><span class="vl-fam">az <b data-grp="name">InnoGroupe</b> tagja</span></div>
   <p><b>Tájékoztató modell, nem hivatalos látványterv; használata saját felelősségre.</b> <button type="button" class="linklike legal-link">Jogi nyilatkozat, felelősségkizárás és adatkezelés</button></p>
   <p>Térkép: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> közreműködők, <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> (CC-BY-SA). Domborzat: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">AWS Terrain Tiles</a> (SRTM és más források). Településnevek: GeoNames (CC BY 4.0). Műholdkép: Copernicus Sentinel-2 (2023–2024, 10 m-es felbontás); a webes kiadásban légifotó: Esri, Maxar, Earthstar Geographics (Powered by Esri). Levél-, kéreg- és fűfotók: ez-tree (MIT, © Daniel Greenheck), égbolt-fény: Poly Haven (CC0). A számítás tájékoztató jellegű, nem helyettesíti a hivatalos látványtervet. <button class="linkbtn" type="button" id="copyLink">Link másolása ehhez a beállításhoz</button> <span id="copyMsg"></span></p>
 

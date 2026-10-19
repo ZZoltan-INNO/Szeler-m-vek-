@@ -84,9 +84,9 @@ if bdir and os.path.exists(os.path.join(bdir, 'bld_index.json')):   # valós ép
     local.update(json.load(open(os.path.join(bdir, 'bld_index.json'))))
 if place:   # kezdő nézőpont és a feliratok a régió településével (alapból Ják)
     local['home'] = {'name': place[0], 'lat': float(place[1]), 'lon': float(place[2])}
-    a = 'Látványvizsgálat · Ják és 30 km-es környéke'
+    a = '>Ják és 30 km-es környéke<'
     assert s.count(a) == 1
-    s = s.replace(a, f"Látványvizsgálat · {place[0]} és {local['region']['km']:g} km-es környéke")
+    s = s.replace(a, f">{place[0]} és {local['region']['km']:g} km-es környéke<")
 s = s.replace('<script>\n"use strict";', '<script>window.LOCAL_DATA = ' + json.dumps(local, separators=(',', ':')) + ';</script>\n<script>\n"use strict";', 1)
 if web:
     s = social(s, f"HorizonLens · Honnan látszik a szélerőmű? {place[0] if place else 'Ják'} és környéke",
@@ -126,6 +126,6 @@ if bdir:
 adir = os.path.join(root, 'assets')
 os.makedirs(os.path.join(out, 'assets'), exist_ok=True)
 for f in os.listdir(adir):
-    if f.endswith(('.png', '.jpg', '.mp4')) or (web and f.startswith('LICENSE')):
+    if f.endswith(('.png', '.jpg', '.mp4', '.webm')) or (web and f.startswith('LICENSE')):
         shutil.copy(os.path.join(adir, f), os.path.join(out, 'assets', f))
 print('kész:', out, len(os.listdir(os.path.join(out, 'dem'))), 'adatfájl', '(weboldal)' if web else '(artifact)')
