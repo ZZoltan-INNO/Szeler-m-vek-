@@ -1130,7 +1130,9 @@ input,select,textarea{background:var(--soft);color:var(--ink);border-color:rgba(
 .hx-vl,.hx-hl{transition:opacity .7s ease,visibility .7s}
 [data-scene="vl"] .hx-hl,[data-scene="hl"] .hx-vl{opacity:0;visibility:hidden;pointer-events:none}
 .hx-chip.hx-hl{transition:opacity .5s ease,visibility .5s}
-[data-chips="off"] .hx-chip{opacity:0;visibility:hidden}
+.hx-chip.off{opacity:0;visibility:hidden}
+.hx-me b{color:#f5f5f7}
+.hx-chip{transition:opacity .35s ease,visibility .35s}
 .hx-scene img,.hx-scene video{transition:filter 1s ease,opacity .8s ease}
 .hx-frame{align-self:center;justify-self:end;width:100%;max-width:720px;aspect-ratio:16/9;border-radius:20px;overflow:hidden;padding:0;position:relative;border:1px solid rgba(255,255,255,.16);box-shadow:0 30px 80px -30px rgba(0,0,0,.8),0 0 0 6px rgba(72,73,79,.35)}
 .hx-frame video{width:100%;height:100%;display:block;object-fit:cover;background:#1d1e22}
@@ -1201,9 +1203,10 @@ input,select,textarea{background:var(--soft);color:var(--ink);border-color:rgba(
   <div class="hx-in hx-top" id="hxTop"><h1 class="hx-slogan"><span class="s1">Amit a szem lát, azt mi megmérjük,</span> <span class="s2">amit nem lát, azt megjelenítjük.</span></h1></div>
   <div class="hx-scene" aria-hidden="true">
     <img id="heroImg" src="assets/hero_film_poster.jpg" alt=""><video id="heroVid" muted loop playsinline preload="none" poster="assets/hero_film_poster.jpg"></video>
-    <div class="hx-chip hx-glass hx-hl" data-jak style="left:48.29%;top:37.07%"><b>63%<i> látszik</i></b><span>4,6 km a főtértől</span></div>
-    <div class="hx-chip hx-glass hx-hl" data-jak style="left:68.38%;top:40.06%"><b>52%<i> látszik</i></b><span>4,7 km</span></div>
-    <div class="hx-chip hx-glass hx-hl" data-jak style="left:81.91%;top:41.47%"><b>51%<i> látszik</i></b><span>4,9 km</span></div>
+    <div class="hx-chip hx-glass hx-hl" data-jak data-k="2" style="left:48.29%;top:37.07%"><b>63%<i> látszik</i></b><span>4,6 km a főtértől</span></div>
+    <div class="hx-chip hx-glass hx-hl" data-jak data-k="1" style="left:68.38%;top:40.06%"><b>52%<i> látszik</i></b><span>4,7 km</span></div>
+    <div class="hx-chip hx-glass hx-hl" data-jak data-k="0" style="left:81.91%;top:41.47%"><b>51%<i> látszik</i></b><span>4,9 km</span></div>
+    <div class="hx-chip hx-glass hx-hl hx-me" data-jak style="left:50%;top:50%"><b>Itt állsz</b><span>Ják, főtér, 1,6 m szemmagasság</span></div>
   </div>
   <div class="hx-in hx-copywrap"><div class="hx-stage">
     <div class="hx-main">
@@ -1264,28 +1267,31 @@ document.addEventListener('DOMContentLoaded', function () {
   document.addEventListener('DOMContentLoaded', () => {   // a beépített adat a lap végén töltődik be
     const L = window.LOCAL_DATA; if (L && L.home && L.home.name !== 'Ják') document.querySelectorAll('[data-jak]').forEach(e => e.hidden = true);
   });
-  /* nyitókép: egyetlen 16 s-os film; 0–8 s VisionLens AOI állomás, 8–16 s a jáki táj (HorizonLens). A felirat, a fülek és a turbina-feliratok a film idejét követik */
+  /* nyitókép: egyetlen 24 s-os film; 0–8,4 s VisionLens gyártósor, majd az ellenőrző kamera objektívjén át a jáki táj (HorizonLens), ráközelítés a turbinákra és nagytotál a megfigyelővel.
+     A turbina-feliratok és az „itt állsz” jelölés képkockánként követik a kamerát (hero_film_chips.json: [idő, [[x,y]×3] vagy 0, [x,y] vagy 0]) */
   const hero = document.getElementById('hxHero'), v = document.getElementById('heroVid'), img = document.getElementById('heroImg');
   if (!hero) return;
-  const still = matchMedia('(prefers-reduced-motion: reduce)').matches, big = innerWidth * devicePixelRatio > 1400, CUT = 8, TT = 16;
-  const tabs = [...hero.querySelectorAll('.hx-tabs [data-scene-go]')];
-  const top = document.getElementById('hxTop');
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches, big = innerWidth * devicePixelRatio > 1400, CUT = 8.4, TT = 24, FPS = 30;
+  const tabs = [...hero.querySelectorAll('.hx-tabs [data-scene-go]')], top = document.getElementById('hxTop');
+  const turbChips = [...hero.querySelectorAll('.hx-chip[data-k]')], me = hero.querySelector('.hx-me');
   const fit = () => { hero.style.setProperty('--hh', hero.offsetHeight + 'px'); hero.style.setProperty('--st', (top.offsetTop + top.offsetHeight) + 'px'); };   // a film a mondat alatt kezdődik és a nyitókép aljáig ér
   fit(); if (window.ResizeObserver) new ResizeObserver(fit).observe(hero);
-  const show = (sc, p, chips) => {
+  let track = null; fetch('assets/hero_film_chips.json').then(r => r.json()).then(d => { track = d; }).catch(() => {});
+  const place = (el, p) => { if (!p || p[0] < 4 || p[0] > 96 || p[1] < 6 || p[1] > 94) { el.classList.add('off'); return; } el.classList.remove('off'); el.style.left = p[0] + '%'; el.style.top = p[1] + '%'; };
+  const show = (sc, p) => {
     if (hero.dataset.scene !== sc) hero.dataset.scene = sc;
-    hero.dataset.chips = chips ? 'on' : 'off';
     tabs.forEach(t => { const on = t.dataset.sceneGo === sc; t.setAttribute('aria-selected', on); t.querySelector('i').style.width = on && p != null ? (p * 100).toFixed(1) + '%' : '0'; });
   };
+  const chipsAt = t => { const f = track && track[Math.min(track.length - 1, Math.round(t * FPS))]; turbChips.forEach(c => place(c, f && f[1] ? f[1][+c.dataset.k] : null)); place(me, f && f[2] ? f[2] : null); };
   hero.querySelectorAll('[data-scene-go]').forEach(b => b.addEventListener('click', () => {
     const sc = b.dataset.sceneGo;
-    if (still || !v.classList.contains('on')) { img.src = sc === 'vl' ? 'assets/hero_film_poster.jpg' : 'assets/hero_poster.jpg'; show(sc, null, sc === 'hl'); return; }
+    if (still || !v.classList.contains('on')) { img.src = sc === 'vl' ? 'assets/hero_film_poster.jpg' : 'assets/hero_poster.jpg'; show(sc, null); turbChips.concat(me).forEach(c => c.classList.toggle('off', sc === 'vl' || c === me)); return; }
     v.currentTime = sc === 'vl' ? 0.05 : CUT + 0.05; v.play().catch(() => {});
   }));
-  show('vl', null, false);
+  show('vl', null); turbChips.concat(me).forEach(c => c.classList.add('off'));
   if (still || !v) return;
   for (const [ext, type] of [['webm', 'video/webm; codecs=vp9'], ['mp4', 'video/mp4']]) { const s = document.createElement('source'); s.src = `assets/hero_film${big ? '' : '_720'}.${ext}`; s.type = type; v.appendChild(s); }
-  const tick = () => { const t = v.currentTime % TT; if (t < CUT) show('vl', t / CUT, false); else show('hl', (t - CUT) / (TT - CUT), t > CUT + .5 && t < TT - .5); requestAnimationFrame(tick); };
+  const tick = () => { const t = v.currentTime % TT; if (t < CUT) show('vl', t / CUT); else show('hl', (t - CUT) / (TT - CUT)); chipsAt(t); requestAnimationFrame(tick); };
   const go = () => { v.preload = 'auto'; v.play().then(() => { v.classList.add('on'); requestAnimationFrame(tick); }).catch(() => {}); };
   if (document.readyState === 'complete') go(); else addEventListener('load', go);
 })();

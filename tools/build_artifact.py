@@ -126,6 +126,6 @@ if bdir:
 adir = os.path.join(root, 'assets')
 os.makedirs(os.path.join(out, 'assets'), exist_ok=True)
 for f in os.listdir(adir):
-    if f.endswith(('.png', '.jpg', '.mp4', '.webm')) or (web and f.startswith('LICENSE')):
+    if f.endswith(('.png', '.jpg', '.mp4', '.webm')) or f.startswith('hero_film_chips') or (web and f.startswith('LICENSE')):
         shutil.copy(os.path.join(adir, f), os.path.join(out, 'assets', f))
 print('kész:', out, len(os.listdir(os.path.join(out, 'dem'))), 'adatfájl', '(weboldal)' if web else '(artifact)')
