@@ -1128,26 +1128,26 @@ input,select,textarea{background:var(--soft);color:var(--ink);border-color:rgba(
 .hx-h em{font-style:normal;color:#ec651d}
 .hx-vl,.hx-hl{transition:opacity .7s ease,visibility .7s}
 [data-scene="vl"] .hx-hl,[data-scene="hl"] .hx-vl{opacity:0;visibility:hidden;pointer-events:none}
-.hx-chip.hx-hl{transition:opacity .7s ease .2s,visibility .7s}
+.hx-chip.hx-hl{transition:opacity .5s ease,visibility .5s}
+[data-chips="off"] .hx-chip{opacity:0;visibility:hidden}
 .hx-scene img,.hx-scene video{transition:filter 1s ease,opacity .8s ease}
-[data-scene="vl"] .hx-scene img,[data-scene="vl"] .hx-scene video{filter:brightness(.55) saturate(.85)}
 .hx-frame{align-self:center;justify-self:end;width:100%;max-width:720px;aspect-ratio:16/9;border-radius:20px;overflow:hidden;padding:0;position:relative;border:1px solid rgba(255,255,255,.16);box-shadow:0 30px 80px -30px rgba(0,0,0,.8),0 0 0 6px rgba(72,73,79,.35)}
 .hx-frame video{width:100%;height:100%;display:block;object-fit:cover;background:#1d1e22}
 .hx-statstack{display:grid}
 .hx-statstack>.hx-stats{grid-area:1/1}
 .hx-by{display:grid;grid-template-columns:minmax(0,1fr) auto}
 .hx-by>.hx-vl,.hx-by>.hx-hl{grid-area:1/1}
-.hx-tabs{position:relative;z-index:3;display:flex;gap:10px;margin:0 0 14px}
+.hx-row{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:12px 24px;flex-wrap:wrap;margin:0 0 14px}
+.hx-tag{margin:0;font:600 clamp(15px,1.4vw,19px)/1.35 var(--display);letter-spacing:-.01em;color:#f5f5f7;max-width:46ch}
+.hx-tag em{font-style:normal;color:#ff8a45}
+.foot-tag{margin-left:auto;color:var(--b-muted);font-size:.85rem}
+.hx-tabs{position:relative;z-index:3;display:flex;gap:10px;margin:0}
 .hx-tabs button{position:relative;overflow:hidden;display:grid;gap:2px;text-align:left;min-width:0;padding:10px 16px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(72,73,79,.32);color:#c0c1c8;font:500 12px/1.25 var(--body);cursor:pointer;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 .hx-tabs button b{font:600 14px/1.2 var(--body);color:#f5f5f7}
 .hx-tabs button[aria-selected="true"]{border-color:rgba(236,101,29,.6);background:rgba(236,101,29,.14)}
 .hx-tabs button i{position:absolute;left:0;bottom:0;height:2px;width:0;background:#ec651d}
-.hx-tabs button.run i{animation:hxbar var(--dur,9s) linear forwards}
-@keyframes hxbar{to{width:100%}}
 @media (max-width:980px){
   .hx-stage{grid-template-columns:minmax(0,1fr)}
-  .hx-frame{order:-1;justify-self:stretch;max-width:none;margin-bottom:56px}
-  .hx-copywrap{padding-top:calc(88px + env(safe-area-inset-top,0px))!important}
   .hx-tabs button span{display:none}
   .hx-by{grid-template-columns:minmax(0,1fr)}
 }
@@ -1162,7 +1162,7 @@ input,select,textarea{background:var(--soft);color:var(--ink);border-color:rgba(
 </div></div></nav>
 <header class="hx-hero" id="hxHero" data-scene="vl">
   <div class="hx-scene" aria-hidden="true">
-    <img src="assets/hero_poster.jpg" alt=""><video id="heroVid" muted loop playsinline preload="none" poster="assets/hero_poster.jpg"></video>
+    <img id="heroImg" src="assets/hero_film_poster.jpg" alt=""><video id="heroVid" muted loop playsinline preload="none" poster="assets/hero_film_poster.jpg"></video>
     <div class="hx-chip hx-glass hx-hl" data-jak style="left:48.29%;top:37.07%"><b>63%<i> látszik</i></b><span>4,6 km a főtértől</span></div>
     <div class="hx-chip hx-glass hx-hl" data-jak style="left:68.38%;top:40.06%"><b>52%<i> látszik</i></b><span>4,7 km</span></div>
     <div class="hx-chip hx-glass hx-hl" data-jak style="left:81.91%;top:41.47%"><b>51%<i> látszik</i></b><span>4,9 km</span></div>
@@ -1171,7 +1171,7 @@ input,select,textarea{background:var(--soft);color:var(--ink);border-color:rgba(
     <div class="hx-stack">
       <div class="hx-copy hx-vl">
         <span class="hx-badge hx-glass"><i>VisionLens AOI</i>az InnoLens terméke</span>
-        <h2 class="hx-h">Amit a szem lát, <em>azt mi megmérjük.</em></h2>
+        <h2 class="hx-h">Gépi látás <em>a gyártósoron.</em></h2>
         <p class="hx-lede">Automatikus optikai ellenőrzés gyártósorra. A mérnök elmondja, mit kell ellenőrizni, az AI összerakja a lépéseket, a gép melletti PC pedig <b>darabonként dönt: OK vagy NOK, okkal együtt</b>.</p>
         <div class="hx-cta"><button type="button" class="hx-btn hx-pri" data-scroll="visionlens">Kérjen próbát</button><button type="button" class="hx-btn hx-sec" data-scene-go="hl">Új projektünk: HorizonLens</button></div>
       </div>
@@ -1183,12 +1183,14 @@ input,select,textarea{background:var(--soft);color:var(--ink);border-color:rgba(
         <p class="hx-hint">Térkép nélkül, sík terepen egyszerűbb: <a href="alap.html">alapváltozat</a>.</p>
       </div>
     </div>
-    <div class="hx-frame hx-vl"><video id="vlVid" muted loop playsinline preload="none" poster="assets/vl_poster.jpg" aria-label="VisionLens AOI bemutató: kódolvasás, méretmérés, felületi hiba, OK vagy NOK döntés"></video></div>
   </div></div>
   <div class="hx-in">
+    <div class="hx-row">
+    <p class="hx-tag">Amit a szem lát, azt mi megmérjük, <em>amit nem lát, azt megjelenítjük.</em></p>
     <div class="hx-tabs" role="tablist" aria-label="Bemutató">
       <button type="button" role="tab" data-scene-go="vl"><b>VisionLens AOI</b><span>gyártósori képelemzés</span><i></i></button>
       <button type="button" role="tab" data-scene-go="hl"><b>HorizonLens</b><span>új projekt: szélerőmű-látványvizsgálat</span><i></i></button>
+    </div>
     </div>
     <div class="hx-statstack">
       <dl class="hx-stats hx-glass hx-vl">
@@ -1222,23 +1224,26 @@ document.addEventListener('DOMContentLoaded', function () {
   document.addEventListener('DOMContentLoaded', () => {   // a beépített adat a lap végén töltődik be
     const L = window.LOCAL_DATA; if (L && L.home && L.home.name !== 'Ják') document.querySelectorAll('[data-jak]').forEach(e => e.hidden = true);
   });
-  /* nyitókép: VisionLens (InnoLens) és HorizonLens jelenet váltakozik; a fülekkel a látogató is válthat */
-  const hero = document.getElementById('hxHero'), bg = document.getElementById('heroVid'), vl = document.getElementById('vlVid');
+  /* nyitókép: egyetlen 16 s-os film; 0–8 s VisionLens AOI állomás, 8–16 s a jáki táj (HorizonLens). A felirat, a fülek és a turbina-feliratok a film idejét követik */
+  const hero = document.getElementById('hxHero'), v = document.getElementById('heroVid'), img = document.getElementById('heroImg');
   if (!hero) return;
-  const still = matchMedia('(prefers-reduced-motion: reduce)').matches, big = innerWidth * devicePixelRatio > 1400;
-  const DUR = { vl: 16000, hl: 9000 }; let timer = 0;
-  const src = (v, list) => { for (const [f, type] of list) { const s = document.createElement('source'); s.src = 'assets/' + f; s.type = type; v.appendChild(s); } };
-  const play = v => { if (still || !v) return; v.preload = 'auto'; v.play().then(() => v.classList.add('on')).catch(() => {}); };
-  const set = (sc, auto) => {
-    hero.dataset.scene = sc; clearTimeout(timer);
-    hero.querySelectorAll('.hx-tabs [data-scene-go]').forEach(t => { const on = t.dataset.sceneGo === sc; t.setAttribute('aria-selected', on); t.classList.remove('run'); if (on && !still) { void t.offsetWidth; t.style.setProperty('--dur', DUR[sc] + 'ms'); t.classList.add('run'); } });
-    if (sc === 'vl') play(vl); else if (vl) vl.pause();
-    if (!still && auto !== false) timer = setTimeout(() => set(sc === 'vl' ? 'hl' : 'vl'), DUR[sc]);
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches, big = innerWidth * devicePixelRatio > 1400, CUT = 8, TT = 16;
+  const tabs = [...hero.querySelectorAll('.hx-tabs [data-scene-go]')];
+  const show = (sc, p, chips) => {
+    if (hero.dataset.scene !== sc) hero.dataset.scene = sc;
+    hero.dataset.chips = chips ? 'on' : 'off';
+    tabs.forEach(t => { const on = t.dataset.sceneGo === sc; t.setAttribute('aria-selected', on); t.querySelector('i').style.width = on && p != null ? (p * 100).toFixed(1) + '%' : '0'; });
   };
-  hero.querySelectorAll('[data-scene-go]').forEach(b => b.addEventListener('click', () => set(b.dataset.sceneGo)));
-  if (bg) src(bg, [[`hero_loop${big ? '' : '_720'}.webm`, 'video/webm; codecs=vp9'], [`hero_loop${big ? '' : '_720'}.mp4`, 'video/mp4']]);
-  if (vl) src(vl, big ? [['vl_loop.webm', 'video/webm; codecs=vp9'], ['visionlens.mp4', 'video/mp4']] : [['vl_loop_720.webm', 'video/webm; codecs=vp9'], ['vl_loop_720.mp4', 'video/mp4']]);
-  const go = () => { play(bg); set('vl'); };
+  hero.querySelectorAll('[data-scene-go]').forEach(b => b.addEventListener('click', () => {
+    const sc = b.dataset.sceneGo;
+    if (still || !v.classList.contains('on')) { img.src = sc === 'vl' ? 'assets/hero_film_poster.jpg' : 'assets/hero_poster.jpg'; show(sc, null, sc === 'hl'); return; }
+    v.currentTime = sc === 'vl' ? 0.05 : CUT + 0.05; v.play().catch(() => {});
+  }));
+  show('vl', null, false);
+  if (still || !v) return;
+  for (const [ext, type] of [['webm', 'video/webm; codecs=vp9'], ['mp4', 'video/mp4']]) { const s = document.createElement('source'); s.src = `assets/hero_film${big ? '' : '_720'}.${ext}`; s.type = type; v.appendChild(s); }
+  const tick = () => { const t = v.currentTime % TT; if (t < CUT) show('vl', t / CUT, false); else show('hl', (t - CUT) / (TT - CUT), t > CUT + .5 && t < TT - .5); requestAnimationFrame(tick); };
+  const go = () => { v.preload = 'auto'; v.play().then(() => { v.classList.add('on'); requestAnimationFrame(tick); }).catch(() => {}); };
   if (document.readyState === 'complete') go(); else addEventListener('load', go);
 })();
 document.querySelectorAll('[data-scroll]').forEach(b => { b.addEventListener('click', () => { const t = document.getElementById(b.dataset.scroll); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); });
@@ -1493,7 +1498,7 @@ window.VL_INFO = {
 })();
 </script>
 <footer class="brand-band foot-band"><div class="wrap">
-  <div class="foot-brand"><span class="hl-mark"><svg viewBox="0 0 26 26" aria-hidden="true"><path d="M13 2.2 22.4 7.6v10.8L13 23.8 3.6 18.4V7.6Z" fill="none" stroke="#ec651d" stroke-width="2.2" stroke-linejoin="round"/><circle cx="13" cy="13" r="4.2" fill="#f5f5f7"/></svg>HorizonLens <span class="by">by InnoLens</span></span><span class="vl-sep" aria-hidden="true"></span><span class="vl-fam">az <b data-grp="name">InnoGroupe</b> tagja</span></div>
+  <div class="foot-brand"><span class="hl-mark"><svg viewBox="0 0 26 26" aria-hidden="true"><path d="M13 2.2 22.4 7.6v10.8L13 23.8 3.6 18.4V7.6Z" fill="none" stroke="#ec651d" stroke-width="2.2" stroke-linejoin="round"/><circle cx="13" cy="13" r="4.2" fill="#f5f5f7"/></svg>HorizonLens <span class="by">by InnoLens</span></span><span class="vl-sep" aria-hidden="true"></span><span class="vl-fam">az <b data-grp="name">InnoGroupe</b> tagja</span><span class="foot-tag">Amit a szem lát, azt mi megmérjük, amit nem lát, azt megjelenítjük.</span></div>
   <p><b>Tájékoztató modell, nem hivatalos látványterv; használata saját felelősségre.</b> <button type="button" class="linklike legal-link">Jogi nyilatkozat, felelősségkizárás és adatkezelés</button></p>
   <p>Térkép: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> közreműködők, <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> (CC-BY-SA). Domborzat: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">AWS Terrain Tiles</a> (SRTM és más források). Településnevek: GeoNames (CC BY 4.0). Műholdkép: Copernicus Sentinel-2 (2023–2024, 10 m-es felbontás); a webes kiadásban légifotó: Esri, Maxar, Earthstar Geographics (Powered by Esri). Levél-, kéreg- és fűfotók: ez-tree (MIT, © Daniel Greenheck), égbolt-fény: Poly Haven (CC0). A számítás tájékoztató jellegű, nem helyettesíti a hivatalos látványtervet. <button class="linkbtn" type="button" id="copyLink">Link másolása ehhez a beállításhoz</button> <span id="copyMsg"></span></p>
 
