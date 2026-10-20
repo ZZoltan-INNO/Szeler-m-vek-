@@ -1191,6 +1191,11 @@ input,select,textarea{background:var(--soft);color:var(--ink);border-color:rgba(
   .hx-hero .hx-copywrap{order:2;padding-top:4px!important}
   .hx-hero .hx-copywrap+.hx-in{order:3;margin-top:20px}
 }
+
+/* gépen a film a mondat alatti sáv közepére igazodik (a 16:9-es kép alja ne csússzon az adatsáv alá); nagytotálban a feliratok tömörek */
+@media (min-width:981px){.hx-hero .hx-scene{top:calc(var(--st,0px) + (var(--hh,100svh) - var(--st,0px)) * .46);transform:translate(-50%,-50%)}}
+.hx-hero.far .hx-chip:not(.hx-me) span,.hx-hero.far .hx-chip:not(.hx-me) b i{display:none}
+.hx-hero.far .hx-chip:not(.hx-me){padding:5px 9px}
 </style>
 </head>
 <body>
@@ -1291,7 +1296,7 @@ document.addEventListener('DOMContentLoaded', function () {
   show('vl', null); turbChips.concat(me).forEach(c => c.classList.add('off'));
   if (still || !v) return;
   for (const [ext, type] of [['webm', 'video/webm; codecs=vp9'], ['mp4', 'video/mp4']]) { const s = document.createElement('source'); s.src = `assets/hero_film${big ? '' : '_720'}.${ext}`; s.type = type; v.appendChild(s); }
-  const tick = () => { const t = v.currentTime % TT; if (t < CUT) show('vl', t / CUT); else show('hl', (t - CUT) / (TT - CUT)); chipsAt(t); requestAnimationFrame(tick); };
+  const tick = () => { const t = v.currentTime % TT; hero.classList.toggle('far', t > 14); if (t < CUT) show('vl', t / CUT); else show('hl', (t - CUT) / (TT - CUT)); chipsAt(t); requestAnimationFrame(tick); };
   const go = () => { v.preload = 'auto'; v.play().then(() => { v.classList.add('on'); requestAnimationFrame(tick); }).catch(() => {}); };
   if (document.readyState === 'complete') go(); else addEventListener('load', go);
 })();
