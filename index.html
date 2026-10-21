@@ -958,6 +958,13 @@ td:last-child{white-space:normal}
 .about-group b{font:700 1.05rem/1.2 var(--display);color:var(--b-ink)}
 .about-group span{font-size:.9rem;color:var(--b-muted)}
 .about-group small{font:500 .72rem/1.3 var(--mono);letter-spacing:.06em;color:var(--b-orange-hi)}
+.about-co{grid-column:1/-1;display:grid;gap:10px}
+.about-co[hidden]{display:none}
+.about-co h3{font:700 1.1rem/1.2 var(--display);color:var(--b-ink)}
+.about-co .vl-contact{border-style:solid}
+.about-co .vl-contact dd{user-select:text}
+.about-co a{color:var(--b-orange-hi);text-decoration:none}
+.about-co a:hover{text-decoration:underline}
 @media (max-width:860px){.about-group{grid-template-columns:minmax(0,1fr)}}
 .vl-wrap{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:28px 40px;align-items:start}
 .vl-head{display:grid;gap:12px;min-width:0}
@@ -1544,10 +1551,23 @@ h_takart = z_szem + D · tan(α_max) − z_talppont</div>
 window.VL_INFO = {
   name: '', role: '', phone: '', email: '', web: '',
   operator: '',   // üzemeltető (cégnév, székhely, cégjegyzékszám) – a jogi nyilatkozatba kerül
+  // a csoport cégadatai a „Kik vagyunk” szakaszban (forrás: innomotion.hu, főoldal és adatvédelmi tájékoztató)
+  company: {
+    name: 'Innomotion Kft.',
+    rows: [
+      ['Székhely', '9081 Győrújbarát, Vendégfogadó u. 2.'],
+      ['Telephely', '9028 Győr, Régi Veszprémi út 14–16.'],
+      ['Telefon', '+36 30 584 6333', 'tel:+36305846333'],
+      ['E-mail', 'info@innomotion.hu', 'mailto:info@innomotion.hu'],
+      ['Web', 'www.innomotion.hu', 'https://www.innomotion.hu/'],
+      ['Cégjegyzékszám', '08-09-035315'],
+      ['Adószám', '24214300-2-08']
+    ]
+  },
   group: {
     name: 'InnoGroupe',
     members: [
-      { name: 'Innomotion', role: 'A csoport legismertebb brandje.', note: 'Győrújbarát · 2012 óta' },
+      { name: 'Innomotion', role: 'Egyedi célgépek, gyártócellák és automatizált rendszerek tervezése és gyártása, alkatrészgyártás, prototípusgyártás és 3D nyomtatás.', note: 'Győrújbarát · 2012 óta' },
       { name: 'InnoProduction', role: 'Gyártás.' },
       { name: 'InnoLens', role: 'Kamerás mérés és képelemzés: a HorizonLens és a VisionLens AOI fejlesztője.', current: true }
     ]
@@ -1559,15 +1579,21 @@ document.addEventListener('DOMContentLoaded', function () {   // a szakasz a lap
   const ul = $id('aboutGroup');
   if (ul) I.group.members.forEach(m => { const li = document.createElement('li'); if (m.current) li.className = 'cur';
     li.innerHTML = '<b></b><span></span>' + (m.note ? '<small></small>' : ''); li.children[0].textContent = m.name; li.children[1].textContent = m.role; if (m.note) li.children[2].textContent = m.note; ul.appendChild(li); });
+  const co = $id('aboutCompany');
+  if (co && I.company) { co.hidden = false; co.querySelector('h3').textContent = I.company.name; const dlc = co.querySelector('dl');
+    I.company.rows.forEach(([k, v, href]) => { const d = document.createElement('div'); d.innerHTML = '<dt></dt><dd></dd>'; d.firstChild.textContent = k;
+      if (href) { const a = document.createElement('a'); a.href = href; a.textContent = v; if (/^https?:/.test(href)) { a.target = '_blank'; a.rel = 'noopener'; } d.lastChild.appendChild(a); } else d.lastChild.textContent = v;
+      dlc.appendChild(d); }); }
   const rows = [['Kapcsolattartó', I.name], ['Beosztás', I.role], ['Telefon', I.phone], ['E-mail', I.email], ['Web', I.web]].filter(r => r[1]);
   const dl = $id('vlContact');
   if (dl && rows.length) { dl.hidden = false; rows.forEach(([k, v]) => { const d = document.createElement('div'); d.innerHTML = '<dt></dt><dd></dd>'; d.firstChild.textContent = k; d.lastChild.textContent = v; dl.appendChild(d); }); }
   const op = $id('vlOperator'); if (op && I.operator) { op.hidden = false; op.querySelector('span').textContent = I.operator; }
-  // a teljes film (a gyártósortól a tájig) csak akkor fut, ha látszik
+  // a táj filmje a nagytotálnál indul (a nyitókép a ráközelítéssel), és csak akkor fut, ha látszik
   const v = $id('aboutVid'); if (!v) return;
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) { v.controls = true; return; }
-  for (const [ext, type] of [['webm', 'video/webm; codecs=vp9'], ['mp4', 'video/mp4']]) { const s = document.createElement('source'); s.src = 'assets/hero_film_720.' + ext; s.type = type; v.appendChild(s); }
+  for (const [ext, type] of [['webm', 'video/webm; codecs=vp9'], ['mp4', 'video/mp4']]) { const s = document.createElement('source'); s.src = 'assets/hero_loop_720.' + ext; s.type = type; v.appendChild(s); }
   if (!window.IntersectionObserver) return;
+  let first = true; v.addEventListener('loadedmetadata', () => { if (first) { first = false; v.currentTime = 6.4; } });
   new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { v.preload = 'auto'; v.play().catch(() => {}); } else v.pause(); }), { threshold: .35 }).observe(v);
 });
 </script>
@@ -1646,8 +1672,9 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
       <p class="vl-lede">A HorizonLenst az <b>InnoLens</b> csapata készítette. Az InnoLens az <span data-grp="name">InnoGroupe</span> kamerás méréssel és képelemzéssel foglalkozó cége: kamerával, objektívvel, fénnyel és számítással dolgozunk. Ugyanezzel a tudással fejlesztjük a gyártósori <b>VisionLens AOI</b> képellenőrző rendszert is.</p>
       <p class="vl-lede">A HorizonLens díjmentes és semleges eszköz: nem foglal állást a beruházások mellett vagy ellen, csak megmutatja, mi fog látszani és mi nem.</p>
     </div>
-    <figure class="vl-media about-media"><video id="aboutVid" muted loop playsinline preload="none" poster="assets/hero_film_poster.jpg" aria-label="Animáció: a gyártósor ellenőrző kamerájából a jáki tájra, a tervezett turbinákra és a megfigyelő látómezejére"></video></figure>
+    <figure class="vl-media about-media"><video id="aboutVid" muted loop playsinline preload="none" poster="assets/hero_poster.jpg" aria-label="Animáció: Ják valódi domborzata a tervezett turbinákkal, a házakkal, a fákkal és a megfigyelő látómezejével"></video></figure>
     <ul class="about-group" id="aboutGroup" aria-label="Az InnoGroupe tagjai"></ul>
+    <div class="about-co" id="aboutCompany" hidden><h3></h3><dl class="vl-contact"></dl></div>
     <dl class="vl-contact" id="vlContact" hidden></dl>
   </div>
 </section>
