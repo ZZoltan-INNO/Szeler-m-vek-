@@ -1392,7 +1392,7 @@ document.addEventListener('DOMContentLoaded', function () {
 document.querySelectorAll('[data-scroll]').forEach(b => { b.addEventListener('click', () => { const t = document.getElementById(b.dataset.scroll); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); });
 /* névtelen összesítő számláló (Netlify-függvény, /api/stats): látogató böngészőnként egyszer, letett turbina és mentett kép eseményenként
    (böngészőnként naponta legfeljebb 50); személyes adatot nem küld. A számok csak STATS_MIN látogató fölött jelennek meg. */
-const STATS_MIN = 100;
+const STATS_MIN = 100, SITE_URL = 'https://jak-szeleromu.pages.dev';   // az oldal kanonikus címe (Cloudflare Pages)
 window.hlCount = kind => {
   try {
     if (!/^https?:/.test(location.protocol)) return;
@@ -1695,12 +1695,7 @@ document.addEventListener('DOMContentLoaded', function () {   // a szakasz a lap
         <li>értesítés, ha új terület vagy új funkció kerül az eszközbe.</li>
       </ul>
     </div>
-    <form class="news-form" id="newsForm" name="hirlevel" method="POST" data-netlify="true" netlify-honeypot="bot-field" novalidate>
-      <input type="hidden" name="form-name" value="hirlevel">
-      <input type="hidden" name="hozzajarulas_verzio" value="">
-      <input type="hidden" name="hozzajarulas_szoveg" value="">
-      <input type="hidden" name="idopont" value="">
-      <input type="hidden" name="oldal" value="">
+    <form class="news-form" id="newsForm" name="hirlevel" novalidate>
       <p class="hp" aria-hidden="true"><label>Ezt hagyd üresen: <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
       <label for="newsEmail" class="small">E-mail-cím</label>
       <div class="news-row"><input type="email" id="newsEmail" name="email" required autocomplete="email" inputmode="email" placeholder="nev@pelda.hu"><button class="btn primary" type="submit" id="newsGo">Feliratkozom</button></div>
@@ -1714,7 +1709,8 @@ document.addEventListener('DOMContentLoaded', function () {   // a szakasz a lap
 </section>
 <script>
 /* Hírlevél: az adatkezelő adatai itt töltendők ki. Amíg a név és az e-mail üres, a feliratkozás és a 8.1 pont rejtve marad
-   (feliratkozáskor az adatkezelő nevét kötelező feltüntetni). A beküldést a Netlify Forms fogadja (Netlify → Forms). */
+   (feliratkozáskor az adatkezelő nevét kötelező feltüntetni). A beküldést a /api/subscribe függvény tárolja (Cloudflare D1); a lista a
+   /api/subscribers címről tölthető le CSV-ben az ADMIN_TOKEN titkos kulccsal. */
 window.NEWS_INFO = {
   controller: '',   // az adatkezelő cég neve, pl. „Minta Kft.”
   address: '',      // székhely
@@ -1736,11 +1732,10 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
     if (!mail.value.trim() || !mail.checkValidity()) { say('Adj meg egy érvényes e-mail-címet.', true); mail.focus(); return; }
     if (!edu.checked && !mkt.checked) { say('Jelöld be, milyen leveleket kérsz (legalább az egyiket).', true); edu.focus(); return; }
     const txt = [edu.checked && $id('newsEduT').textContent, mkt.checked && $id('newsMktT').textContent].filter(Boolean).join(' | ') + ` (adatkezelő: ${N.controller})`;
-    f.elements.hozzajarulas_verzio.value = N.version; f.elements.hozzajarulas_szoveg.value = txt;
-    f.elements.idopont.value = new Date().toISOString(); f.elements.oldal.value = location.origin + location.pathname;
     $id('newsGo').disabled = true; say('Küldés…');
     try {
-      const r = await fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(new FormData(f)).toString() });
+      const r = await fetch('/api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: mail.value.trim(), edu: edu.checked, mkt: mkt.checked,
+        consent_text: txt, consent_version: N.version, page: location.origin + location.pathname, 'bot-field': f.elements['bot-field'].value }) });
       if (!r.ok) throw new Error(r.status);
       f.hidden = true; const ok = $id('newsOk'); ok.hidden = false;
       $id('newsOkT').textContent = `${[edu.checked && 'Az edukációs leveleket', mkt.checked && (edu.checked ? 'az ajánlatainkat' : 'Az ajánlatainkat')].filter(Boolean).join(' és ')} erre a címre küldjük: ${mail.value.trim()}. Bármikor leiratkozhatsz a levelek alján lévő linkkel.`;
@@ -1782,7 +1777,7 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
       <p><b>6. Az eredmények felhasználása.</b> A számítások és a képek tájékoztató jellegűek; hivatalos eljárásban, szerződésben vagy döntés alapjaként csak szakember ellenőrzése után használhatók. A mentett képek forrásjelölését ne távolítsd el; a képek megosztásáért és felhasználásáért a megosztó felel.</p>
       <p><b>7. Harmadik felek.</b> Az oldal harmadik felek adatait és szolgáltatásait használja (térképek, légi- és műholdképek, domborzat, épület- és famagasság-adatok, programkönyvtárak, tárhely). Ezek tartalmáért, pontosságáért és elérhetőségéért nem vállalunk felelősséget; a forrásokat és a licenceket a lap alján soroljuk fel.</p>
       <p><b>8. Adatkezelés.</b> A helyadatot, a kamera képét és a mozgásérzékelők adatait az oldal kizárólag a készülékeden, a böngészőben dolgozza fel; ezeket nem rögzítjük és nem továbbítjuk. A beállításokat (például a kalibrációt) a böngésző helyi tárolója őrzi a készülékeden, a megosztható link pedig a címsorban hordozza a beállításokat. A tárhelyszolgáltató és a térkép- és adatszolgáltatók a kérések kiszolgálásához technikai adatokat (például IP-címet) kezelhetnek, a saját adatkezelési tájékoztatójuk szerint. Az oldal névtelen, összesítő számlálót vezet (a látogatók, a letett turbinák és a mentett képek száma); ehhez személyes adatot, IP-címet és sütit nem tárolunk, a böngésző helyi tárolója csak azt jegyzi meg, hogy a látogatást már beszámítottuk.<span class="news-on" hidden> Személyes adatot az oldal csak akkor kezel, ha feliratkozol a hírlevélre (8.1 pont).</span></p>
-      <p class="news-on" id="jogiNews" hidden><b>8.1 Hírlevél.</b> <b>Adatkezelő:</b> <span data-news="controller"></span><span data-news="address" data-pre=", székhely: "></span><span data-news="regno" data-pre=", cégjegyzékszám: "></span>; e-mail: <span data-news="email"></span>. <b>Kezelt adatok:</b> az e-mail-címed; a választott levéltípusok (edukációs levélsorozat, reklám és ajánlatok); a hozzájárulásod időpontja, pontos szövege és verziója; az oldal, ahol feliratkoztál. <b>Cél:</b> szakmai (edukációs) tartalmak, és ha ehhez is hozzájárultál, gazdasági reklámot tartalmazó levelek küldése az InnoGroupe termékeiről és szolgáltatásairól; a hozzájárulás igazolása. <b>Jogalap:</b> a hozzájárulásod (GDPR 6. cikk (1) bekezdés a) pont); a gazdasági reklámnál a gazdasági reklámtevékenységről szóló 2008. évi XLVIII. törvény (Grt.) 6. § (1) bekezdése szerinti előzetes, kifejezett hozzájárulás. A két levéltípushoz külön-külön járulsz hozzá; egyik sem feltétele a másiknak vagy az oldal használatának. <b>Időtartam:</b> a hozzájárulás visszavonásáig. A hozzájárulásodat bármikor, indoklás nélkül és díjmentesen visszavonhatod (leiratkozhatsz) a levelek alján lévő linkkel vagy a fenti e-mail-címen; leiratkozáskor az e-mail-címedet haladéktalanul töröljük a küldési listáról. A visszavonás nem érinti az előtte végzett adatkezelés jogszerűségét. <b>Adatfeldolgozók:</b> a feliratkozó űrlapot a tárhelyszolgáltató, a Netlify, Inc. (USA) fogadja és tárolja; az adattovábbítás az Európai Bizottság általános szerződési feltételei alapján történik. <span data-news="sender" data-pre="A leveleket a következő szolgáltató küldi ki: " data-post="."></span> A levelek megnyitását és a bennük lévő linkekre kattintást statisztikai céllal, összesítve mérhetjük. Az adataidat nem adjuk el, harmadik félnek reklámcélra nem adjuk át, és rólad automatizált döntést nem hozunk. <b>Jogaid:</b> tájékoztatást kérhetsz a rólad kezelt adatokról, kérheted a helyesbítésüket, a törlésüket, a kezelésük korlátozását, és adathordozhatóságot is kérhetsz; kérésedre egy hónapon belül válaszolunk. Panasszal a Nemzeti Adatvédelmi és Információszabadság Hatósághoz (NAIH, 1055 Budapest, Falk Miksa utca 9–11., ugyfelszolgalat@naih.hu, www.naih.hu) fordulhatsz, vagy bírósághoz is. 16 év alatt nem iratkozhatsz fel.</p>
+      <p class="news-on" id="jogiNews" hidden><b>8.1 Hírlevél.</b> <b>Adatkezelő:</b> <span data-news="controller"></span><span data-news="address" data-pre=", székhely: "></span><span data-news="regno" data-pre=", cégjegyzékszám: "></span>; e-mail: <span data-news="email"></span>. <b>Kezelt adatok:</b> az e-mail-címed; a választott levéltípusok (edukációs levélsorozat, reklám és ajánlatok); a hozzájárulásod időpontja, pontos szövege és verziója; az oldal, ahol feliratkoztál. <b>Cél:</b> szakmai (edukációs) tartalmak, és ha ehhez is hozzájárultál, gazdasági reklámot tartalmazó levelek küldése az InnoGroupe termékeiről és szolgáltatásairól; a hozzájárulás igazolása. <b>Jogalap:</b> a hozzájárulásod (GDPR 6. cikk (1) bekezdés a) pont); a gazdasági reklámnál a gazdasági reklámtevékenységről szóló 2008. évi XLVIII. törvény (Grt.) 6. § (1) bekezdése szerinti előzetes, kifejezett hozzájárulás. A két levéltípushoz külön-külön járulsz hozzá; egyik sem feltétele a másiknak vagy az oldal használatának. <b>Időtartam:</b> a hozzájárulás visszavonásáig. A hozzájárulásodat bármikor, indoklás nélkül és díjmentesen visszavonhatod (leiratkozhatsz) a levelek alján lévő linkkel vagy a fenti e-mail-címen; leiratkozáskor az e-mail-címedet haladéktalanul töröljük a küldési listáról. A visszavonás nem érinti az előtte végzett adatkezelés jogszerűségét. <b>Adatfeldolgozók:</b> a feliratkozást és a feliratkozók listáját a tárhelyszolgáltató, a Cloudflare, Inc. (USA) fogadja és tárolja; az adattovábbítás az EU–USA adatvédelmi keretrendszer és az Európai Bizottság általános szerződési feltételei alapján történik. <span data-news="sender" data-pre="A leveleket a következő szolgáltató küldi ki: " data-post="."></span> A levelek megnyitását és a bennük lévő linkekre kattintást statisztikai céllal, összesítve mérhetjük. Az adataidat nem adjuk el, harmadik félnek reklámcélra nem adjuk át, és rólad automatizált döntést nem hozunk. <b>Jogaid:</b> tájékoztatást kérhetsz a rólad kezelt adatokról, kérheted a helyesbítésüket, a törlésüket, a kezelésük korlátozását, és adathordozhatóságot is kérhetsz; kérésedre egy hónapon belül válaszolunk. Panasszal a Nemzeti Adatvédelmi és Információszabadság Hatósághoz (NAIH, 1055 Budapest, Falk Miksa utca 9–11., ugyfelszolgalat@naih.hu, www.naih.hu) fordulhatsz, vagy bírósághoz is. 16 év alatt nem iratkozhatsz fel.</p>
       <p><b>9. Módosítás, irányadó jog.</b> Az oldalt és ezt a nyilatkozatot bármikor, előzetes értesítés nélkül módosíthatjuk vagy megszüntethetjük. Az oldal használatával a nyilatkozatot elfogadod. Irányadó jog: a magyar jog. Hatályos: 2026. október 21-től.</p>
     </div>
   </details>
@@ -4312,7 +4307,7 @@ BASES.forEach(([name, layer], i) => {
 let activeName = BASES.find(b => b[1] === activeBase)[0];
 /* felirat a térkép alatt: melyik kép látszik, milyen részletes */
 function baseInfo() {
-  const n = activeName, link = 'https://jak-szeleromu.netlify.app';
+  const n = activeName, link = SITE_URL;
   const what = /Légifotó/.test(n) ? 'Esri légifotó, kb. 0,3–0,5 m-es felbontás'
     : /Műhold/.test(n) ? (LOCAL ? 'Copernicus Sentinel-2 műholdkép, 10 m-es felbontás (közelről elmosódott)' : 'Esri műholdkép, kb. 0,5 m-es felbontás')
     : /Domborzat|domborzat/.test(n) ? 'domborzat-árnyékolás' : n;
@@ -5636,7 +5631,7 @@ function openIntro(mode) {
   $('arIntroGo').hidden = mode === 'info'; $('arIntroGo').textContent = mode === 'help' ? 'Vissza az élő képhez' : 'Kezdjük';
   $('arIntroNo').textContent = mode === 'start' ? 'Mégse' : 'Bezárás'; $('arIntroNo').hidden = mode === 'help';
   $('arIntroSkipW').hidden = mode !== 'start';
-  $('arIntroNote').textContent = mode === 'info' ? 'Az élő kamera telefonon működik: nyisd meg ezt az oldalt a telefonod böngészőjében (jak-szeleromu.netlify.app). Járművezetés vagy közlekedés közben ne használd.' : 'A képen végig egy kártya mondja, mi a következő lépés. Járművezetés vagy közlekedés közben ne használd.';
+  $('arIntroNote').textContent = mode === 'info' ? `Az élő kamera telefonon működik: nyisd meg ezt az oldalt a telefonod böngészőjében (${SITE_URL.replace('https://', '')}). Járművezetés vagy közlekedés közben ne használd.` : 'A képen végig egy kártya mondja, mi a következő lépés. Járművezetés vagy közlekedés közben ne használd.';
   box.hidden = false; (mode === 'info' ? $('arIntroNo') : $('arIntroGo')).focus();
 }
 function closeIntro() { const v = $('arIntroV'); v.pause(); v.removeAttribute('src'); v.load(); $('arIntro').hidden = true; if (MONT.mode) $('montClose').focus(); else ($('arBtn').hidden ? $('arHow') : $('arBtn')).focus(); }
@@ -5687,7 +5682,7 @@ function coachTick() {
   }
 }
 async function startAR() {
-  const framed = window.top !== window, link = 'https://jak-szeleromu.netlify.app';
+  const framed = window.top !== window, link = SITE_URL;
   const fail = t => { realMsg(t + (framed || !(LOCAL && LOCAL.web) ? ` Az élő kamera a nyilvános oldalon működik: <a href="${link}" target="_blank" rel="noopener">${link.replace('https://', '')}</a>` : '')); return false; };
   if (!(LOCAL && LOCAL.web)) return fail('Ebben a beágyazott nézetben a böngésző nem engedi a kamerát és az iránytűt.');
   realMsg('Engedélyezd a kamerát, a helymeghatározást és a mozgásérzékelőt…', false);
