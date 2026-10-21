@@ -776,6 +776,29 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .mont-stage{position:relative;flex:1;min-height:0;overflow:hidden;touch-action:none;cursor:grab}
 .mont-stage video,.mont-stage canvas{position:absolute;inset:0;width:100%;height:100%}
 .mont-stage video{object-fit:cover}
+.ar-coach{position:absolute;left:10px;right:10px;top:10px;z-index:3;max-width:520px;margin:0 auto;display:grid;gap:8px;padding:12px 14px;border-radius:14px;background:rgba(29,30,34,.9);color:#f2f1ee;border:1px solid rgba(255,255,255,.14);box-shadow:0 10px 30px rgba(0,0,0,.35);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);cursor:auto;touch-action:auto}
+.ar-coach[hidden]{display:none}
+.ac-head{display:flex;align-items:center;gap:10px}
+.ac-head b{background:var(--accent);color:#fff;border-radius:999px;padding:3px 10px;font:700 .78rem/1.2 var(--body);white-space:nowrap}
+.ac-head strong{flex:1;min-width:0;font:700 1rem/1.2 var(--display)}
+.ac-head button{border:0;background:none;color:#d6d5d0;font:600 .85rem var(--body);cursor:pointer;padding:4px 6px}
+.ar-coach p{margin:0;font-size:.9rem;line-height:1.4;color:#e4e3de}
+.ac-prog{height:6px;border-radius:6px;background:rgba(255,255,255,.15);overflow:hidden}
+.ac-prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.ac-btns{display:flex;gap:8px;flex-wrap:wrap}
+.ac-btns:empty{display:none}
+.mont-ctl details{font-size:.82rem;color:var(--muted)}
+.mont-ctl summary{cursor:pointer;color:var(--ink);font-weight:600}
+.arint{position:fixed;inset:0;z-index:5100;display:grid;place-items:center;background:rgba(10,10,12,.74);padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
+.arint[hidden]{display:none}
+.arint-box{width:min(940px,100%);max-height:100%;overflow:auto;display:grid;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:14px}
+.arint-vid{display:grid;place-items:center;background:#2b2c31;border-radius:14px 14px 0 0;overflow:hidden}
+.arint-vid video{display:block;width:100%;aspect-ratio:16/9;max-height:58vh;object-fit:contain;background:#2b2c31}
+.arint.port .arint-vid video{width:auto;max-width:100%;height:min(50vh,640px);aspect-ratio:9/16}
+.arint-txt{display:grid;gap:10px;padding:16px 18px 18px}
+.arint-txt h2{font-size:1.3rem}
+.arint-steps{margin:0;padding-left:1.25em;display:grid;gap:6px;font-size:.92rem;max-width:68ch}
+.arint-btns{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .mont-hint{position:absolute;left:8px;bottom:8px;right:8px;font:600 .8rem/1.3 var(--body);color:#fff;text-shadow:0 1px 3px #000;pointer-events:none}
 .mont-ctl{background:var(--card);color:var(--ink);padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));max-height:42vh;overflow:auto;display:grid;gap:8px}
 .mont-ctl p{margin:0}
@@ -1441,7 +1464,7 @@ document.querySelectorAll('[data-scroll]').forEach(b => { b.addEventListener('cl
         <span class="checks"><label class="check"><input type="checkbox" id="ghost" checked> A takart rész pirosan áttűnik</label>
         <label class="check"><input type="checkbox" id="spin" checked> Forgó lapátok</label></span>
       </div>
-      <div class="real-row"><label class="btn" for="photoIn" id="photoBtn" tabindex="0">Turbina a saját fotódon</label><input type="file" id="photoIn" class="vh" accept="image/*"><button class="btn" type="button" id="arBtn" hidden>Élő kamera (AR)</button><span class="small" id="realNote" role="status" aria-live="polite">Fotózd le a tájat onnan, ahonnan nézed, és a program valós méretben ráteszi a turbinát.</span></div>
+      <div class="real-row"><label class="btn" for="photoIn" id="photoBtn" tabindex="0">Turbina a saját fotódon</label><input type="file" id="photoIn" class="vh" accept="image/*"><button class="btn" type="button" id="arBtn" hidden>Élő kamera (AR)</button><button class="linkbtn" type="button" id="arHow">Hogyan működik? (videó)</button><span class="small" id="realNote" role="status" aria-live="polite">Fotózd le a tájat onnan, ahonnan nézed, és a program valós méretben ráteszi a turbinát.</span></div>
       <div class="bld-edit" id="bldEdit" hidden>
         <div class="be-head"><b>Kiválasztott épület</b><button type="button" id="beClose" aria-label="Bezárás">×</button></div>
         <p class="small" id="beInfo"></p>
@@ -1592,8 +1615,9 @@ window.VL_INFO = {
 </div></footer>
 
 <div class="mont" id="mont" hidden role="dialog" aria-modal="true" aria-labelledby="montTitle">
-  <div class="mont-bar"><b id="montTitle">A turbina a saját fotódon</b><button class="btn" type="button" id="montClose">Bezárás</button></div>
-  <div class="mont-stage" id="montStage"><video id="arVideo" playsinline muted autoplay hidden></video><canvas id="montCv" role="img" aria-label="A kép a turbinával"></canvas><div class="mont-hint" id="montHint" aria-live="polite"></div></div>
+  <div class="mont-bar"><b id="montTitle">A turbina a saját fotódon</b><span class="ac-btns"><button class="btn" type="button" id="mHelp" hidden>Útmutató</button><button class="btn" type="button" id="montClose">Bezárás</button></span></div>
+  <div class="mont-stage" id="montStage"><video id="arVideo" playsinline muted autoplay hidden></video><canvas id="montCv" role="img" aria-label="A kép a turbinával"></canvas><div class="mont-hint" id="montHint" aria-live="polite"></div>
+    <div class="ar-coach" id="arCoach" hidden role="status" aria-live="polite"><div class="ac-head"><b id="acN"></b><strong id="acH"></strong><button type="button" id="acVid">Videó</button><button type="button" id="acX" aria-label="Az útmutató elrejtése">✕</button></div><p id="acT"></p><div class="ac-prog" id="acP" hidden><i></i></div><div class="ac-btns" id="acB"></div></div></div>
   <div class="mont-ctl">
     <p class="small" id="montSt"></p>
     <div class="mont-grid">
@@ -1619,7 +1643,24 @@ window.VL_INFO = {
     </div>
   </div>
 </div>
-
+<div class="arint" id="arIntro" hidden role="dialog" aria-modal="true" aria-labelledby="arIntroT">
+  <div class="arint-box">
+    <div class="arint-vid"><video id="arIntroV" muted loop playsinline preload="none" aria-label="Bemutató videó: az élő kamera használata lépésről lépésre"></video></div>
+    <div class="arint-txt">
+      <p class="eyebrow">Élő kamera (AR)</p>
+      <h2 id="arIntroT">Így látod a turbinát a saját szemeddel</h2>
+      <ol class="arint-steps">
+        <li><b>Indítás:</b> engedélyezd a kamerát, a helymeghatározást és a mozgásérzékelőt.</li>
+        <li><b>Vízszint</b> (csak az első alkalommal): a telefon az asztalon kijelzővel felfelé, a sípszó után átfordítva kijelzővel lefelé.</li>
+        <li><b>Látószög:</b> tartsd magad elé a telefont, és fordítsd lassan jobbra-balra, majd fel-le.</li>
+        <li><b>Irány:</b> fordulj a turbina felé, állítsd meg a képet, és húzd a falunevek vonalát a valódi dombvonalra.</li>
+      </ol>
+      <p class="small" id="arIntroNote">A képen végig egy kártya mondja, mi a következő lépés. Járművezetés vagy közlekedés közben ne használd.</p>
+      <label class="check" id="arIntroSkipW"><input type="checkbox" id="arIntroSkip"> Legközelebb ne mutasd, egyből induljon</label>
+      <div class="arint-btns"><button class="btn primary" type="button" id="arIntroGo">Kezdjük</button><button class="btn" type="button" id="arIntroNo">Mégse</button></div>
+    </div>
+  </div>
+</div>
 <script>
 /* @preserve
  * Leaflet 1.9.4, a JS library for interactive maps. https://leafletjs.com
@@ -4949,6 +4990,7 @@ function openMont(mode) {
   $('montTitle').textContent = mode === 'ar' ? 'Élő kamera: a turbina a helyén' : 'A turbina a saját fotódon';
   $('arVideo').hidden = mode !== 'ar';
   for (const id of ['mRlW', 'mSave']) $(id).hidden = mode === 'ar';
+  $('mHelp').hidden = mode !== 'ar'; $('arCoach').hidden = true;
   $('mShot').hidden = mode !== 'ar'; $('mFreeze').hidden = mode !== 'ar'; $('mHzW').hidden = $('mCalRow').hidden = mode !== 'ar'; syncAR(); calStatus();
   $('mHdL').textContent = mode === 'ar' ? 'Iránytű-javítás' : 'Irány'; $('mSkyL').textContent = mode === 'ar' ? 'Falunevek, fokbeosztás és Nap' : 'Modell-horizont és falunevek'; $('mFovL').textContent = mode === 'ar' ? 'A kamera látószöge' : 'Látószög';
   $('mGhost').checked = false;   // alapból csak az látszik, ami a valóságban is látszani fog
@@ -4956,7 +4998,7 @@ function openMont(mode) {
   $('montClose').focus();
 }
 function closeMont() {
-  MONT.mode = null; $('mont').hidden = true; document.body.style.overflow = ''; cancelAnimationFrame(MONT.raf);
+  MONT.mode = null; $('mont').hidden = true; document.body.style.overflow = ''; cancelAnimationFrame(MONT.raf); COACH.on = false; $('arCoach').hidden = true;
   if (AR.stream) { AR.stream.getTracks().forEach(tr => tr.stop()); AR.stream = null; $('arVideo').srcObject = null; }
   AR.frozen = null; MONT_SUN.t = null; SCAL.step = 0; CAL.msg = '';
   if (AR.watch != null) { navigator.geolocation.clearWatch(AR.watch); AR.watch = null; }
@@ -4983,6 +5025,7 @@ function montCam(W, H) {
 }
 function montFrame() {
   if (!MONT.mode) return;
+  if (MONT.mode === 'ar') coachTick();
   const cv = $('montCv'), st = $('montStage'), dpr = Math.min(2, window.devicePixelRatio || 1), W = Math.round(st.clientWidth * dpr), H = Math.round(st.clientHeight * dpr);
   if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
   const g = cv.getContext('2d'); g.clearRect(0, 0, W, H);
@@ -5171,7 +5214,7 @@ function arNote() {
   if (MONT.mode !== 'ar') return '';
   if (SCAL.step || CAL.busy) return CAL.msg + ' ';
   if (AR.frozen) return (AR.hzMsg ? AR.hzMsg + ' ' : '') + 'Ha kell, húzd a falunevek vonalát (vagy a Nap-jelet) a valódi helyére. ';
-  if (AR.rel && !AR.fovAuto && !AR.fovManual) return `A kamera látószögének mérése: fordítsd lassan jobbra-balra, majd fel-le a telefont (${Math.min(100, Math.round(FLOW.est.length / 8 * 100))}%). `;
+  if (AR.rel && !AR.fovAuto && !AR.fovManual && COACH.step !== 'fov') return `A kamera látószögének mérése: fordítsd lassan jobbra-balra, majd fel-le a telefont (${Math.min(100, Math.round(FLOW.est.length / 8 * 100))}%). `;
   if (AR.lock) return 'Igazítás rögzítve: az iránytű ingadozása már nem mozdítja el. ';
   if (AR.rel && AR.sd > 8) return `Az iránytű most bizonytalan (±${AR.sd.toFixed(0)}°): igazíts a kép megállításával. `;
   return '';
@@ -5390,6 +5433,68 @@ function horizonLive() {
   const r = horizonFit($('arVideo'), arBasis(AR)); if (r.why || r.cost > 0.15 * RAD) return;
   AR.ptOff = Math.max(-3, Math.min(3, AR.ptOff - Math.max(-1, Math.min(1, 0.5 * r.pitch / RAD)))); savePt(); syncMontCtl();
 }
+/* ---------- Útmutató: bevezető videó és a lépésenként vezető kártya ----------
+   A kártya a mért állapotból dönti el a lépést (vízszint → látószög → irány → igazítás → kész), és magától lép tovább;
+   a már elvégzett kalibrációkat (a böngésző megjegyzi) kihagyja. */
+const AV = 'assets/', INTRO = { mode: null };
+function openIntro(mode) {
+  INTRO.mode = mode; const box = $('arIntro'), v = $('arIntroV'), port = innerHeight > innerWidth || innerWidth < 700;
+  box.classList.toggle('port', port);
+  const ext = v.canPlayType('video/webm; codecs="vp9"') ? 'webm' : 'mp4', nm = 'ar_guide' + (port ? '' : '_wide');
+  v.poster = AV + nm + '_poster.jpg'; v.src = AV + nm + '.' + ext; v.play().catch(() => {});
+  $('arIntroGo').hidden = mode === 'info'; $('arIntroGo').textContent = mode === 'help' ? 'Vissza az élő képhez' : 'Kezdjük';
+  $('arIntroNo').textContent = mode === 'start' ? 'Mégse' : 'Bezárás'; $('arIntroNo').hidden = mode === 'help';
+  $('arIntroSkipW').hidden = mode !== 'start';
+  $('arIntroNote').textContent = mode === 'info' ? 'Az élő kamera telefonon működik: nyisd meg ezt az oldalt a telefonod böngészőjében (jak-szeleromu.netlify.app). Járművezetés vagy közlekedés közben ne használd.' : 'A képen végig egy kártya mondja, mi a következő lépés. Járművezetés vagy közlekedés közben ne használd.';
+  box.hidden = false; (mode === 'info' ? $('arIntroNo') : $('arIntroGo')).focus();
+}
+function closeIntro() { const v = $('arIntroV'); v.pause(); v.removeAttribute('src'); v.load(); $('arIntro').hidden = true; if (MONT.mode) $('montClose').focus(); else ($('arBtn').hidden ? $('arHow') : $('arBtn')).focus(); }
+const COACH = { on: false, list: [], skip: {}, step: null, key: '', bkey: '', doneT: 0 };
+function coachStart() {
+  Object.assign(COACH, { on: true, skip: {}, step: null, key: '', bkey: '', doneT: 0 });
+  COACH.list = [...(AR.bias ? [] : ['level']), ...(AR.fovAuto || AR.fovCal ? [] : ['fov']), 'aim', 'align'];
+  $('arCoach').hidden = false; coachTick();
+}
+function coachStep() {
+  if (SCAL.step) return 'scale';
+  if (COACH.list.includes('level') && !AR.bias && !COACH.skip.level) return 'level';
+  if (COACH.list.includes('fov') && !(AR.fovAuto || AR.fovCal || AR.fovManual) && !COACH.skip.fov && !(AR.f && !AR.rel)) return 'fov';
+  if (AR.frozen) return 'align';
+  return AR.lock ? 'done' : 'aim';
+}
+function coachTick() {
+  if (arReady() && /Nem érkezik iránytű/.test(MONT.msg)) MONT.msg = '';   // a késve induló érzékelő után ne maradjon ott a hibaüzenet
+  if (!COACH.on) return;
+  const st = coachStep(), now = performance.now();
+  if (st === 'done' && COACH.step !== 'done') COACH.doneT = now;
+  if (st === 'done' && now - COACH.doneT > 9000) { COACH.on = false; $('arCoach').hidden = true; return; }
+  COACH.step = st;
+  const L = COACH.list, nr = k => `${L.indexOf(k) + 1}/${L.length}`, pr = Math.min(1, FLOW.est.length / 8);
+  const C = {
+    level: [nr('level'), 'Vízszint', CAL.busy ? CAL.msg : (CAL.msg && !AR.bias ? CAL.msg + ' ' : '') + 'Csak az első alkalommal kell. Tedd a telefont kijelzővel felfelé egy asztalra, és nyomd meg az Indítás gombot; a sípszó után fordítsd át kijelzővel lefelé.'],
+    fov: [nr('fov'), 'Látószög', 'Tartsd magad elé a telefont, és fordítsd lassan jobbra-balra, majd fel-le, amíg a csík megtelik.'],
+    scale: [L.includes('fov') ? nr('fov') : '+', 'Lépték', CAL.msg],
+    aim: [nr('aim'), 'Irány', 'Fordulj a turbina felé, és állítsd meg a képet. A turbina legyen a kép közepén, ott a legpontosabb.'],
+    align: [nr('align'), 'Igazítás', 'Húzd a falunevek vonalát (vagy a sárga Nap-jelet) a valódi dombvonalra, majd koppints a Kész gombra.'],
+    done: ['✓', 'Kész', 'A turbina a helyén, valós méretben: ami domb, ház vagy fa mögött van, az nem látszik. Lent pillanatképet is menthetsz.']
+  }[st];
+  const key = st + '|' + C[2] + '|' + (st === 'fov' ? Math.round(pr * 20) : '');
+  if (key !== COACH.key) {
+    COACH.key = key; $('acN').textContent = C[0]; $('acH').textContent = C[1]; $('acT').textContent = C[2];
+    $('acP').hidden = st !== 'fov'; $('acP').firstElementChild.style.width = Math.round(pr * 100) + '%';
+  }
+  const bk = st + (CAL.busy ? '1' : '0');
+  if (bk !== COACH.bkey) {
+    COACH.bkey = bk; const B = $('acB'); B.textContent = '';
+    const add = (txt, fn, pri) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (pri ? ' primary' : ''); b.textContent = txt; b.onclick = fn; B.appendChild(b); };
+    if (st === 'level' && !CAL.busy) { add('Indítás', calLevel, true); add('Kihagyom', () => { COACH.skip.level = true; }); }
+    if (st === 'fov') { add('Pontosabb: lépték-kalibráció', () => $('mCalScale').click()); add('Kihagyom', () => { COACH.skip.fov = true; }); }
+    if (st === 'scale') add('Mégse', () => { SCAL.step = 0; CAL.msg = ''; calStatus(); });
+    if (st === 'aim') add('Kép megállítása', freezeAR, true);
+    if (st === 'align') add('Kész', freezeAR, true);
+    if (st === 'done') add('Rendben', () => { COACH.on = false; $('arCoach').hidden = true; });
+  }
+}
 async function startAR() {
   const framed = window.top !== window, link = 'https://jak-szeleromu.netlify.app';
   const fail = t => { realMsg(t + (framed || !(LOCAL && LOCAL.web) ? ` Az élő kamera a nyilvános oldalon működik: <a href="${link}" target="_blank" rel="noopener">${link.replace('https://', '')}</a>` : '')); return false; };
@@ -5407,9 +5512,9 @@ async function startAR() {
   tick();
   window.addEventListener('deviceorientationabsolute', onOri); window.addEventListener('deviceorientation', onOri);
   MONT.msg = '';
-  montStatus('<b>Járművezetés vagy közlekedés közben ne használd.</b> <b>Első használatkor</b> kalibráld a telefont (lent, egyszer kell): <b>Vízszint</b>: asztalra téve, majd megfordítva, kb. fél perc; <b>Lépték</b>: a kereszttel egy távoli tárgyra célzol, koppintasz, elfordulsz, amíg a tárgy a szaggatott vonalhoz ér, és koppintasz. Ezek után a fehér szaggatott vonal a valódi vízszintes (szemmagasság), és a turbina méretre és magasságra helyes, bárhol állsz. <b>Iránynál</b> fordulj a turbina felé, nyomd meg az <b>„Igazítás: kép megállítása”</b> gombot, és ha kell, húzd a falunevek vonalát vagy a sárga Nap-jelet a helyére; a „Kész” után rögzül. Tipp: a turbinát tartsd a kép közepén, ott a legpontosabb.');
+  montStatus('<b>Járművezetés vagy közlekedés közben ne használd.</b><details><summary>Részletes leírás</summary><b>Első használatkor</b> kalibráld a telefont (lent, egyszer kell): <b>Vízszint</b>: asztalra téve, majd megfordítva, kb. fél perc; <b>Lépték</b>: a kereszttel egy távoli tárgyra célzol, koppintasz, elfordulsz, amíg a tárgy a szaggatott vonalhoz ér, és koppintasz. Ezek után a fehér szaggatott vonal a valódi vízszintes (szemmagasság), és a turbina méretre és magasságra helyes, bárhol állsz. <b>Iránynál</b> fordulj a turbina felé, nyomd meg az <b>„Igazítás: kép megállítása”</b> gombot, és ha kell, húzd a falunevek vonalát vagy a sárga Nap-jelet a helyére; a „Kész” után rögzül. Tipp: a turbinát tartsd a kép közepén, ott a legpontosabb.</details>');
   if (navigator.geolocation) AR.watch = navigator.geolocation.watchPosition(onGps, () => { AR.gps = 'nincs'; }, { enableHighAccuracy: true, maximumAge: 3000, timeout: 30000 });
-  openMont('ar'); prepReal();
+  openMont('ar'); prepReal(); coachStart();
   setTimeout(() => { if (MONT.mode === 'ar' && !arReady()) MONT.msg = ' Nem érkezik iránytű-adat: ez a böngésző vagy készülék nem adja meg, merre nézel.'; }, 4000);
 }
 function onGps(p) {
@@ -5459,9 +5564,17 @@ $('photoBtn').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.pre
 $('photoIn').onchange = () => { const f = $('photoIn').files[0]; $('photoIn').value = ''; if (f) { realMsg('A fotó betöltése…', false); openPhoto(f); } };
 if (AR_OK && matchMedia('(pointer: coarse)').matches) $('arBtn').hidden = false;
 else $('realNote').textContent += ' Telefonon élő kamerás nézet is van.';
-$('arBtn').onclick = startAR;
+$('arBtn').onclick = () => { let seen = false; try { seen = localStorage.getItem('arIntro') === '1'; } catch (e) {} if (seen) startAR(); else openIntro('start'); };
+$('arHow').onclick = () => openIntro(AR_OK && matchMedia('(pointer: coarse)').matches ? 'start' : 'info');
+$('arIntroGo').onclick = () => { const m = INTRO.mode; if (m === 'start') { try { if ($('arIntroSkip').checked) localStorage.setItem('arIntro', '1'); } catch (e) {} } closeIntro(); if (m === 'start') startAR(); };
+$('arIntroNo').onclick = closeIntro;
+$('arIntro').onclick = e => { if (e.target === $('arIntro')) closeIntro(); };
+$('mHelp').onclick = () => { coachStart(); };
+$('acX').onclick = () => { COACH.on = false; $('arCoach').hidden = true; };
+$('acVid').onclick = () => openIntro('help');
+for (const ev of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']) $('arCoach').addEventListener(ev, e => e.stopPropagation());
 $('montClose').onclick = closeMont;
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && MONT.mode) closeMont(); });
+document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (!$('arIntro').hidden) closeIntro(); else if (MONT.mode) closeMont(); });
 for (const ev of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']) $('montStage').addEventListener(ev, montDrag);
 $('mHd').oninput = () => { const v = +$('mHd').value; if (MONT.mode === 'ar') { AR.hdOff = v; AR.lock = true; syncAR(); } else MONT.hd = MONT.hd0 + v; syncMontCtl(); };
 $('mPt').oninput = () => { const v = +$('mPt').value; if (MONT.mode === 'ar') { AR.ptOff = v; AR.ptManual = true; savePt(); } else MONT.pt = v; syncMontCtl(); };
