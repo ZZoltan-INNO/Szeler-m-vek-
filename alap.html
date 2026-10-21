@@ -138,6 +138,14 @@ main{display:grid;gap:20px;padding-bottom:20px}
 @media (max-width:980px){.hero{grid-template-columns:minmax(0,1fr)}.hero-art{display:none}}
 /* ---- VisionLens bemutató ---- */
 .vl-band{margin-top:28px;padding-block:44px 48px}
+.about-group{grid-column:1/-1;list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.about-group li{display:grid;gap:4px;align-content:start;background:var(--b-bg2);border:1px solid var(--b-line);border-radius:10px;padding:14px 16px}
+.about-group li.cur{border-color:var(--b-orange)}
+#rolunk .vl-head{grid-column:1/-1}
+.about-group b{font:700 1.05rem/1.2 var(--display);color:var(--b-ink)}
+.about-group span{font-size:.9rem;color:var(--b-muted)}
+.about-group small{font:500 .72rem/1.3 var(--mono);letter-spacing:.06em;color:var(--b-orange-hi)}
+@media (max-width:860px){.about-group{grid-template-columns:minmax(0,1fr)}}
 .vl-wrap{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:28px 40px;align-items:start}
 .vl-head{display:grid;gap:12px;min-width:0}
 .vl-head h2{font:800 clamp(1.7rem,3.4vw,2.6rem)/1.08 var(--display);letter-spacing:-.015em;color:var(--b-ink)}
@@ -269,8 +277,8 @@ input,select,textarea{background:var(--soft);color:var(--ink);border-color:rgba(
 
 <nav class="topnav brand-band" aria-label="Fő menü">
   <div class="wrap nav-in">
-    <span class="hl-mark"><svg viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#e8620c"/><path d="M5 18.5 H23" stroke="#16181b" stroke-width="2.2" stroke-linecap="round"/><circle cx="14" cy="12" r="4.6" fill="#16181b"/></svg>InnoLens <span class="by">az <span data-grp="name">InnoGroupe</span> tagja</span></span>
-    <div class="nav-links"><button type="button" data-scroll="visionlens">VisionLens</button></div>
+    <span class="hl-mark"><svg viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#e8620c"/><path d="M5 18.5 H23" stroke="#16181b" stroke-width="2.2" stroke-linecap="round"/><circle cx="14" cy="12" r="4.6" fill="#16181b"/></svg>HorizonLens <span class="by">az InnoLens fejlesztése</span></span>
+    <div class="nav-links"><button type="button" data-scroll="rolunk">Kik vagyunk</button></div>
     <button type="button" class="nav-cta" data-scroll="eszkoz">Indítás</button>
   </div>
 </nav>
@@ -378,25 +386,21 @@ h_takart = 1,7 + D · tan(α_max)</div>
     </section>
   </div>
 </main>
-<section class="brand-band vl-band" id="visionlens" aria-labelledby="vl-h">
+<section class="brand-band vl-band about" id="rolunk" aria-labelledby="about-h">
   <div class="wrap vl-wrap">
     <div class="vl-head">
-      <p class="eyebrow">VisionLens AOI · <span data-vl="family">az InnoLens terméke</span></p>
-      <h2 id="vl-h">Amit a szem lát, <span class="hl">azt mi megmérjük.</span></h2>
-      <p class="vl-lede">Ezt a látványvizsgálót az InnoLens csapata készítette. Ugyanezzel a tudással dolgozunk a gyártósoron is: kamera, objektív, fény és szögek. A <b>VisionLens AOI</b> automatikus optikai ellenőrzés, amelyet a saját mérnöke tanít be, és darabonként megmondja: OK vagy NOK, és miért.</p>
+      <p class="eyebrow">Kik vagyunk</p>
+      <h2 id="about-h">Amit a szem lát, azt mi megmérjük, <span class="hl">amit nem lát, azt megjelenítjük.</span></h2>
+      <p class="vl-lede">A HorizonLenst az <b>InnoLens</b> csapata készítette. Az InnoLens az <span data-grp="name">InnoGroupe</span> kamerás méréssel és képelemzéssel foglalkozó cége: kamerával, objektívvel, fénnyel és számítással dolgozunk. Ugyanezzel a tudással fejlesztjük a gyártósori <b>VisionLens AOI</b> képellenőrző rendszert is.</p>
+      <p class="vl-lede">A HorizonLens díjmentes és semleges eszköz: nem foglal állást a beruházások mellett vagy ellen, csak megmutatja, mi fog látszani és mi nem.</p>
     </div>
-    <div class="vl-media"><video id="vlVideo" controls preload="none" playsinline poster="assets/vl-poster.jpg" aria-label="VisionLens AOI bemutatóvideó, 46 másodperc"><source src="assets/visionlens.mp4" type="video/mp4"></video></div>
-    <div class="vl-cta">
-      <p>Küldjön 5–10 képet a darabjáról, jót és hibásat vegyesen: <b>megmutatjuk rajta.</b></p>
-      <a class="vl-btn" id="vlCta" href="#" hidden target="_blank" rel="noopener">Kérjen próbát</a>
-      <dl class="vl-contact" id="vlContact" hidden></dl>
-    </div>
+    <ul class="about-group" id="aboutGroup" aria-label="Az InnoGroupe tagjai"></ul>
+    <dl class="vl-contact" id="vlContact" hidden></dl>
   </div>
 </section>
 <script>
-/* VisionLens elérhetőségek: itt kell kitölteni (az üres mezők nem jelennek meg) */
+/* InnoLens elérhetőségek a „Kik vagyunk” szakaszhoz: itt kell kitölteni (az üres mezők nem jelennek meg) */
 window.VL_INFO = {
-  family: 'az InnoLens terméke',
   name: '', role: '', phone: '', email: '', web: '',
   operator: '',   // üzemeltető (cégnév, székhely, cégjegyzékszám) – a jogi nyilatkozatba kerül
   group: {
@@ -404,25 +408,25 @@ window.VL_INFO = {
     members: [
       { name: 'Innomotion', role: 'A csoport legismertebb brandje.', note: 'Győrújbarát · 2012 óta' },
       { name: 'InnoProduction', role: 'Gyártás.' },
-      { name: 'InnoLens', role: 'Vizuális és képelemzési megoldások: VisionLens AOI, HorizonLens.', current: true }
+      { name: 'InnoLens', role: 'Kamerás mérés és képelemzés: a HorizonLens és a VisionLens AOI fejlesztője.', current: true }
     ]
   }
 };
 (function () {
   const I = window.VL_INFO, $id = id => document.getElementById(id);
-  document.querySelectorAll('[data-vl="family"]').forEach(e => { e.textContent = I.family; });
+  document.querySelectorAll('[data-grp="name"]').forEach(e => { e.textContent = I.group.name; });
+  const ul = $id('aboutGroup');
+  if (ul) I.group.members.forEach(m => { const li = document.createElement('li'); if (m.current) li.className = 'cur';
+    li.innerHTML = '<b></b><span></span>' + (m.note ? '<small></small>' : ''); li.children[0].textContent = m.name; li.children[1].textContent = m.role; if (m.note) li.children[2].textContent = m.note; ul.appendChild(li); });
   const rows = [['Kapcsolattartó', I.name], ['Beosztás', I.role], ['Telefon', I.phone], ['E-mail', I.email], ['Web', I.web]].filter(r => r[1]);
   const dl = $id('vlContact');
   if (rows.length) { dl.hidden = false; rows.forEach(([k, v]) => { const d = document.createElement('div'); d.innerHTML = '<dt></dt><dd></dd>'; d.firstChild.textContent = k; d.lastChild.textContent = v; dl.appendChild(d); }); }
-  const cta = $id('vlCta');
-  if (I.email) { cta.href = 'mailto:' + I.email + '?subject=' + encodeURIComponent('VisionLens AOI – próbát kérek'); cta.hidden = false; }
-  else if (I.web) { cta.href = I.web; cta.hidden = false; }
   document.querySelectorAll('[data-scroll]').forEach(b => { b.onclick = () => { const t = $id(b.dataset.scroll); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }; });
   const op = $id('vlOperator'); if (op && I.operator) { op.hidden = false; op.querySelector('span').textContent = I.operator; }
 })();
 </script>
 <footer class="brand-band foot-band"><div class="wrap">
-  <div class="foot-brand"><span class="hl-mark"><svg viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#e8620c"/><path d="M5 18.5 H23" stroke="#16181b" stroke-width="2.2" stroke-linecap="round"/><circle cx="14" cy="12" r="4.6" fill="#16181b"/></svg>HorizonLens <span class="by">by InnoLens</span></span><span class="vl-sep" aria-hidden="true"></span><span class="vl-fam">az <b data-grp="name">InnoGroupe</b> tagja</span><span class="foot-tag">Amit a szem lát, azt mi megmérjük, amit nem lát, azt megjelenítjük.</span></div>
+  <div class="foot-brand"><span class="hl-mark"><svg viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#e8620c"/><path d="M5 18.5 H23" stroke="#16181b" stroke-width="2.2" stroke-linecap="round"/><circle cx="14" cy="12" r="4.6" fill="#16181b"/></svg>HorizonLens <span class="by">by InnoLens</span></span><span class="vl-sep" aria-hidden="true"></span><span class="vl-fam">az <b data-grp="name">InnoGroupe</b> tagja</span></div>
   <p><b>Tájékoztató modell, nem hivatalos látványterv; használata saját felelősségre.</b> <button type="button" class="linklike legal-link">Jogi nyilatkozat, felelősségkizárás és adatkezelés</button></p><p>Feltételezések: sík terep, lombos (átlátszatlan) fák, a lapát a legmagasabb állásban, a rotor szemből látszik. Télen a lombhullató fák áttetszőek, magasabb nézőpontról (emelet, domb) a takarás gyorsan csökken.</p><p>Levél-, kéreg- és fűfotók: ez-tree (MIT, © Daniel Greenheck); égbolt-fény: Poly Haven (CC0).</p>
 <section class="legal" id="jogi">
   <details id="jogiDet">
