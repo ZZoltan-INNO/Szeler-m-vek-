@@ -1,0 +1,8 @@
+# Netlify: alapkönyvtár „deploy”; a kész oldal a site/ mappában, a számláló függvény a netlify/functions alatt.
+# Az Esri-kulcs nincs a repóban: a Netlify környezeti változójából (ESRI_KEY) kerül a helyére telepítéskor.
+[build]
+  publish = "site"
+  command = "bash inject_key.sh"
+
+[functions]
+  directory = "netlify/functions"

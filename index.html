@@ -1173,6 +1173,41 @@ body{background:radial-gradient(1200px 500px at 85% -120px,rgba(236,101,29,.10),
 input,select,textarea{background:var(--soft);color:var(--ink);border-color:rgba(255,255,255,.12)}
 .sec-head .kicker{font:600 .9rem/1.2 var(--body);letter-spacing:0;text-transform:none;color:var(--accent)}
 .sec-head h2{color:var(--ink)}
+/* ---- az eszköz a nyitókép látványvilágában ---- */
+.tool-band{position:relative;background:linear-gradient(180deg,#26272c 0%,#2b2c31 380px);border-top:1px solid rgba(255,255,255,.06)}
+.tool-band::before{content:"";position:absolute;inset:0 0 auto;height:520px;pointer-events:none;opacity:.55;background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);background-size:44px 44px;-webkit-mask-image:linear-gradient(180deg,#000,transparent);mask-image:linear-gradient(180deg,#000,transparent)}
+.tool-band>*{position:relative}
+.tool-band .tool-head{padding-block:56px 6px}
+.hl2{color:var(--accent)}
+.tool-band .card{background:rgba(52,53,59,.78);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:18px;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 24px 60px -34px rgba(0,0,0,.7)}
+.tool-band .card-head h2,#c-ctrl>h2{display:flex;align-items:center;gap:10px;font:700 1.15rem/1.2 var(--display);letter-spacing:-.01em}
+.tool-band .card-head h2::before,#c-ctrl>h2::before{display:grid;place-items:center;flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font:700 .8rem/1 var(--body);box-shadow:0 6px 16px -6px rgba(236,101,29,.9)}
+#h-map::before{content:"1"}#h-view::before{content:"2"}#h-ctrl::before{content:"3"}#h-prof::before{content:"4"}
+.tool-band .seg{border-radius:999px;padding:3px;gap:3px;background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1)}
+.tool-band .seg button{border-radius:999px;padding:8px 13px}
+.tool-band .seg button+button{border-left:0}
+.tool-band .btn{border-radius:12px;padding:10px 14px;background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.12);transition:border-color .2s,background .2s}
+.tool-band .btn:hover{border-color:rgba(236,101,29,.6);background:rgba(236,101,29,.1)}
+.tool-band .btn.primary,.tool-band .real-row .btn{background:#ec651d;border-color:#ec651d;color:#fff}
+.tool-band .btn.primary:hover,.tool-band .real-row .btn:hover{background:#ff7420}
+.tool-band input[type=text],.tool-band select{border-radius:10px;background:rgba(0,0,0,.18);border-color:rgba(255,255,255,.12)}
+.pano-wrap,.prof-wrap{position:relative}
+#pano{border-radius:12px}
+.empty-cta{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(440px,calc(100% - 32px));display:grid;gap:8px;justify-items:start;padding:18px 20px;border-radius:16px;background:rgba(36,37,42,.86);border:1px solid rgba(255,255,255,.12);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 20px 50px -20px rgba(0,0,0,.7);z-index:4}
+.empty-cta[hidden]{display:none}
+.empty-cta b{font:700 1.05rem/1.25 var(--display);color:var(--ink)}
+.empty-cta span{font-size:.9rem;color:var(--muted);line-height:1.5}
+.empty-cta.small-cta{padding:14px 16px}
+details.more{font-size:.82rem;color:var(--muted)}
+details.more>summary{cursor:pointer;color:var(--accent);font-weight:600;list-style:none;display:inline-flex;align-items:center;gap:6px}
+details.more>summary::-webkit-details-marker{display:none}
+details.more>summary::before{content:"";width:6px;height:6px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .2s}
+details.more[open]>summary::before{transform:rotate(45deg)}
+details.more>p{margin:8px 0 0}
+.live-stats{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 0}
+.live-stats[hidden]{display:none}
+.live-stats span{display:inline-flex;align-items:baseline;gap:6px;padding:7px 12px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);font-size:.85rem;color:var(--muted)}
+.live-stats b{font:700 1.05rem/1 var(--display);color:var(--ink)}
 .principles div{border-radius:18px;border-color:rgba(255,255,255,.09)}
 .brand-band::before{display:none}
 .vl-band,.foot-band{border-top:1px solid rgba(255,255,255,.07)}
@@ -1355,10 +1390,43 @@ document.addEventListener('DOMContentLoaded', function () {
   if (document.readyState === 'complete') go(); else addEventListener('load', go);
 })();
 document.querySelectorAll('[data-scroll]').forEach(b => { b.addEventListener('click', () => { const t = document.getElementById(b.dataset.scroll); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); });
+/* névtelen összesítő számláló (Netlify-függvény, /api/stats): látogató böngészőnként egyszer, letett turbina és mentett kép eseményenként
+   (böngészőnként naponta legfeljebb 50); személyes adatot nem küld. A számok csak STATS_MIN látogató fölött jelennek meg. */
+const STATS_MIN = 100;
+window.hlCount = kind => {
+  try {
+    if (!/^https?:/.test(location.protocol)) return;
+    if (kind === 'users') { if (localStorage.getItem('hlc_user')) return; localStorage.setItem('hlc_user', '1'); }
+    else { const k = 'hlc_' + kind + '_' + new Date().toISOString().slice(0, 10), n = +localStorage.getItem(k) || 0; if (n >= 50) return; localStorage.setItem(k, n + 1); }
+    fetch('/api/stats', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind }), keepalive: true }).catch(() => {});
+  } catch (e) { /* a számlálás nem kötelező */ }
+};
+document.addEventListener('DOMContentLoaded', () => {
+  hlCount('users');
+  const el = document.getElementById('liveStats'); if (!el || !/^https?:/.test(location.protocol)) return;
+  fetch('/api/stats').then(r => r.ok ? r.json() : null).then(d => {
+    if (!d || !(d.users >= STATS_MIN)) return;
+    const nf = n => (n || 0).toLocaleString('hu-HU');
+    el.innerHTML = `<span><b>${nf(d.users)}</b> látogató</span><span><b>${nf(d.turbines)}</b> letett turbina</span><span><b>${nf(d.images)}</b> mentett kép</span>`; el.hidden = false;
+  }).catch(() => {});
+});
+/* az eszköz: a hosszú magyarázó bekezdések lenyithatók („Részletek”), hogy a kártyák rövidek maradjanak; üres állapot turbina nélkül */
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.tool-band .card p.small:not([id])').forEach(p => { if (p.textContent.trim().length < 170 || p.closest('details')) return;
+    const d = document.createElement('details'), sm = document.createElement('summary'); d.className = 'more'; sm.textContent = 'Részletek';
+    p.replaceWith(d); d.append(sm, p); p.classList.remove('small'); });
+  const ve = document.getElementById('viewEmpty'), pe = document.getElementById('profEmpty'), ex = document.getElementById('exLoad');
+  const sync = () => { const none = typeof state !== 'undefined' && !(state.turbines && state.turbines.length); if (ve) ve.hidden = !none; if (pe) pe.hidden = !none; const pr = document.getElementById('prof'); if (pr) pr.style.visibility = none ? 'hidden' : ''; };
+  setInterval(sync, 400); sync();
+  if (ex) ex.onclick = () => { // a nyitófilm három példa-turbinája (1. lehetséges terület, Jáktól kb. 4,6 km-re délre)
+    state.turbines = [{ lat: 47.09960, lon: 16.55731 }, { lat: 47.09960, lon: 16.56590 }, { lat: 47.09960, lon: 16.57449 }]; state.sel = 1; state.isExample = false;
+    if (typeof buildMarkers === 'function') buildMarkers(); update(); sync(); };
+});
 </script>
 
 
-<div class="wrap tool-head" id="eszkoz"><div class="tool-row"><div class="sec-head"><p class="kicker">Az eszköz</p><h2>Tedd le a turbinát, válaszd ki, honnan nézed.</h2><p>A térképen mozgathatod a nézőpontot és a turbinákat; jobb oldalon szemmagasságból látod az eredményt, alatta az oldalnézetet. Telefonon élő kamerával is kipróbálhatod.</p></div><button class="btn" type="button" id="resetBtn" title="Minden beállítás visszaáll a kiinduló állapotra: nézőpont Ják főterén, turbina és kézi takarás nélkül">Alaphelyzet</button></div></div>
+<div class="tool-band">
+<div class="wrap tool-head" id="eszkoz"><div class="tool-row"><div class="sec-head"><p class="kicker">Az eszköz</p><h2>Tedd le a turbinát, <span class="hl2">válaszd ki, honnan nézed.</span></h2><p class="live-stats" id="liveStats" hidden aria-live="polite"></p><p>A térképen mozgathatod a nézőpontot és a turbinákat; jobb oldalon szemmagasságból látod az eredményt, alatta az oldalnézetet. Telefonon élő kamerával is kipróbálhatod.</p></div><button class="btn" type="button" id="resetBtn" title="Minden beállítás visszaáll a kiinduló állapotra: nézőpont Ják főterén, turbina és kézi takarás nélkül">Alaphelyzet</button></div></div>
 <main class="wrap cols">
   <div class="col">
     <section class="card" id="c-map" aria-labelledby="h-map">
@@ -1487,6 +1555,7 @@ document.querySelectorAll('[data-scroll]').forEach(b => { b.addEventListener('cl
       <div class="pano-wrap">
         <canvas id="pano" role="img" aria-label="A nézőpontból látott kép: domborzat, takarások és a szélturbina"></canvas>
         <div class="busy" id="busy" hidden>Domborzat betöltése…</div>
+        <div class="empty-cta" id="viewEmpty" hidden><b>Még nincs turbina a térképen</b><span>Válaszd a térkép fölött az „Új turbina” módot, és koppints oda, ahová tervezik.</span><button class="btn primary" type="button" id="exLoad" data-jak>Példa: 3 turbina az 1. lehetséges területen</button></div>
       </div>
       <div class="pano-tools">
         <span class="tilt" role="group" aria-label="Fel-le nézés"><button class="btn" type="button" id="tiltUp" aria-label="Nézz feljebb">▲</button><button class="btn" type="button" id="tiltDown" aria-label="Nézz lejjebb">▼</button></span>
@@ -1512,11 +1581,12 @@ document.querySelectorAll('[data-scroll]').forEach(b => { b.addEventListener('cl
 
     <section class="card" id="c-prof" aria-labelledby="h-prof">
       <div class="card-head"><h2 id="h-prof">Oldalnézet a turbina felé</h2><span class="hint" id="exNote"></span></div>
-      <svg id="prof" viewBox="0 0 700 280" role="img" aria-label="Terepmetszet a nézőponttól a turbináig a rálátás vonalával"></svg>
+      <div class="prof-wrap"><svg id="prof" viewBox="0 0 700 280" role="img" aria-label="Terepmetszet a nézőponttól a turbináig a rálátás vonalával"></svg><div class="empty-cta small-cta" id="profEmpty" hidden><b>Itt jelenik meg a metszet</b><span>a szemedtől a kiválasztott turbináig, a rálátás vonalával.</span></div></div>
       <p class="small">A piros szaggatott vonal a rálátás határa: a szemedtől a legjobban takaró ponton át húzódik. Ami a turbinánál ez alá esik, az nem látszik. A függőleges léptéket a jobb olvashatóság miatt nagyítottuk; ettől az egyenesek egyenesek maradnak, így a takarás képe helyes.</p>
     </section>
   </div>
 </main>
+</div>
 
 <section class="wrap why" id="miert" aria-labelledby="h-why">
   <div class="sec-head"><p class="kicker">Miért készült</p><h2 id="h-why">Ugyanarról a helyről, egészen más képek.</h2></div>
@@ -1711,7 +1781,7 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
       <p><b>5. Saját felelősség és biztonság.</b> Az oldalt mindenki saját felelősségére használja. Járművezetés vagy a forgalomban való közlekedés közben ne használd; figyelj a környezetedre, és engedély nélkül ne lépj magánterületre.</p>
       <p><b>6. Az eredmények felhasználása.</b> A számítások és a képek tájékoztató jellegűek; hivatalos eljárásban, szerződésben vagy döntés alapjaként csak szakember ellenőrzése után használhatók. A mentett képek forrásjelölését ne távolítsd el; a képek megosztásáért és felhasználásáért a megosztó felel.</p>
       <p><b>7. Harmadik felek.</b> Az oldal harmadik felek adatait és szolgáltatásait használja (térképek, légi- és műholdképek, domborzat, épület- és famagasság-adatok, programkönyvtárak, tárhely). Ezek tartalmáért, pontosságáért és elérhetőségéért nem vállalunk felelősséget; a forrásokat és a licenceket a lap alján soroljuk fel.</p>
-      <p><b>8. Adatkezelés.</b> A helyadatot, a kamera képét és a mozgásérzékelők adatait az oldal kizárólag a készülékeden, a böngészőben dolgozza fel; ezeket nem rögzítjük és nem továbbítjuk. A beállításokat (például a kalibrációt) a böngésző helyi tárolója őrzi a készülékeden, a megosztható link pedig a címsorban hordozza a beállításokat. A tárhelyszolgáltató és a térkép- és adatszolgáltatók a kérések kiszolgálásához technikai adatokat (például IP-címet) kezelhetnek, a saját adatkezelési tájékoztatójuk szerint.<span class="news-on" hidden> Személyes adatot az oldal csak akkor kezel, ha feliratkozol a hírlevélre (8.1 pont).</span></p>
+      <p><b>8. Adatkezelés.</b> A helyadatot, a kamera képét és a mozgásérzékelők adatait az oldal kizárólag a készülékeden, a böngészőben dolgozza fel; ezeket nem rögzítjük és nem továbbítjuk. A beállításokat (például a kalibrációt) a böngésző helyi tárolója őrzi a készülékeden, a megosztható link pedig a címsorban hordozza a beállításokat. A tárhelyszolgáltató és a térkép- és adatszolgáltatók a kérések kiszolgálásához technikai adatokat (például IP-címet) kezelhetnek, a saját adatkezelési tájékoztatójuk szerint. Az oldal névtelen, összesítő számlálót vezet (a látogatók, a letett turbinák és a mentett képek száma); ehhez személyes adatot, IP-címet és sütit nem tárolunk, a böngésző helyi tárolója csak azt jegyzi meg, hogy a látogatást már beszámítottuk.<span class="news-on" hidden> Személyes adatot az oldal csak akkor kezel, ha feliratkozol a hírlevélre (8.1 pont).</span></p>
       <p class="news-on" id="jogiNews" hidden><b>8.1 Hírlevél.</b> <b>Adatkezelő:</b> <span data-news="controller"></span><span data-news="address" data-pre=", székhely: "></span><span data-news="regno" data-pre=", cégjegyzékszám: "></span>; e-mail: <span data-news="email"></span>. <b>Kezelt adatok:</b> az e-mail-címed; a választott levéltípusok (edukációs levélsorozat, reklám és ajánlatok); a hozzájárulásod időpontja, pontos szövege és verziója; az oldal, ahol feliratkoztál. <b>Cél:</b> szakmai (edukációs) tartalmak, és ha ehhez is hozzájárultál, gazdasági reklámot tartalmazó levelek küldése az InnoGroupe termékeiről és szolgáltatásairól; a hozzájárulás igazolása. <b>Jogalap:</b> a hozzájárulásod (GDPR 6. cikk (1) bekezdés a) pont); a gazdasági reklámnál a gazdasági reklámtevékenységről szóló 2008. évi XLVIII. törvény (Grt.) 6. § (1) bekezdése szerinti előzetes, kifejezett hozzájárulás. A két levéltípushoz külön-külön járulsz hozzá; egyik sem feltétele a másiknak vagy az oldal használatának. <b>Időtartam:</b> a hozzájárulás visszavonásáig. A hozzájárulásodat bármikor, indoklás nélkül és díjmentesen visszavonhatod (leiratkozhatsz) a levelek alján lévő linkkel vagy a fenti e-mail-címen; leiratkozáskor az e-mail-címedet haladéktalanul töröljük a küldési listáról. A visszavonás nem érinti az előtte végzett adatkezelés jogszerűségét. <b>Adatfeldolgozók:</b> a feliratkozó űrlapot a tárhelyszolgáltató, a Netlify, Inc. (USA) fogadja és tárolja; az adattovábbítás az Európai Bizottság általános szerződési feltételei alapján történik. <span data-news="sender" data-pre="A leveleket a következő szolgáltató küldi ki: " data-post="."></span> A levelek megnyitását és a bennük lévő linkekre kattintást statisztikai céllal, összesítve mérhetjük. Az adataidat nem adjuk el, harmadik félnek reklámcélra nem adjuk át, és rólad automatizált döntést nem hozunk. <b>Jogaid:</b> tájékoztatást kérhetsz a rólad kezelt adatokról, kérheted a helyesbítésüket, a törlésüket, a kezelésük korlátozását, és adathordozhatóságot is kérhetsz; kérésedre egy hónapon belül válaszolunk. Panasszal a Nemzeti Adatvédelmi és Információszabadság Hatósághoz (NAIH, 1055 Budapest, Falk Miksa utca 9–11., ugyfelszolgalat@naih.hu, www.naih.hu) fordulhatsz, vagy bírósághoz is. 16 év alatt nem iratkozhatsz fel.</p>
       <p><b>9. Módosítás, irányadó jog.</b> Az oldalt és ezt a nyilatkozatot bármikor, előzetes értesítés nélkül módosíthatjuk vagy megszüntethetjük. Az oldal használatával a nyilatkozatot elfogadod. Irányadó jog: a magyar jog. Hatályos: 2026. október 21-től.</p>
     </div>
@@ -4338,7 +4408,7 @@ if (REGION && Math.hypot(REGION.lat - 47.14, REGION.lon - 16.58) < 0.3) {
   siteLayer.addTo(map);
   map.on('popupopen', e => {
     const b = e.popup.getElement().querySelector('[data-site]'); if (!b) return;
-    b.onclick = () => { const st = SITES.find(x => x[0] === +b.dataset.site); state.turbines.push({ lat: st[2], lon: st[3] }); state.sel = state.turbines.length - 1; map.closePopup(); buildMarkers(); update(); fitView(); };
+    b.onclick = () => { const st = SITES.find(x => x[0] === +b.dataset.site); state.turbines.push({ lat: st[2], lon: st[3] }); hlCount('turbines'); state.sel = state.turbines.length - 1; map.closePopup(); buildMarkers(); update(); fitView(); };
   });
 }
 /* ---------- Árnyékvetés és villódzás ----------
@@ -4581,7 +4651,7 @@ map.on('click', e => {
     const card = document.querySelector(`.ob[data-id="${id}"]`); if (card) card.classList.add('new');
     $('mapHint').innerHTML = `<b>${OB[type].name} lerakva.</b> <button type="button" class="linkbtn" id="goCard">Finomhangolás a csúszkákkal ↓</button>`;
     $('goCard').onclick = () => { const c = document.querySelector(`.ob[data-id="${id}"]`); if (c) { c.scrollIntoView({ behavior: 'smooth', block: 'center' }); c.querySelector('input')?.focus({ preventScroll: true }); } };
-  } else { state.turbines.push(p); state.sel = state.turbines.length - 1; state.pan = 0; clearViewshed(true); buildMarkers(); }
+  } else { state.turbines.push(p); hlCount('turbines'); state.sel = state.turbines.length - 1; state.pan = 0; clearViewshed(true); buildMarkers(); }
   update();
 });
 function setMode(m) {
@@ -4604,7 +4674,7 @@ $('obType').innerHTML = OB_ORDER.map(k => `<option value="${k}">${OB[k].name}</o
 $('obType').value = 'trees';
 $('modeView').onclick = () => setMode('view');
 $('centerView').onclick = () => { const c = map.getCenter(); state.viewer = { lat: c.lat, lon: c.lng }; state.pan = 0; buildMarkers(); update(); };
-$('centerTurb').onclick = () => { const c = map.getCenter(); state.turbines.push({ lat: c.lat, lon: c.lng }); state.sel = state.turbines.length - 1; state.pan = 0; clearViewshed(true); buildMarkers(); update(); };
+$('centerTurb').onclick = () => { const c = map.getCenter(); state.turbines.push({ lat: c.lat, lon: c.lng }); hlCount('turbines'); state.sel = state.turbines.length - 1; state.pan = 0; clearViewshed(true); buildMarkers(); update(); };
 $('modeTurb').onclick = () => setMode('turb');
 function selectTurbine(i) { state.sel = i; state.pan = 0; buildMarkers(); update(); }
 function delTurbine(i) { state.turbines.splice(i, 1); state.sel = clamp(state.sel >= i ? state.sel - 1 : state.sel, 0, Math.max(0, state.turbines.length - 1)); clearViewshed(true); buildMarkers(); update(); }
@@ -5260,7 +5330,7 @@ async function saveMontage(fromVideo) {
     if (dl) { try { await dl.save({ filename: name, data: blob }); MONT.msg = ' A kép elmentve.'; return; } catch (e) { if (e && e.code === 'declined') return; } }
   }
   if (navigator.canShare && navigator.canShare({ files: [file] }) && matchMedia('(pointer: coarse)').matches) { try { await navigator.share({ files: [file], title: 'Szélerőmű a valós tájban' }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); hlCount('images'); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   MONT.msg = ' A kép letöltődött.';
 }
 
