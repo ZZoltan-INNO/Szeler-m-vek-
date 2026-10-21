@@ -1037,6 +1037,26 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .principles b{font:600 1.05rem/1.2 var(--display);letter-spacing:-.01em}
 .principles span{color:var(--muted);font-size:.95rem}
 @media (max-width:860px){.why-grid{grid-template-columns:minmax(0,1fr)}}
+.news{padding-block:48px 56px}
+.news[hidden]{display:none}
+.news-card{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:20px 48px;align-items:start;border:1px solid var(--line);border-radius:16px;background:var(--card);padding:clamp(20px,3.5vw,36px)}
+.news-card .sec-head{margin:0}
+.news-list{margin:4px 0 0;padding-left:1.15em;display:grid;gap:6px;color:var(--muted);max-width:60ch}
+.news-form{display:grid;gap:14px;min-width:0}
+.news-row{display:flex;gap:10px;flex-wrap:wrap}
+.news-row input[type=email]{flex:1 1 240px;min-width:0;font-size:1rem;padding:11px 12px}
+.news-row .btn{padding:12px 18px;font-size:.95rem}
+.news-ok{display:grid;gap:8px;align-items:start}
+.news-ok[hidden]{display:none}
+.news-ok b{font:700 1.2rem var(--display)}
+.consent{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;font-size:.9rem;line-height:1.5;color:var(--ink);cursor:pointer}
+.consent input{margin-top:3px;width:18px;height:18px;accent-color:var(--accent)}
+.consent span b{font-weight:600}
+.news-fine{font-size:.8rem;line-height:1.5;color:var(--muted);margin:0}
+.news-msg{font-size:.88rem;font-weight:600;margin:0;min-height:1.2em}
+.news-msg.err{color:#ff8f7a}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+@media (max-width:860px){.news-card{grid-template-columns:minmax(0,1fr)}}
 .method{padding-block:8px 8px}
 .grp{list-style:none;margin:28px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 .grp li{background:var(--b-bg2);border:1px solid var(--b-line);border-radius:12px;padding:18px 18px 16px;display:grid;gap:6px;align-content:start;min-width:0}
@@ -1576,6 +1596,73 @@ window.VL_INFO = {
   const op = $id('vlOperator'); if (op && I.operator) { op.hidden = false; op.querySelector('span').textContent = I.operator; }
 })();
 </script>
+<section class="wrap news" id="hirlevel" aria-labelledby="h-news" hidden>
+  <div class="news-card">
+    <div class="sec-head">
+      <p class="kicker">Hírlevél</p>
+      <h2 id="h-news">Kérd a HorizonLens hírlevelét.</h2>
+      <p>Ritkán írunk, és csak akkor, ha van miről.</p>
+      <ul class="news-list">
+        <li>érthető összefoglalók a szélerőművek láthatóságáról, a takarásról és a látványelemzésről;</li>
+        <li>értesítés, ha új terület vagy új funkció kerül az eszközbe;</li>
+        <li>ha kéred: az InnoLens és az InnoGroupe megoldásai és ajánlatai.</li>
+      </ul>
+    </div>
+    <form class="news-form" id="newsForm" name="hirlevel" method="POST" data-netlify="true" netlify-honeypot="bot-field" novalidate>
+      <input type="hidden" name="form-name" value="hirlevel">
+      <input type="hidden" name="hozzajarulas_verzio" value="">
+      <input type="hidden" name="hozzajarulas_szoveg" value="">
+      <input type="hidden" name="idopont" value="">
+      <input type="hidden" name="oldal" value="">
+      <p class="hp" aria-hidden="true"><label>Ezt hagyd üresen: <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
+      <label for="newsEmail" class="small">E-mail-cím</label>
+      <div class="news-row"><input type="email" id="newsEmail" name="email" required autocomplete="email" inputmode="email" placeholder="nev@pelda.hu"><button class="btn primary" type="submit" id="newsGo">Feliratkozom</button></div>
+      <label class="consent"><input type="checkbox" name="szakmai_hirlevel" value="igen" id="newsEdu"><span id="newsEduT"><b>Kérem a szakmai hírlevelet:</b> összefoglalók a szélerőművek láthatóságáról és a látványelemzésről, értesítés a HorizonLens új területeiről és funkcióiról.</span></label>
+      <label class="consent"><input type="checkbox" name="marketing" value="igen" id="newsMkt"><span id="newsMktT"><b>Hozzájárulok</b>, hogy az adatkezelő az InnoGroupe (InnoLens, Innomotion, InnoProduction) termékeiről és szolgáltatásairól <b>reklámot és ajánlatokat</b> (gazdasági reklámot) küldjön nekem e-mailben.</span></label>
+      <p class="news-fine">Legalább az egyiket jelöld be. A feliratkozással kijelented, hogy elmúltál 16 éves. A hozzájárulásodat bármikor, indoklás nélkül visszavonhatod a levelek alján lévő leiratkozó linkkel vagy e-mailben (<span data-news="email"></span>). Adatkezelő: <span data-news="controller" data-trim></span>. Részletek: <button type="button" class="linklike legal-link">adatkezelési tájékoztató, 8.1 pont</button>.</p>
+      <p class="news-msg" id="newsMsg" role="status" aria-live="polite"></p>
+    </form>
+    <div class="news-ok" id="newsOk" hidden tabindex="-1"><b>Köszönjük, feliratkoztál.</b><p class="news-fine" id="newsOkT"></p></div>
+  </div>
+</section>
+<script>
+/* Hírlevél: az adatkezelő adatai itt töltendők ki. Amíg a név és az e-mail üres, a feliratkozás és a 8.1 pont rejtve marad
+   (feliratkozáskor az adatkezelő nevét kötelező feltüntetni). A beküldést a Netlify Forms fogadja (Netlify → Forms). */
+window.NEWS_INFO = {
+  controller: '',   // az adatkezelő cég neve, pl. „Minta Kft.”
+  address: '',      // székhely
+  regno: '',        // cégjegyzékszám (nem kötelező)
+  email: '',        // kapcsolattartó e-mail-cím: leiratkozás, adatkezelési kérések
+  sender: '',       // a leveleket kiküldő szolgáltató, pl. „UAB MailerLite (Litvánia)”; üresen kimarad
+  version: 'hirlevel-v1-2026-10-21'   // a hozzájárulási szöveg verziója; a szöveg módosításakor léptetni kell
+};
+document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg a lábléc alatt van: csak a teljes betöltés után tölthető ki
+  const N = window.NEWS_INFO, $id = id => document.getElementById(id), on = !!(N.controller && N.email);
+  document.querySelectorAll('[data-news]').forEach(e => { const v = e.hasAttribute('data-trim') ? (N[e.dataset.news] || '').replace(/\.$/, '') : N[e.dataset.news]; e.textContent = v ? (e.dataset.pre || '') + v + (e.dataset.post || '') : ''; });
+  document.querySelectorAll('.news-on').forEach(e => { e.hidden = !on; });
+  $id('hirlevel').hidden = !on; if (!on) return;
+  const f = $id('newsForm'), msg = $id('newsMsg'), mail = $id('newsEmail'), edu = $id('newsEdu'), mkt = $id('newsMkt');
+  const say = (t, err) => { msg.textContent = t; msg.classList.toggle('err', !!err); };
+  f.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (f.elements['bot-field'].value) return;
+    if (!mail.value.trim() || !mail.checkValidity()) { say('Adj meg egy érvényes e-mail-címet.', true); mail.focus(); return; }
+    if (!edu.checked && !mkt.checked) { say('Jelöld be, milyen leveleket kérsz (legalább az egyiket).', true); edu.focus(); return; }
+    const txt = [edu.checked && $id('newsEduT').textContent, mkt.checked && $id('newsMktT').textContent].filter(Boolean).join(' | ') + ` (adatkezelő: ${N.controller})`;
+    f.elements.hozzajarulas_verzio.value = N.version; f.elements.hozzajarulas_szoveg.value = txt;
+    f.elements.idopont.value = new Date().toISOString(); f.elements.oldal.value = location.origin + location.pathname;
+    $id('newsGo').disabled = true; say('Küldés…');
+    try {
+      const r = await fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(new FormData(f)).toString() });
+      if (!r.ok) throw new Error(r.status);
+      f.hidden = true; const ok = $id('newsOk'); ok.hidden = false;
+      $id('newsOkT').textContent = `${[edu.checked && 'A szakmai hírlevelet', mkt.checked && (edu.checked ? 'az ajánlatainkat' : 'Az ajánlatainkat')].filter(Boolean).join(' és ')} erre a címre küldjük: ${mail.value.trim()}. Bármikor leiratkozhatsz a levelek alján lévő linkkel.`;
+      ok.focus();
+    } catch (er) { say('Most nem sikerült elküldeni. Próbáld újra néhány perc múlva.', true); }
+    finally { $id('newsGo').disabled = false; }
+  });
+});
+</script>
 <footer class="brand-band foot-band"><div class="wrap">
   <div class="foot-brand"><span class="hl-mark"><svg viewBox="0 0 26 26" aria-hidden="true"><path d="M13 2.2 22.4 7.6v10.8L13 23.8 3.6 18.4V7.6Z" fill="none" stroke="#ec651d" stroke-width="2.2" stroke-linejoin="round"/><circle cx="13" cy="13" r="4.2" fill="#f5f5f7"/></svg>HorizonLens <span class="by">by InnoLens</span></span><span class="vl-sep" aria-hidden="true"></span><span class="vl-fam">az <b data-grp="name">InnoGroupe</b> tagja</span><span class="foot-tag">Amit a szem lát, azt mi megmérjük, amit nem lát, azt megjelenítjük.</span></div>
   <p><b>Tájékoztató modell, nem hivatalos látványterv; használata saját felelősségre.</b> <button type="button" class="linklike legal-link">Jogi nyilatkozat, felelősségkizárás és adatkezelés</button></p>
@@ -1593,8 +1680,9 @@ window.VL_INFO = {
       <p><b>5. Saját felelősség és biztonság.</b> Az oldalt mindenki saját felelősségére használja. Járművezetés vagy a forgalomban való közlekedés közben ne használd; figyelj a környezetedre, és engedély nélkül ne lépj magánterületre.</p>
       <p><b>6. Az eredmények felhasználása.</b> A számítások és a képek tájékoztató jellegűek; hivatalos eljárásban, szerződésben vagy döntés alapjaként csak szakember ellenőrzése után használhatók. A mentett képek forrásjelölését ne távolítsd el; a képek megosztásáért és felhasználásáért a megosztó felel.</p>
       <p><b>7. Harmadik felek.</b> Az oldal harmadik felek adatait és szolgáltatásait használja (térképek, légi- és műholdképek, domborzat, épület- és famagasság-adatok, programkönyvtárak, tárhely). Ezek tartalmáért, pontosságáért és elérhetőségéért nem vállalunk felelősséget; a forrásokat és a licenceket a lap alján soroljuk fel.</p>
-      <p><b>8. Adatkezelés.</b> A helyadatot, a kamera képét és a mozgásérzékelők adatait az oldal kizárólag a készülékeden, a böngészőben dolgozza fel; ezeket nem rögzítjük és nem továbbítjuk. A beállításokat (például a kalibrációt) a böngésző helyi tárolója őrzi a készülékeden, a megosztható link pedig a címsorban hordozza a beállításokat. A tárhelyszolgáltató és a térkép- és adatszolgáltatók a kérések kiszolgálásához technikai adatokat (például IP-címet) kezelhetnek, a saját adatkezelési tájékoztatójuk szerint.</p>
-      <p><b>9. Módosítás, irányadó jog.</b> Az oldalt és ezt a nyilatkozatot bármikor, előzetes értesítés nélkül módosíthatjuk vagy megszüntethetjük. Az oldal használatával a nyilatkozatot elfogadod. Irányadó jog: a magyar jog. Hatályos: 2026. október 19-től.</p>
+      <p><b>8. Adatkezelés.</b> A helyadatot, a kamera képét és a mozgásérzékelők adatait az oldal kizárólag a készülékeden, a böngészőben dolgozza fel; ezeket nem rögzítjük és nem továbbítjuk. A beállításokat (például a kalibrációt) a böngésző helyi tárolója őrzi a készülékeden, a megosztható link pedig a címsorban hordozza a beállításokat. A tárhelyszolgáltató és a térkép- és adatszolgáltatók a kérések kiszolgálásához technikai adatokat (például IP-címet) kezelhetnek, a saját adatkezelési tájékoztatójuk szerint.<span class="news-on" hidden> Személyes adatot az oldal csak akkor kezel, ha feliratkozol a hírlevélre (8.1 pont).</span></p>
+      <p class="news-on" id="jogiNews" hidden><b>8.1 Hírlevél.</b> <b>Adatkezelő:</b> <span data-news="controller"></span><span data-news="address" data-pre=", székhely: "></span><span data-news="regno" data-pre=", cégjegyzékszám: "></span>; e-mail: <span data-news="email"></span>. <b>Kezelt adatok:</b> az e-mail-címed; a választott levéltípusok (szakmai hírlevél, reklám és ajánlatok); a hozzájárulásod időpontja, pontos szövege és verziója; az oldal, ahol feliratkoztál. <b>Cél:</b> szakmai (edukációs) tartalmak, és ha ehhez is hozzájárultál, gazdasági reklámot tartalmazó levelek küldése az InnoGroupe termékeiről és szolgáltatásairól; a hozzájárulás igazolása. <b>Jogalap:</b> a hozzájárulásod (GDPR 6. cikk (1) bekezdés a) pont); a gazdasági reklámnál a gazdasági reklámtevékenységről szóló 2008. évi XLVIII. törvény (Grt.) 6. § (1) bekezdése szerinti előzetes, kifejezett hozzájárulás. A két levéltípushoz külön-külön járulsz hozzá; egyik sem feltétele a másiknak vagy az oldal használatának. <b>Időtartam:</b> a hozzájárulás visszavonásáig. A hozzájárulásodat bármikor, indoklás nélkül és díjmentesen visszavonhatod (leiratkozhatsz) a levelek alján lévő linkkel vagy a fenti e-mail-címen; leiratkozáskor az e-mail-címedet haladéktalanul töröljük a küldési listáról. A visszavonás nem érinti az előtte végzett adatkezelés jogszerűségét. <b>Adatfeldolgozók:</b> a feliratkozó űrlapot a tárhelyszolgáltató, a Netlify, Inc. (USA) fogadja és tárolja; az adattovábbítás az Európai Bizottság általános szerződési feltételei alapján történik. <span data-news="sender" data-pre="A leveleket a következő szolgáltató küldi ki: " data-post="."></span> A levelek megnyitását és a bennük lévő linkekre kattintást statisztikai céllal, összesítve mérhetjük. Az adataidat nem adjuk el, harmadik félnek reklámcélra nem adjuk át, és rólad automatizált döntést nem hozunk. <b>Jogaid:</b> tájékoztatást kérhetsz a rólad kezelt adatokról, kérheted a helyesbítésüket, a törlésüket, a kezelésük korlátozását, és adathordozhatóságot is kérhetsz; kérésedre egy hónapon belül válaszolunk. Panasszal a Nemzeti Adatvédelmi és Információszabadság Hatósághoz (NAIH, 1055 Budapest, Falk Miksa utca 9–11., ugyfelszolgalat@naih.hu, www.naih.hu) fordulhatsz, vagy bírósághoz is. 16 év alatt nem iratkozhatsz fel.</p>
+      <p><b>9. Módosítás, irányadó jog.</b> Az oldalt és ezt a nyilatkozatot bármikor, előzetes értesítés nélkül módosíthatjuk vagy megszüntethetjük. Az oldal használatával a nyilatkozatot elfogadod. Irányadó jog: a magyar jog. Hatályos: 2026. október 21-től.</p>
     </div>
   </details>
 </section>
