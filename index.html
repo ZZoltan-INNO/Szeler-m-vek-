@@ -787,6 +787,8 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .ac-prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
 .ac-btns{display:flex;gap:8px;flex-wrap:wrap}
 .ac-btns:empty{display:none}
+.mont-bar .ac-btns{flex-wrap:nowrap;flex:none}
+.ar-coach{-webkit-user-select:none;user-select:none}
 .mont-ctl details{font-size:.82rem;color:var(--muted)}
 .mont-ctl summary{cursor:pointer;color:var(--ink);font-weight:600}
 .arint{position:fixed;inset:0;z-index:5100;display:grid;place-items:center;background:rgba(10,10,12,.74);padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
@@ -5440,8 +5442,8 @@ const AV = 'assets/', INTRO = { mode: null };
 function openIntro(mode) {
   INTRO.mode = mode; const box = $('arIntro'), v = $('arIntroV'), port = innerHeight > innerWidth || innerWidth < 700;
   box.classList.toggle('port', port);
-  const ext = v.canPlayType('video/webm; codecs="vp9"') ? 'webm' : 'mp4', nm = 'ar_guide' + (port ? '' : '_wide');
-  v.poster = AV + nm + '_poster.jpg'; v.src = AV + nm + '.' + ext; v.play().catch(() => {});
+  const nm = 'ar_guide' + (port ? '' : '_wide');
+  v.poster = AV + nm + '_poster.jpg'; v.src = AV + nm + (v.canPlayType('video/mp4; codecs="avc1.42E01E"') ? '.mp4' : '.webm'); v.play().catch(() => {});
   $('arIntroGo').hidden = mode === 'info'; $('arIntroGo').textContent = mode === 'help' ? 'Vissza az élő képhez' : 'Kezdjük';
   $('arIntroNo').textContent = mode === 'start' ? 'Mégse' : 'Bezárás'; $('arIntroNo').hidden = mode === 'help';
   $('arIntroSkipW').hidden = mode !== 'start';
