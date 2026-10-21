@@ -1400,7 +1400,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (document.readyState === 'complete') go(); else addEventListener('load', go);
 })();
 document.querySelectorAll('[data-scroll]').forEach(b => { b.addEventListener('click', () => { const t = document.getElementById(b.dataset.scroll); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); });
-/* névtelen összesítő számláló (Netlify-függvény, /api/stats): látogató böngészőnként egyszer, letett turbina és mentett kép eseményenként
+/* névtelen összesítő számláló (Cloudflare Pages-függvény, /api/stats): látogató böngészőnként egyszer, letett turbina és mentett kép eseményenként
    (böngészőnként naponta legfeljebb 50); személyes adatot nem küld. A számok csak STATS_MIN látogató fölött jelennek meg. */
 const STATS_MIN = 100, SITE_URL = 'https://jak-szeleromu.pages.dev';   // az oldal kanonikus címe (Cloudflare Pages)
 window.hlCount = kind => {
