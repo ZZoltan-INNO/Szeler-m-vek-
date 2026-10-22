@@ -141,6 +141,12 @@ main{display:grid;gap:20px;padding-bottom:20px}
 .about-group{grid-column:1/-1;list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .about-group li{display:grid;gap:4px;align-content:start;background:var(--b-bg2);border:1px solid var(--b-line);border-radius:10px;padding:14px 16px}
 .about-group li.cur{border-color:var(--b-orange)}
+.about-group .prod{justify-self:start;margin-top:6px;font:600 .8rem/1.2 var(--display);font-style:normal;color:var(--b-ink);background:color-mix(in srgb,var(--b-orange) 22%,transparent);border:1px solid var(--b-orange);border-radius:999px;padding:4px 10px}
+.about-group .prod strong{color:var(--b-orange-hi)}
+.about-parent{grid-column:1/-1;display:flex;align-items:baseline;gap:10px;margin:8px 0 -2px;padding-bottom:8px;border-bottom:1px solid var(--b-line)}
+.about-parent b{font:700 1.15rem/1.2 var(--display);color:var(--b-ink)}
+.about-parent span{font:500 .72rem/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--b-muted)}
+.about-co p{margin:0;font-size:.92rem;color:var(--b-muted);max-width:68ch}
 #rolunk .vl-head{grid-column:1/-1}
 .about-group b{font:700 1.05rem/1.2 var(--display);color:var(--b-ink)}
 .about-group span{font-size:.9rem;color:var(--b-muted)}
@@ -296,7 +302,7 @@ input,select,textarea{background:var(--soft);color:var(--ink);border-color:rgba(
         <p class="eyebrow"><span class="prod">HorizonLens</span> · Szélerőmű · látványszámítás sík terepen</p>
         <h1>Mennyi látszik <span class="hl">a turbinából?</span></h1>
         <p class="lede">Add meg, milyen messze és milyen magas a szélerőmű, aztán tegyél elé bokrot, épületet, fákat vagy dombot. A csúszkákkal mozgathatod őket, és azonnal látod, mennyit takarnak 1,7 m-es szemmagasságból.</p>
-        <p class="hero-by">Az <b>InnoLens</b>, az <b data-grp="name">InnoGroupe</b> vizuális és képelemzési cégének fejlesztése. Díjmentes, semleges eszköz.</p>
+        <p class="hero-by">A HorizonLens az <b>InnoLens</b> (<b data-grp="name">InnoGroup</b>) terméke. Díjmentes, semleges eszköz.</p>
         <p class="hint">Valós domborzattal, térképen: <a href="index.html" style="color:var(--accent);font-weight:600">térképes változat</a>.</p>
       </div>
       <svg class="hero-art" viewBox="0 0 390 236" role="img" aria-label="Rálátás: a szemtől a háztetőn át húzott látóvonal fölötti turbinarész látszik, az alatta lévő takarásban marad">
@@ -398,11 +404,12 @@ h_takart = 1,7 + D · tan(α_max)</div>
     <div class="vl-head">
       <p class="eyebrow">Kik vagyunk</p>
       <h2 id="about-h">Amit a szem lát, azt mi megmérjük, <span class="hl">amit nem lát, azt megjelenítjük.</span></h2>
-      <p class="vl-lede">A HorizonLenst az <b>InnoLens</b> csapata készítette. Az InnoLens az <span data-grp="name">InnoGroupe</span> kamerás méréssel és képelemzéssel foglalkozó cége: kamerával, objektívvel, fénnyel és számítással dolgozunk. Ugyanezzel a tudással fejlesztjük a gyártósori <b>VisionLens AOI</b> képellenőrző rendszert is.</p>
+      <p class="vl-lede">A HorizonLens az <b>InnoLens</b> terméke. Az InnoLens az <b data-grp="name">InnoGroup</b> kamerás méréssel és képelemzéssel foglalkozó tagja: kamerával, objektívvel, fénnyel és számítással dolgozunk. Ugyanebből a tudásból készül a gyártósori VisionLens AOI képellenőrző is.</p>
       <p class="vl-lede">A HorizonLens díjmentes és semleges eszköz: nem foglal állást a beruházások mellett vagy ellen, csak megmutatja, mi fog látszani és mi nem.</p>
     </div>
-    <ul class="about-group" id="aboutGroup" aria-label="Az InnoGroupe tagjai"></ul>
-    <div class="about-co" id="aboutCompany" hidden><h3></h3><dl class="vl-contact"></dl></div>
+    <p class="about-parent"><b data-grp="name">InnoGroup</b><span>a csoport tagjai</span></p>
+    <ul class="about-group" id="aboutGroup" aria-label="Az InnoGroup tagjai"></ul>
+    <div class="about-co" id="aboutCompany" hidden><h3></h3><p></p><dl class="vl-contact"></dl></div>
     <dl class="vl-contact" id="vlContact" hidden></dl>
   </div>
 </section>
@@ -410,10 +417,11 @@ h_takart = 1,7 + D · tan(α_max)</div>
 /* InnoLens elérhetőségek a „Kik vagyunk” szakaszhoz: itt kell kitölteni (az üres mezők nem jelennek meg) */
 window.VL_INFO = {
   name: '', role: '', phone: '', email: '', web: '',
-  operator: '',   // üzemeltető (cégnév, székhely, cégjegyzékszám) – a jogi nyilatkozatba kerül
+  operator: 'Innomotion Kft. (székhely: 9081 Győrújbarát, Vendégfogadó u. 2.; cégjegyzékszám: 08-09-035315)',   // üzemeltető (cégnév, székhely, cégjegyzékszám) – a jogi nyilatkozatba kerül
   // a csoport cégadatai a „Kik vagyunk” szakaszban (forrás: innomotion.hu, főoldal és adatvédelmi tájékoztató)
   company: {
-    name: 'Innomotion Kft.',
+    name: 'Üzemeltető: Innomotion Kft.',
+    note: 'Az InnoLens az Innomotion Kft. üzletága: a HorizonLenst jogilag az Innomotion Kft. üzemelteti, és ő kezeli a hírlevél adatait is.',
     rows: [
       ['Székhely', '9081 Győrújbarát, Vendégfogadó u. 2.'],
       ['Telephely', '9028 Győr, Régi Veszprémi út 14–16.'],
@@ -425,11 +433,11 @@ window.VL_INFO = {
     ]
   },
   group: {
-    name: 'InnoGroupe',
+    name: 'InnoGroup',
     members: [
       { name: 'Innomotion', role: 'Egyedi célgépek, gyártócellák és automatizált rendszerek tervezése és gyártása, alkatrészgyártás, prototípusgyártás és 3D nyomtatás.', note: 'Győrújbarát · 2012 óta' },
-      { name: 'InnoProduction', role: 'Gyártás.' },
-      { name: 'InnoLens', role: 'Kamerás mérés és képelemzés: a HorizonLens és a VisionLens AOI fejlesztője.', current: true }
+      { name: 'InnoProduction', role: 'Sorozatgyártás és szerelés: bérgyártás az Innomotion által tervezett gépekhez és alkatrészekhez.' },
+      { name: 'InnoLens', role: 'Kamerás mérés és képelemzés, az Innomotion Kft. üzletága.', product: 'HorizonLens', current: true }
     ]
   }
 };
@@ -438,9 +446,10 @@ window.VL_INFO = {
   document.querySelectorAll('[data-grp="name"]').forEach(e => { e.textContent = I.group.name; });
   const ul = $id('aboutGroup');
   if (ul) I.group.members.forEach(m => { const li = document.createElement('li'); if (m.current) li.className = 'cur';
-    li.innerHTML = '<b></b><span></span>' + (m.note ? '<small></small>' : ''); li.children[0].textContent = m.name; li.children[1].textContent = m.role; if (m.note) li.children[2].textContent = m.note; ul.appendChild(li); });
+    li.innerHTML = '<b></b><span></span>' + (m.note ? '<small></small>' : '') + (m.product ? '<em class="prod">Terméke: <strong></strong></em>' : ''); li.children[0].textContent = m.name; li.children[1].textContent = m.role;
+    if (m.note) li.querySelector('small').textContent = m.note; if (m.product) li.querySelector('.prod strong').textContent = m.product; ul.appendChild(li); });
   const co = $id('aboutCompany');
-  if (co && I.company) { co.hidden = false; co.querySelector('h3').textContent = I.company.name; const dlc = co.querySelector('dl');
+  if (co && I.company) { co.hidden = false; co.querySelector('h3').textContent = I.company.name; if (I.company.note) co.querySelector('p').textContent = I.company.note; const dlc = co.querySelector('dl');
     I.company.rows.forEach(([k, v, href]) => { const d = document.createElement('div'); d.innerHTML = '<dt></dt><dd></dd>'; d.firstChild.textContent = k;
       if (href) { const a = document.createElement('a'); a.href = href; a.textContent = v; if (/^https?:/.test(href)) { a.target = '_blank'; a.rel = 'noopener'; } d.lastChild.appendChild(a); } else d.lastChild.textContent = v;
       dlc.appendChild(d); }); }
@@ -452,14 +461,14 @@ window.VL_INFO = {
 })();
 </script>
 <footer class="brand-band foot-band"><div class="wrap">
-  <div class="foot-brand"><span class="hl-mark"><svg viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#e8620c"/><path d="M5 18.5 H23" stroke="#16181b" stroke-width="2.2" stroke-linecap="round"/><circle cx="14" cy="12" r="4.6" fill="#16181b"/></svg>HorizonLens <span class="by">by InnoLens</span></span><span class="vl-sep" aria-hidden="true"></span><span class="vl-fam">az <b data-grp="name">InnoGroupe</b> tagja</span></div>
+  <div class="foot-brand"><span class="hl-mark"><svg viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#e8620c"/><path d="M5 18.5 H23" stroke="#16181b" stroke-width="2.2" stroke-linecap="round"/><circle cx="14" cy="12" r="4.6" fill="#16181b"/></svg>HorizonLens <span class="by">az InnoLens terméke</span></span><span class="vl-sep" aria-hidden="true"></span><span class="vl-fam"><b data-grp="name">InnoGroup</b> · üzemeltető: Innomotion Kft.</span></div>
   <p><b>Tájékoztató modell, nem hivatalos látványterv; használata saját felelősségre.</b> <button type="button" class="linklike legal-link">Jogi nyilatkozat, felelősségkizárás és adatkezelés</button></p><p>Feltételezések: sík terep, lombos (átlátszatlan) fák, a lapát a legmagasabb állásban, a rotor szemből látszik. Télen a lombhullató fák áttetszőek, magasabb nézőpontról (emelet, domb) a takarás gyorsan csökken.</p><p>Levél-, kéreg- és fűfotók: ez-tree (MIT, © Daniel Greenheck); égbolt-fény: Poly Haven (CC0).</p>
 <section class="legal" id="jogi">
   <details id="jogiDet">
     <summary>Jogi nyilatkozat, felelősségkizárás és adatkezelés</summary>
     <div class="legal-body">
       <p id="vlOperator" hidden><b>Üzemeltető:</b> <span></span></p>
-      <p><b>1. Az oldal jellege.</b> Az oldalt (HorizonLens) az InnoLens (InnoGroupe) csapata díjmentes, tájékoztató és szemléltető célú számítási eszközként készítette. Semleges eszköz: nem foglal állást a szélerőmű-beruházások mellett vagy ellen. Nem hatósági, szakhatósági vagy igazságügyi szakértői vélemény, nem látványterv és nem környezeti hatásvizsgálat, és nem helyettesíti a hivatalos eljárásokban készülő dokumentációt. Az oldal nem a beruházó, nem hatóság és nem önkormányzat kiadványa.</p>
+      <p><b>1. Az oldal jellege.</b> A HorizonLens az InnoLens (InnoGroup) terméke, üzemeltetője az Innomotion Kft. Az InnoLens csapata díjmentes, tájékoztató és szemléltető célú számítási eszközként készítette. Semleges eszköz: nem foglal állást a szélerőmű-beruházások mellett vagy ellen. Nem hatósági, szakhatósági vagy igazságügyi szakértői vélemény, nem látványterv és nem környezeti hatásvizsgálat, és nem helyettesíti a hivatalos eljárásokban készülő dokumentációt. Az oldal nem a beruházó, nem hatóság és nem önkormányzat kiadványa.</p>
       <p><b>2. Pontosság.</b> Az eredmények modellszámítások, közelítésekkel és feltételezésekkel (domborzat; az épületek és fák magasságának gépi becslése; a turbinák helye, száma, típusa és mérete; a lehetséges telepítési területek kézi illesztése; az árnyék és a villódzás legrosszabb esetre számolt becslése). A felhasznált adatok hibásak, hiányosak vagy elavultak lehetnek. A tervezett turbinák pontos helye, száma és típusa nem ismert: a megjelenített turbinák a felhasználó által elhelyezett, feltételezett szemléltetések. Az élő kamerás és a fotós nézet pontossága a készülék érzékelőitől, a kalibrációtól és a használat módjától függ. A valóság a modelltől jelentősen eltérhet.</p>
       <p><b>3. Szavatosság és jótállás kizárása.</b> Az oldalt „ahogy van” és „ahogy elérhető” állapotában bocsátjuk rendelkezésre, mindenféle kifejezett vagy hallgatólagos szavatosság és jótállás nélkül, különösen az eredmények pontosságára, teljességére, naprakészségére, egy adott célra való alkalmasságára és az oldal folyamatos elérhetőségére vonatkozóan.</p>
       <p><b>4. Felelősség kizárása.</b> A jogszabályok által megengedett legteljesebb mértékben az oldal készítője, üzemeltetője és közreműködői semmilyen felelősséget nem vállalnak semmilyen közvetlen vagy közvetett kárért, elmaradt haszonért, költségért vagy egyéb hátrányért, amely az oldal használatából vagy használhatatlanságából, az eredmények és a képek felhasználásából, megosztásából, az ezek alapján hozott döntésekből (például ingatlanvásárlás, beruházás, észrevétel, jogi lépés), illetve harmadik felek adataiból vagy szolgáltatásaiból ered. Ez a kizárás nem terjed ki azokra az esetekre, amelyekben jogszabály a felelősség kizárását vagy korlátozását nem engedi (így különösen a szándékosan vagy súlyos gondatlansággal okozott, illetve az életet, a testi épséget vagy az egészséget megsértő károkra).</p>
