@@ -1657,14 +1657,12 @@ window.VL_INFO = {
   company: {
     name: 'Üzemeltető: Innomotion Kft.',
     note: 'Az InnoLens az Innomotion Kft. üzletága: a HorizonLenst jogilag az Innomotion Kft. üzemelteti, és ő kezeli a hírlevél adatait is.',
+    // csak a honlap, az e-mail és a közösségi csatornák; a teljes cégadat a jogi nyilatkozatban (üzemeltető) van. Üres érték: a sor nem jelenik meg.
     rows: [
-      ['Székhely', '9081 Győrújbarát, Vendégfogadó u. 2.'],
-      ['Telephely', '9028 Győr, Régi Veszprémi út 14–16.'],
-      ['Telefon', '+36 30 584 6333', 'tel:+36305846333'],
+      ['Honlap', 'www.innomotion.hu', 'https://www.innomotion.hu/'],
       ['E-mail', 'info@innomotion.hu', 'mailto:info@innomotion.hu'],
-      ['Web', 'www.innomotion.hu', 'https://www.innomotion.hu/'],
-      ['Cégjegyzékszám', '08-09-035315'],
-      ['Adószám', '24214300-2-08']
+      ['Facebook', 'facebook.com/innomotionhu', 'https://www.facebook.com/innomotionhu'],
+      ['YouTube', '', '']   // a csatorna címe (pl. youtube.com/@…) ide kerül
     ]
   },
   group: {
@@ -1685,7 +1683,7 @@ document.addEventListener('DOMContentLoaded', function () {   // a szakasz a lap
     if (m.note) li.querySelector('small').textContent = m.note; if (m.product) li.querySelector('.prod strong').textContent = m.product; ul.appendChild(li); });
   const co = $id('aboutCompany');
   if (co && I.company) { co.hidden = false; co.querySelector('h3').textContent = I.company.name; if (I.company.note) co.querySelector('p').textContent = I.company.note; const dlc = co.querySelector('dl');
-    I.company.rows.forEach(([k, v, href]) => { const d = document.createElement('div'); d.innerHTML = '<dt></dt><dd></dd>'; d.firstChild.textContent = k;
+    I.company.rows.filter(r => r[1]).forEach(([k, v, href]) => { const d = document.createElement('div'); d.innerHTML = '<dt></dt><dd></dd>'; d.firstChild.textContent = k;
       if (href) { const a = document.createElement('a'); a.href = href; a.textContent = v; if (/^https?:/.test(href)) { a.target = '_blank'; a.rel = 'noopener'; } d.lastChild.appendChild(a); } else d.lastChild.textContent = v;
       dlc.appendChild(d); }); }
   const rows = [['Kapcsolattartó', I.name], ['Beosztás', I.role], ['Telefon', I.phone], ['E-mail', I.email], ['Web', I.web]].filter(r => r[1]);
