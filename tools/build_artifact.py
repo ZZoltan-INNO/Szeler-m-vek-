@@ -3,8 +3,8 @@
 Használat:
   python3 tools/build_artifact.py <dem_mappa> <kimeneti_mappa> [alapváltozat_url] [muhold_mappa]
       claude.ai artifacthoz (a dokumentumvázat az artifact adja)
-  python3 tools/build_artifact.py --web [--base=https://valami.netlify.app/] <dem_mappa> <kimeneti_mappa> [muhold_mappa]
-      önálló weboldal bármilyen statikus tárhelyre (Netlify, GitHub Pages, Cloudflare Pages):
+  python3 tools/build_artifact.py --web [--base=https://valami.pages.dev/] <dem_mappa> <kimeneti_mappa> [muhold_mappa]
+      önálló weboldal bármilyen statikus tárhelyre (Cloudflare Pages, GitHub Pages):
       index.html + alap.html + dem/ + assets/, Facebook-előnézettel (og:*), megosztható linkkel.
       A --base a végleges cím; nélküle az előnézeti kép relatív útvonalú.
   --bld=<mappa>: a valós épületek (tools/build_buildings.py) külön mappából (b12_*.png, bld_index.json).

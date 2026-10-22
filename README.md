@@ -70,9 +70,8 @@ python3 tools/build_artifact.py --web [--base=https://VÉGLEGES-CÍM/] --bld=<mu
 Más régió (pl. tesztelésre) ugyanezekkel a lépésekkel készíthető; a `--place=<név>,<szélesség>,<hosszúság>` adja a kezdő
 nézőpontot és a feliratokat. Almappába építve (pl. `<kimenet>/gyorujbarat`) egy feltöltéssel több régió is közzétehető.
 
-A `<kimenet>` mappa (index.html, alap.html, dem/, assets/, kb. 63 MB) bármilyen statikus tárhelyre feltölthető.
-A legegyszerűbb a Netlify Drop (https://app.netlify.com/drop): ingyenes fiókkal be kell húzni a mappát vagy a ZIP-et.
-Ugyanez működik Cloudflare Pages vagy GitHub Pages alatt is. A webes kiadás Facebook-előnézetet (`assets/og.jpg`) és
+A `<kimenet>` mappa (index.html, alap.html, dem/, assets/) bármilyen statikus tárhelyre feltölthető (pl. GitHub Pages);
+a számláló és a hírlevél ilyenkor nem működik, minden más igen. A webes kiadás Facebook-előnézetet (`assets/og.jpg`) és
 „Megosztás” gombot kap; a link a címsorban (#…) hordozza a nézőpontot, a turbinákat és a takarásokat.
 A `--base` a végleges címmel abszolút útvonalat ad az előnézeti képnek (a Facebook ezt szereti).
 A `--esri-key=<kulcs>` nagy felbontású légifotót (Esri World Imagery, kb. 30–50 cm) kapcsol be a webes kiadásban:
@@ -83,6 +82,21 @@ kulcs nélkül, a nyilvános Esri-szerverről (server.arcgisonline.com) töltőd
 „Változat” felirat fölé víve látszik. Kulcs nélkül is ez a nyilvános elérés működik. Ha az Esri egyáltalán nem érhető el,
 az oldal a beépített Sentinel-2 képre vált, és szól. A claude.ai artifact külső képet nem tölthet be,
 ott a Sentinel-2 marad.
+
+### Az éles oldal (Cloudflare Pages)
+
+A https://jak-szeleromu.pages.dev a repó `deploy/` mappájából épül, minden pushra automatikusan:
+
+- `deploy/site/`: a kész oldal (a fenti `--web` kimenet, a Győrújbarát almappával). Az Esri-kulcs helyén csak a
+  `__ESRI_KEY__` helyőrző áll; a build (`bash inject_key.sh`) a Cloudflare `ESRI_KEY` változójából illeszti be.
+  A kulcs soha nem kerülhet a repóba.
+- `deploy/functions/api/`: Pages Functions egy D1 adatbázissal (kötés neve: `DB`). `/api/stats`: névtelen
+  számláló (látogatók, letett turbinák, mentett képek); `/api/subscribe`: hírlevél-feliratkozás a hozzájárulás
+  szövegével és verziójával; `/api/subscribers`: a feliratkozók CSV-ben, csak `Authorization: Bearer <ADMIN_TOKEN>`
+  fejléccel. A táblák első használatkor jönnek létre (`deploy/lib/db.js`).
+- Cloudflare-beállítás: gyökérkönyvtár `deploy`, build parancs `bash inject_key.sh`, kimenet `site`;
+  változók: `ESRI_KEY`, `ADMIN_TOKEN` (titkos); D1-kötés: `DB`. Új változó vagy kötés csak új telepítéssel lép életbe.
+- A régi https://jak-szeleromu.netlify.app cím csak átirányít (301) ide.
 
 ### A turbina a valódi képen
 
