@@ -1,0 +1,71 @@
+# Netlify: alapkönyvtár „deploy”; a kész oldal a site/ mappában, a függvények (számláló, hírlevél) a netlify/functions alatt, Netlify Blobs tárral.
+# Az Esri-kulcs nincs a repóban: a Netlify környezeti változójából (ESRI_KEY) kerül a helyére telepítéskor (inject_key.sh).
+# Ugyanez a mappa a Cloudflare Pages forrása is (functions/, D1); a Cloudflare ezt a fájlt nem olvassa.
+[build]
+  publish = "site"
+  command = "bash inject_key.sh"
+
+[functions]
+  directory = "netlify/functions"
+
+# A nagy videók a Cloudflare Pages-ről jönnek (ott a forgalom ingyenes), így nem fogyasztják a Netlify-kreditet.
+[[redirects]]
+  from = "/assets/ar_guide.mp4"
+  to = "https://jak-szeleromu.pages.dev/assets/ar_guide.mp4"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/assets/ar_guide.webm"
+  to = "https://jak-szeleromu.pages.dev/assets/ar_guide.webm"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/assets/ar_guide_wide.mp4"
+  to = "https://jak-szeleromu.pages.dev/assets/ar_guide_wide.mp4"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/assets/ar_guide_wide.webm"
+  to = "https://jak-szeleromu.pages.dev/assets/ar_guide_wide.webm"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/assets/hero_layers.mp4"
+  to = "https://jak-szeleromu.pages.dev/assets/hero_layers.mp4"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/assets/hero_layers.webm"
+  to = "https://jak-szeleromu.pages.dev/assets/hero_layers.webm"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/assets/hero_layers_720.mp4"
+  to = "https://jak-szeleromu.pages.dev/assets/hero_layers_720.mp4"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/assets/hero_layers_720.webm"
+  to = "https://jak-szeleromu.pages.dev/assets/hero_layers_720.webm"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/assets/hero_loop_720.mp4"
+  to = "https://jak-szeleromu.pages.dev/assets/hero_loop_720.mp4"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/assets/hero_loop_720.webm"
+  to = "https://jak-szeleromu.pages.dev/assets/hero_loop_720.webm"
+  status = 302
+  force = true
+
