@@ -788,6 +788,7 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .ac-btns{display:flex;gap:8px;flex-wrap:wrap}
 .ac-btns:empty{display:none}
 .mont-bar .ac-btns{flex-wrap:nowrap;flex:none}
+@media (max-width:560px){.mont.is-ar .mont-bar b{display:none}.mont.is-ar .mont-bar{justify-content:flex-end}.mont.is-ar .mont-bar .btn{padding:7px 10px;font-size:.85rem}}   /* telefonon az élő képnél a gomboknak kell a hely */
 .ar-coach{-webkit-user-select:none;user-select:none}
 .mont-ctl details{font-size:.82rem;color:var(--muted)}
 .mont-ctl summary{cursor:pointer;color:var(--ink);font-weight:600}
@@ -1816,7 +1817,7 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
 </div></footer>
 
 <div class="mont" id="mont" hidden role="dialog" aria-modal="true" aria-labelledby="montTitle">
-  <div class="mont-bar"><b id="montTitle">A turbina a saját fotódon</b><span class="ac-btns"><button class="btn" type="button" id="mHelp" hidden>Útmutató</button><button class="btn" type="button" id="montClose">Bezárás</button></span></div>
+  <div class="mont-bar"><b id="montTitle">A turbina a saját fotódon</b><span class="ac-btns"><button class="btn" type="button" id="mCam" hidden aria-label="Kamera váltása">Kamera</button><button class="btn" type="button" id="mHelp" hidden>Útmutató</button><button class="btn" type="button" id="montClose">Bezárás</button></span></div>
   <div class="mont-stage" id="montStage"><video id="arVideo" playsinline muted autoplay hidden></video><canvas id="montCv" role="img" aria-label="A kép a turbinával"></canvas><div class="mont-hint" id="montHint" aria-live="polite"></div>
     <div class="ar-coach" id="arCoach" hidden role="status" aria-live="polite"><div class="ac-head"><b id="acN"></b><strong id="acH"></strong><button type="button" id="acVid">Videó</button><button type="button" id="acX" aria-label="Az útmutató elrejtése">✕</button></div><p id="acT"></p><div class="ac-prog" id="acP" hidden><i></i></div><div class="ac-btns" id="acB"></div></div></div>
   <div class="mont-ctl">
@@ -5256,15 +5257,16 @@ const MONT = { mode: null, img: null, bg: null, hd0: 0, hd: 0, pt: 0, rl: 0, fov
 const MONT_SUN = { t: null };   // a fotó készítésének ideje (EXIF), a Nap-jelhez
 const AR = { stream: null, watch: null, f: null, u: null, raw: null, rawT: 0, rate: 0, rel: false, abs: false, ios: false, yaw: null, yC: 0, yS: 0, yN: 0, sd: null,
   lock: false, frozen: null, hdOff: 0, ptOff: 0, acc: null, gps: null, lastFix: null, fov: 66, fovManual: false, ptManual: false, hzT: 0, hzMsg: '' };
-try { AR.fov = +localStorage.getItem('arFov') || 66; AR.fovAuto = localStorage.getItem('arFovAuto') === '1'; AR.fovCal = localStorage.getItem('arFovCal') === '1'; AR.bias = JSON.parse(localStorage.getItem('arBias') || 'null'); } catch (e) {}
+AR.cams = []; AR.cam = 0; AR.run = 0;
+try { AR.fov = 66; AR.bias = JSON.parse(localStorage.getItem('arBias') || 'null'); } catch (e) {}
 const inRegion = (la, lo) => !REGION || Math.hypot((la - REGION.lat) * 111.2, (lo - REGION.lon) * 111.32 * Math.cos(REGION.lat * RAD)) <= REGION.km + 3;
 function montStatus(html) { $('montSt').innerHTML = html; }
 function openMont(mode) {
-  MONT.mode = mode; $('mont').hidden = false; document.body.style.overflow = 'hidden';
+  MONT.mode = mode; $('mont').hidden = false; $('mont').classList.toggle('is-ar', mode === 'ar'); document.body.style.overflow = 'hidden';
   $('montTitle').textContent = mode === 'ar' ? 'Élő kamera: a turbina a helyén' : 'A turbina a saját fotódon';
   $('arVideo').hidden = mode !== 'ar';
   for (const id of ['mRlW', 'mSave']) $(id).hidden = mode === 'ar';
-  $('mHelp').hidden = mode !== 'ar'; $('arCoach').hidden = true;
+  $('mHelp').hidden = mode !== 'ar'; $('arCoach').hidden = true; camButton();
   $('mShot').hidden = mode !== 'ar'; $('mFreeze').hidden = mode !== 'ar'; $('mHzW').hidden = $('mCalRow').hidden = mode !== 'ar'; syncAR(); calStatus();
   $('mHdL').textContent = mode === 'ar' ? 'Iránytű-javítás' : 'Irány'; $('mSkyL').textContent = mode === 'ar' ? 'Falunevek, templom, fokbeosztás és Nap' : 'Modell-horizont, falunevek és templom'; $('mFovL').textContent = mode === 'ar' ? 'A kamera látószöge' : 'Látószög';
   $('mGhost').checked = false;   // alapból csak az látszik, ami a valóságban is látszani fog
@@ -5341,7 +5343,7 @@ function montDrag(e) {
   else { MONT.hd -= dx; MONT.pt = Math.max(-25, Math.min(25, MONT.pt + dy)); if (Math.abs(MONT.hd - MONT.hd0) > 40) MONT.hd0 = MONT.hd; }
   if (P1.length >= 2 && d0 > 30 && d1 > 0) {
     const f0 = ar ? AR.fov : MONT.fov, f1 = Math.max(15, Math.min(110, 2 * Math.atan(Math.tan(f0 * RAD / 2) * d0 / d1) / RAD));
-    if (ar) { AR.fov = f1; AR.fovManual = true; try { localStorage.setItem('arFov', f1.toFixed(1)); } catch (e) {} } else MONT.fov = f1;
+    if (ar) { AR.fov = f1; AR.fovManual = true; camSave(); } else MONT.fov = f1;
   }
   syncMontCtl();
 }
@@ -5573,7 +5575,7 @@ function scalTap() {
   SCAL.step = 0;
   if (!(ax > 3 * RAD) || !(fov > 20 && fov < 120)) { CAL.msg = 'Ez nem sikerült (túl kicsi vagy furcsa fordulás). Próbáld újra.'; calStatus(); return; }
   AR.fov = fov; AR.fovCal = true; AR.fovAuto = true;
-  try { localStorage.setItem('arFov', fov.toFixed(2)); localStorage.setItem('arFovCal', '1'); localStorage.setItem('arFovAuto', '1'); } catch (e) {}
+  camSave();
   CAL.msg = `Lépték kalibrálva: a kamera látószöge ${fov.toFixed(1)}° (a hosszabb oldalon).` + (fov > 95 ? ' Ez nagylátószögű kamerának tűnik: ha lehet, a fő (1×) kamerával használd.' : '') + (AR.rel ? '' : ' (Giroszkóp nélkül pontatlanabb.)');
   syncMontCtl(); calStatus();
 }
@@ -5643,7 +5645,7 @@ function flowPush(src, t, o) {
     FLOW.est.push(fov); if (FLOW.est.length > 40) FLOW.est.shift();
     if (FLOW.est.length >= 8) {
       const md = median(FLOW.est), mad = median(FLOW.est.map(v => Math.abs(v - md)));
-      if (mad < md * 0.04 && !AR.fovManual && !AR.fovCal) { AR.fov = md; AR.fovAuto = true; try { localStorage.setItem('arFov', md.toFixed(1)); localStorage.setItem('arFovAuto', '1'); } catch (e) {} syncMontCtl(); }
+      if (mad < md * 0.04 && !AR.fovManual && !AR.fovCal) { AR.fov = md; AR.fovAuto = true; camSave(); syncMontCtl(); }
     }
     break;
   }
@@ -5788,6 +5790,59 @@ function arElsewhere() {   // beépített vagy támogatás nélküli böngésző
     $('arCopy').textContent = ok ? 'Link kimásolva – illeszd be a böngészőbe' : url; };
   return false;
 }
+/* ---------- Kamera választása ----------
+   A böngésző a „hátsó kamera” kérésre telefononként mást ad (Samsungon gyakran a 0,6×-os nagylátószögűt, amin minden
+   apró). A fő kamerával indulunk; ha több hátsó kamera van, a fejléc gombja vált köztük. A látószög kameránként más,
+   ezért kameránként tároljuk (mozgásból mérve, kalibrálva vagy kézzel állítva). */
+const CAM_ORDER = l => /camera2 (\d+)/.test(l) ? +RegExp.$1 : /^back camera$|^hátsó kamera$/i.test(l) ? 0 : /dual|triple|kettős|hármas/i.test(l) ? 5 : /ultra|ultraszéles/i.test(l) ? 6 : /tele/i.test(l) ? 7 : 3;
+function camName(c, i) {   // iPhone-on a név elárulja a kamerát; Androidon a már megmért látószögből derül ki
+  if (/ultra|ultraszéles/i.test(c.label)) return 'Nagylátószögű';
+  if (/tele/i.test(c.label)) return 'Tele';
+  if (/dual|triple|kettős|hármas/i.test(c.label)) return 'Automatikus';
+  if (i === 0) return 'Fő (1×)';
+  let d = null; try { d = JSON.parse(localStorage.getItem('arCam:' + (c.label || c.id)) || 'null'); } catch (e) {}
+  return d && (d.auto || d.cal || d.man) && d.fov > 85 ? 'Nagylátószögű' : d && (d.auto || d.cal || d.man) && d.fov < 42 ? 'Tele' : `${i + 1}. kamera`;
+}
+async function camList() {
+  AR.cams = []; AR.cam = 0;
+  try {
+    const devs = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput' && !/front|előlap|elülső|user|facing front/i.test(d.label));
+    AR.cams = devs.map(d => ({ id: d.deviceId, label: d.label || '' })).sort((a, b) => CAM_ORDER(a.label) - CAM_ORDER(b.label));
+    const cur = AR.stream && AR.stream.getVideoTracks()[0], id = cur && cur.getSettings ? cur.getSettings().deviceId : '';
+    const k = AR.cams.findIndex(c => c.id === id); AR.cam = k < 0 ? 0 : k;
+    if (k < 0 && AR.cams.length) AR.cams.unshift({ id, label: cur ? cur.label : '' });   // ismeretlen azonosítójú kamera: maradjon az első
+  } catch (e) {}
+  camButton();
+}
+function camKey() { const c = AR.cams[AR.cam]; return 'arCam:' + (c ? c.label || c.id : 'alap'); }
+function camLoad() {   // a kiválasztott kamera megjegyzett látószöge; új kameránál a mozgásból méri
+  let d = null; try { d = JSON.parse(localStorage.getItem(camKey()) || 'null'); } catch (e) {}
+  const c = AR.cams[AR.cam] || { label: '' }, guess = /ultra|ultraszéles/i.test(c.label) ? 100 : /tele/i.test(c.label) ? 30 : 66;
+  Object.assign(AR, { fov: d ? d.fov : guess, fovAuto: !!(d && d.auto), fovCal: !!(d && d.cal), fovManual: !!(d && d.man) });
+  FLOW.buf.length = 0; FLOW.est.length = 0; syncMontCtl(); calStatus();
+}
+function camSave() { try { localStorage.setItem(camKey(), JSON.stringify({ fov: +AR.fov.toFixed(2), auto: AR.fovAuto, cal: AR.fovCal, man: AR.fovManual })); } catch (e) {} camButton(); }
+function camButton() { const b = $('mCam'); if (!b) return; b.hidden = MONT.mode !== 'ar' || AR.cams.length < 2; if (!b.hidden) b.textContent = 'Kamera: ' + camName(AR.cams[AR.cam], AR.cam); }
+async function camOpen(i) {
+  const c = AR.cams[i]; if (!c || AR.camBusy) return;
+  AR.camBusy = true; $('mCam').disabled = true;
+  try {
+    let st;
+    try { st = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: c.id }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false }); }
+    catch (e) { MONT.msg = ' Ezt a kamerát nem sikerült elindítani.'; return; }
+    if (AR.stream) AR.stream.getTracks().forEach(tr => tr.stop());
+    AR.stream = st; AR.cam = i; camLoad(); camButton();   // a kamera, a látószöge és a felirat egyszerre vált
+    const vd = $('arVideo'); vd.srcObject = st; try { await vd.play(); } catch (e) {}
+  } finally { AR.camBusy = false; $('mCam').disabled = false; }
+  if (AR.frozen) freezeAR();   // megállított képnél vissza az élő képre
+  const m = ` Kamera: ${camName(c, i)}${AR.fovAuto || AR.fovCal || AR.fovManual ? '' : ' – a látószöget a mozgásból méri: fordítsd lassan jobbra-balra'}.`; MONT.msg = m;
+  setTimeout(() => { if (MONT.msg === m) MONT.msg = ''; }, 5000);
+  arLoop();
+}
+function arLoop() {   // képkockánként a mozgásból mért látószöghöz; kameraváltáskor újraindul (a régi kör leáll)
+  const run = ++AR.run, vd = $('arVideo'), t = () => { if (!AR.stream || run !== AR.run) return; if (AR.raw) flowPush(vd, performance.now(), AR.raw); if (vd.requestVideoFrameCallback) vd.requestVideoFrameCallback(t); else setTimeout(t, 40); };
+  t();
+}
 async function startAR() {
   const framed = window.top !== window, link = SITE_URL;
   const fail = t => { realMsg(t + (framed || !(LOCAL && LOCAL.web) ? ` Az élő kamera a nyilvános oldalon működik: <a href="${link}" target="_blank" rel="noopener">${link.replace('https://', '')}</a>` : '')); return false; };
@@ -5800,11 +5855,12 @@ async function startAR() {
   try { AR.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false }); }
   catch (e) { return e && e.name === 'NotAllowedError' ? realMsg('A böngésző nem adott hozzáférést a kamerához. ' + UNBLOCK) || false : fail('A kamerát nem sikerült elindítani' + (e && e.name === 'NotReadableError' ? ' (egy másik alkalmazás használja).' : '.')); }
   const vd = $('arVideo'); vd.srcObject = AR.stream; try { await vd.play(); } catch (e) {}
+  await camList();   // a hátsó kamerák; ha a böngésző nem a fő kamerát adta (pl. Samsungon a 0,6×-ost), átváltunk rá
   let pt0 = 0; try { pt0 = +localStorage.getItem('arPt') || 0; } catch (e) {}
   Object.assign(AR, { f: null, u: null, raw: null, rate: 0, rel: false, abs: false, ios: false, yaw: null, yC: 0, yS: 0, yN: 0, sd: null, lock: false, frozen: null, hdOff: 0, ptOff: pt0, gps: null, fovManual: false, ptManual: false, hzT: 0, hzMsg: '' });
   FLOW.buf.length = 0; FLOW.est.length = 0;
-  const tick = () => { if (!AR.stream) return; if (AR.raw) flowPush(vd, performance.now(), AR.raw); if (vd.requestVideoFrameCallback) vd.requestVideoFrameCallback(tick); else setTimeout(tick, 40); };
-  tick();
+  arLoop();
+  if (AR.cams.length > 1 && AR.cam !== 0) await camOpen(0); else camLoad();
   window.addEventListener('deviceorientationabsolute', onOri); window.addEventListener('deviceorientation', onOri);
   MONT.msg = '';
   montStatus('<b>Járművezetés vagy közlekedés közben ne használd.</b><details><summary>Részletes leírás</summary><b>Pontosabb képhez</b> kalibrálhatod a telefont (lent; nem kötelező, elég egyszer, a böngésző megjegyzi): <b>Vízszint</b>: asztalra téve, majd megfordítva, kb. fél perc; <b>Lépték</b>: a kereszttel egy távoli tárgyra célzol, koppintasz, elfordulsz, amíg a tárgy a szaggatott vonalhoz ér, és koppintasz. Ezek után a fehér szaggatott vonal a valódi vízszintes (szemmagasság), és a turbina méretre és magasságra helyes, bárhol állsz. <b>Iránynál</b> fordulj a turbina felé, nyomd meg az <b>„Igazítás: kép megállítása”</b> gombot, és ha kell, húzd a falunevek vonalát vagy a sárga Nap-jelet a helyére; a „Kész” után rögzül. Tipp: a turbinát tartsd a kép közepén, ott a legpontosabb.</details>');
@@ -5866,6 +5922,7 @@ $('arIntroGo').onclick = () => { const m = INTRO.mode; if (m === 'start') { try 
 $('arIntroNo').onclick = closeIntro;
 $('arIntro').onclick = e => { if (e.target === $('arIntro')) closeIntro(); };
 $('mHelp').onclick = () => { coachStart(); };
+$('mCam').onclick = () => { if (AR.cams.length > 1) camOpen((AR.cam + 1) % AR.cams.length); };
 $('acX').onclick = () => { COACH.on = false; $('arCoach').hidden = true; };
 $('acVid').onclick = () => openIntro('help');
 for (const ev of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']) $('arCoach').addEventListener(ev, e => e.stopPropagation());
@@ -5875,7 +5932,7 @@ for (const ev of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']) $
 $('mHd').oninput = () => { const v = +$('mHd').value; if (MONT.mode === 'ar') { AR.hdOff = v; AR.lock = true; syncAR(); } else MONT.hd = MONT.hd0 + v; syncMontCtl(); };
 $('mPt').oninput = () => { const v = +$('mPt').value; if (MONT.mode === 'ar') { AR.ptOff = v; AR.ptManual = true; savePt(); } else MONT.pt = v; syncMontCtl(); };
 $('mRl').oninput = () => { MONT.rl = +$('mRl').value; syncMontCtl(); };
-$('mFov').oninput = () => { const v = +$('mFov').value; if (MONT.mode === 'ar') { AR.fov = v; AR.fovManual = true; try { localStorage.setItem('arFov', v); } catch (e) {} } else MONT.fov = v; syncMontCtl(); };
+$('mFov').oninput = () => { const v = +$('mFov').value; if (MONT.mode === 'ar') { AR.fov = v; AR.fovManual = true; camSave(); } else MONT.fov = v; syncMontCtl(); };
 $('mSave').onclick = () => saveMontage(false);
 $('mShot').onclick = () => saveMontage(true);
 $('mFreeze').onclick = freezeAR;
