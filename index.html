@@ -5212,7 +5212,7 @@ function drawLandmarks(g, proj, fr, ei, sc, half, dAz) {
     g.drawImage(LM_CV, 0, 0);
     if (top) { g.save(); g.font = `700 ${Math.round(11 * sc + 7)}px system-ui, sans-serif`; g.textAlign = 'center';
       const txt = `${L.lm.name.replace(/^a /, '')} · ${km(D)}`, y = top[1] - 34 * sc - 14;
-      g.fillStyle = 'rgba(255,255,255,.8)'; g.fillRect(top[0] - 0.75, y + 4, 1.5, Math.max(0, top[1] - y - 8 - 2 * sc));
+      g.fillStyle = 'rgba(255,255,255,.8)'; g.fillRect(top[0] - 0.75, y + 4, 1.5, Math.max(0, top[1] - y - 4 - (14 * sc + 10)));   // a vezetővonal jóval a csúcs fölött ér véget: a torony hegye az igazításhoz szabadon marad
       g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.6)'; g.strokeText(txt, top[0], y); g.fillStyle = '#fff'; g.fillText(txt, top[0], y); g.restore(); }
   }
 }
