@@ -3553,7 +3553,7 @@ function updateFovNote(cssW) {
 // a kép oldalaránya: úszó ablakban 16:9, nagyítva a térkép helyének aránya, egyébként keskenyen négyzet, szélesen 16:9
 const panoAspect = cssW => PIP.on && PIP.big ? clamp(($('mapStage').clientHeight - $('pipBar').offsetHeight) / Math.max(1, cssW), 0.3, 1.5) : PIP.on ? 0.5625 : cssW < 560 ? 1 : 0.5625;
 function renderPano(q = 1) {
-  { const cw = $('pano').clientWidth || $('pano').parentElement.clientWidth || 640; state.fov = FOV_MODE === 'life' ? lifeFov(cw) : CAM_FOV; updateFovNote(cw); }
+  { const cw = $('pano').clientWidth || $('pano').parentElement.clientWidth || 640; state.fov = window.FOV_OVERRIDE || (FOV_MODE === 'life' ? lifeFov(cw) : CAM_FOV); updateFovNote(cw); }
   if (RV === undefined) { try { RV = window.RealView ? window.RealView.create($('pano').parentElement, { assets: 'assets/' }) : null; if (RV) RV.onReady = () => renderPano(1); } catch (e) { RV = null; } }
   if (RV) { renderPano.lastEye = eyeInfo().eyeZ; renderReal(); return; }
   const cv = $('pano'), cssW = cv.clientWidth || cv.parentElement.clientWidth || 640;
@@ -5350,7 +5350,6 @@ try { AR.fov = 66; AR.bias = JSON.parse(localStorage.getItem('arBias') || 'null'
 const inRegion = (la, lo) => !REGION || Math.hypot((la - REGION.lat) * 111.2, (lo - REGION.lon) * 111.32 * Math.cos(REGION.lat * RAD)) <= REGION.km + 3;
 function montStatus(html) { $('montSt').innerHTML = html; }
 function openMont(mode) {
-  boot();   // a fotós és az élő kamerás nézet az eszköz adataiból dolgozik
   MONT.mode = mode; $('mont').hidden = false; $('mont').classList.toggle('is-ar', mode === 'ar'); document.body.style.overflow = 'hidden';
   $('montTitle').textContent = mode === 'ar' ? 'Élő kamera: a turbina a helyén' : 'A turbina a saját fotódon';
   $('arVideo').hidden = mode !== 'ar';
@@ -5933,6 +5932,7 @@ function arLoop() {   // képkockánként a mozgásból mért látószöghöz; k
   t();
 }
 async function startAR() {
+  boot();   // görgetés nélkül is: előbb az eszköz, hogy utána a GPS-nézőpontot ne írja felül
   const framed = window.top !== window, link = SITE_URL;
   const fail = t => { realMsg(t + (framed || !(LOCAL && LOCAL.web) ? ` Az élő kamera a nyilvános oldalon működik: <a href="${link}" target="_blank" rel="noopener">${link.replace('https://', '')}</a>` : '')); return false; };
   if (!(LOCAL && LOCAL.web)) return fail('Ebben a beágyazott nézetben a böngésző nem engedi a kamerát és az iránytűt.');
@@ -6002,7 +6002,7 @@ async function shareLink(msg) {
 $('copyLink').onclick = () => shareLink($('copyMsg'));
 $('shareBtn').onclick = () => shareLink($('shareMsg'));
 $('photoBtn').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('photoIn').click(); } };
-$('photoIn').onchange = () => { const f = $('photoIn').files[0]; $('photoIn').value = ''; if (f) { realMsg('A fotó betöltése…', false); openPhoto(f); } };
+$('photoIn').onchange = () => { const f = $('photoIn').files[0]; $('photoIn').value = ''; if (f) { boot(); realMsg('A fotó betöltése…', false); openPhoto(f); } };
 if (TOUCH) $('arBtn').hidden = false;   // telefonon mindig látszik; ha a böngésző nem tudja, a gomb elmondja, mit kell tenni
 else $('realNote').textContent += ' Telefonon élő kamerás nézet is van.';
 $('arBtn').onclick = () => { let seen = false; try { seen = localStorage.getItem('arIntro') === '1'; } catch (e) {} if (seen) startAR(); else openIntro('start'); };
@@ -6081,7 +6081,7 @@ function boot() {
   update();
 }
 window.hlBoot = boot;
-{ const el = document.querySelector('main.cols') || $('map');   // az eszközblokk (térkép…kamera-gombok) 400 px-re a képernyőtől: asztalon kb. az első görgetésre, telefonon a nyitókép után indul; horgonylinkkel lejjebb ugorva is
+{ const el = $('map');   // a térkép 400 px-re a képernyőtől: asztalon kb. az első görgetésre, telefonon a nyitókép után indul (a kamera- és fotógomb maga is elindítja)
   if (/^#eyJ/.test(location.hash) || !el || !window.IntersectionObserver) boot();
   else { const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); boot(); } }, { rootMargin: '400px 0px' }); io.observe(el); } }
 </script>
