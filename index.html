@@ -1147,6 +1147,8 @@ footer a{color:var(--accent)}
 .hx-badge{justify-self:start;display:inline-flex;align-items:center;gap:10px;padding:7px 14px 7px 8px;border-radius:999px;font-size:13px;color:#c0c1c8}
 .hx-badge i{font-style:normal;font-weight:600;color:#fff;background:#ec651d;border-radius:999px;padding:3px 10px}
 .hx-badge .eyebrow{font:inherit;letter-spacing:0;text-transform:none;color:inherit}
+.hx-reg{color:#ff8a45;font-weight:600;text-decoration:none;padding-left:10px;border-left:1px solid rgba(255,255,255,.18)}
+.hx-reg:hover,.hx-reg:focus-visible{text-decoration:underline}
 .hx-hero h1{margin:0;font:640 clamp(42px,5.4vw,80px)/.98 var(--display);letter-spacing:-.045em;color:#f5f5f7;text-wrap:balance}
 .hx-hero h1 em{font-style:normal;color:#ec651d}
 .hx-lede{margin:0;font-size:clamp(17px,1.5vw,20px);line-height:1.55;color:#c0c1c8;max-width:52ch}
@@ -1329,7 +1331,7 @@ details.more>p{margin:8px 0 0}
   <div class="hx-in hx-copywrap"><div class="hx-stage">
     <div class="hx-main">
       <div class="hx-stack">
-        <span class="hx-badge hx-glass hx-hl"><i>HorizonLens</i><span class="eyebrow">Ják és 30 km-es környéke</span></span>
+        <span class="hx-badge hx-glass hx-hl"><i>HorizonLens</i><span class="eyebrow">Ják és 30 km-es környéke</span><a class="hx-reg" id="regionLink" hidden></a></span>
       </div>
       <div class="hx-stack">
         <div class="hx-copy hx-hl">
@@ -1370,6 +1372,10 @@ document.addEventListener('DOMContentLoaded', function () {
 (function () {
   document.addEventListener('DOMContentLoaded', () => {   // a beépített adat a lap végén töltődik be
     const L = window.LOCAL_DATA; if (L && L.home && L.home.name !== 'Ják') document.querySelectorAll('[data-jak]').forEach(e => e.hidden = true);
+    // területváltó (csak a webes kiadásban, ahol a régiók egymás mellett vannak: Ják a gyökérben, a többi almappában)
+    const REGIONS = [['Ják', ''], ['Győrújbarát', 'gyorujbarat/']], here = L && L.home ? L.home.name : 'Ják', rl = document.getElementById('regionLink');
+    const cur = REGIONS.find(r => r[0] === here), other = REGIONS.filter(r => r[0] !== here);
+    if (rl && L && L.web && cur && other.length) { const root = cur[1] ? '../' : ''; rl.href = root + other[0][1]; rl.textContent = other[0][0] + ' környéke →'; rl.hidden = false; }
   });
   /* nyitókép: 34 s-os film Ják környékének valós adataiból; a rétegek sorban épülnek fel (domborzat, épületek, fák, szélerőművek), majd a
      nagytotálból a főtéri nézőpontra ereszkedik, onnan a turbinákra néz, és a középső turbina felé repül. A turbina-feliratok és az „itt állsz”
