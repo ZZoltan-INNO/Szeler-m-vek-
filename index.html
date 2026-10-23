@@ -5350,6 +5350,7 @@ try { AR.fov = 66; AR.bias = JSON.parse(localStorage.getItem('arBias') || 'null'
 const inRegion = (la, lo) => !REGION || Math.hypot((la - REGION.lat) * 111.2, (lo - REGION.lon) * 111.32 * Math.cos(REGION.lat * RAD)) <= REGION.km + 3;
 function montStatus(html) { $('montSt').innerHTML = html; }
 function openMont(mode) {
+  boot();   // a fotós és az élő kamerás nézet az eszköz adataiból dolgozik
   MONT.mode = mode; $('mont').hidden = false; $('mont').classList.toggle('is-ar', mode === 'ar'); document.body.style.overflow = 'hidden';
   $('montTitle').textContent = mode === 'ar' ? 'Élő kamera: a turbina a helyén' : 'A turbina a saját fotódon';
   $('arVideo').hidden = mode !== 'ar';
@@ -6080,7 +6081,7 @@ function boot() {
   update();
 }
 window.hlBoot = boot;
-{ const el = $('map');   // a térkép 400 px-re a képernyőtől: asztalon kb. az első görgetésre, telefonon a nyitókép után indul
+{ const el = document.querySelector('main.cols') || $('map');   // az eszközblokk (térkép…kamera-gombok) 400 px-re a képernyőtől: asztalon kb. az első görgetésre, telefonon a nyitókép után indul; horgonylinkkel lejjebb ugorva is
   if (/^#eyJ/.test(location.hash) || !el || !window.IntersectionObserver) boot();
   else { const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); boot(); } }, { rootMargin: '400px 0px' }); io.observe(el); } }
 </script>
