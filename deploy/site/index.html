@@ -1213,6 +1213,8 @@ input,select,textarea{background:var(--soft);color:var(--ink);border-color:rgba(
 #pano{border-radius:12px}
 .empty-cta{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(440px,calc(100% - 32px));display:grid;gap:8px;justify-items:start;padding:18px 20px;border-radius:16px;background:rgba(36,37,42,.86);border:1px solid rgba(255,255,255,.12);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 20px 50px -20px rgba(0,0,0,.7);z-index:4}
 .empty-cta[hidden]{display:none}
+.empty-cta{grid-template-columns:minmax(0,1fr)}
+.empty-cta .btn{white-space:normal;text-align:left;max-width:100%}   /* telefonon a hosszú gombfelirat tördelődjön, ne feszítse ki a kártyát */
 .empty-cta b{font:700 1.05rem/1.25 var(--display);color:var(--ink)}
 .empty-cta span{font-size:.9rem;color:var(--muted);line-height:1.5}
 .empty-cta.small-cta{padding:14px 16px}
@@ -5354,6 +5356,10 @@ async function saveMontage(fromVideo) {
    azt simítja (a régi módon). Hozzáadva: a mágneses elhajlás és a kézi javítás. Hely: GPS.
    A kamera látószöge készülékenként más: csúszkával vagy két ujjal állítható, a böngésző megjegyzi. */
 const AR_OK = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) && typeof DeviceOrientationEvent !== 'undefined';
+// alkalmazásba épített böngészők (Facebook, Messenger, Instagram, TikTok, Snapchat, Line, Android WebView): a kamerát és az iránytűt
+// jellemzően kérdés nélkül tiltják, ezért itt el se indítjuk, hanem elmondjuk, hogyan nyitható meg a telefon saját böngészőjében
+const UA = navigator.userAgent, IN_APP = /FBAN|FBAV|FB_IAB|FBIOS|Instagram|Messenger|musical_ly|TikTok|Snapchat|Line\/|; wv\)/.test(UA);
+const IOS = /iPhone|iPad|iPod/.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1), TOUCH = matchMedia('(pointer: coarse)').matches;
 function oriMatrix(a, b, gm) {
   const cA = Math.cos(a * RAD), sA = Math.sin(a * RAD), cB = Math.cos(b * RAD), sB = Math.sin(b * RAD), cG = Math.cos(gm * RAD), sG = Math.sin(gm * RAD);
   // a készülék tengelyei (x jobbra, y a kijelző teteje felé, z a kijelzőből kifelé) a Föld rendszerében (kelet, észak, fel)
@@ -5688,15 +5694,39 @@ function coachTick() {
     if (st === 'done') add('Rendben', () => { COACH.on = false; $('arCoach').hidden = true; });
   }
 }
+const UNBLOCK = IOS
+  ? 'Engedélyezd így: a címsor bal oldalán az „aA” (vagy a lap ikon) → Webhely-beállítások → Kamera és Hely: Engedélyezés; utána töltsd újra az oldalt. (Beállítások → Safari → Kamera is lehet „Tiltás”-on.)'
+  : 'Engedélyezd így: a címsor bal oldalán a lakat vagy a beállítás ikon → Engedélyek → Kamera és Hely: Engedélyezés; utána töltsd újra az oldalt.';
+async function permDenied() {   // korábban letiltott engedély: a böngésző már nem kérdez, csak csendben elutasít
+  if (!navigator.permissions || !navigator.permissions.query) return false;
+  const off = [];
+  for (const [n, t] of [['camera', 'kamera'], ['geolocation', 'helymeghatározás']]) { try { if ((await navigator.permissions.query({ name: n })).state === 'denied') off.push(t); } catch (e) {} }
+  if (!off.length) return false;
+  realMsg(`Ezen az oldalon korábban le lett tiltva: ${off.join(' és ')}, ezért a böngésző már nem kérdez rá. ` + UNBLOCK); return true;
+}
+function arElsewhere() {   // beépített vagy támogatás nélküli böngésző: megnyitás a telefon saját böngészőjében
+  const url = location.href, android = /Android/.test(UA), app = /Instagram/.test(UA) ? 'Az Instagram' : /Messenger/.test(UA) ? 'A Messenger' : /FBAN|FBAV|FB_IAB|FBIOS/.test(UA) ? 'A Facebook' : /TikTok|musical_ly/.test(UA) ? 'A TikTok' : IN_APP ? 'Ez az alkalmazás' : '';
+  const how = IOS ? 'Koppints a jobb alsó vagy jobb felső sarokban a … (vagy az iránytű) ikonra, és válaszd a „Megnyitás Safariban” lehetőséget.'
+    : 'Koppints a jobb felső sarokban a ⋮ ikonra, és válaszd a „Megnyitás böngészőben” vagy a „Megnyitás Chrome-ban” lehetőséget.';
+  const chrome = android ? `<a class="btn primary" href="intent://${location.host}${location.pathname}${location.search}#Intent;scheme=https;package=com.android.chrome;end">Megnyitás Chrome-ban</a>` : '';
+  realMsg(`${app ? app + ' beépített böngészője' : 'Ez a böngésző'} nem engedi a kamerát és az iránytűt, ezért az élő kamera itt nem indul el. ${app ? how : 'Nyisd meg az oldalt Chrome-ban (Android) vagy Safariban (iPhone).'}`
+    + `<span class="real-row">${chrome}<button class="btn" type="button" id="arCopy">Link másolása</button></span>`);
+  $('arCopy').onclick = async () => { let ok = false; try { await navigator.clipboard.writeText(url); ok = true; } catch (e) {}
+    if (!ok) { const t = document.createElement('textarea'); t.value = url; document.body.appendChild(t); t.select(); try { ok = document.execCommand('copy'); } catch (e) {} t.remove(); }
+    $('arCopy').textContent = ok ? 'Link kimásolva – illeszd be a böngészőbe' : url; };
+  return false;
+}
 async function startAR() {
   const framed = window.top !== window, link = SITE_URL;
   const fail = t => { realMsg(t + (framed || !(LOCAL && LOCAL.web) ? ` Az élő kamera a nyilvános oldalon működik: <a href="${link}" target="_blank" rel="noopener">${link.replace('https://', '')}</a>` : '')); return false; };
   if (!(LOCAL && LOCAL.web)) return fail('Ebben a beágyazott nézetben a böngésző nem engedi a kamerát és az iránytűt.');
+  if (IN_APP || !AR_OK) return arElsewhere();
   realMsg('Engedélyezd a kamerát, a helymeghatározást és a mozgásérzékelőt…', false);
-  try { if (DeviceOrientationEvent.requestPermission && await DeviceOrientationEvent.requestPermission() !== 'granted') return fail('Az iránytű és a dőlésérzékelő használatát nem engedélyezted, enélkül nem tudom, merre nézel.'); }
+  try { if (DeviceOrientationEvent.requestPermission && await DeviceOrientationEvent.requestPermission() !== 'granted') return realMsg('Az iránytű és a dőlésérzékelő („Mozgás és tájolás”) nincs engedélyezve, enélkül nem tudom, merre nézel. ' + (IOS ? 'iPhone-on a Safari ezt csak egyszer kérdezi meg: zárd be ezt a lapot, nyisd meg újra az oldalt, és az Élő kamera gombnál válaszd az Engedélyezést.' : UNBLOCK)) || false; }
   catch (e) { return fail('Az iránytűt ez az oldal nem érheti el.'); }
+  if (await permDenied()) return false;   // az iránytű-engedély után (iPhone-on azt közvetlenül a koppintásra kell kérni)
   try { AR.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false }); }
-  catch (e) { return fail(e && e.name === 'NotAllowedError' ? 'A kamera használatát nem engedélyezted (vagy itt a böngésző nem engedi).' : 'A kamerát nem sikerült elindítani.'); }
+  catch (e) { return e && e.name === 'NotAllowedError' ? realMsg('A böngésző nem adott hozzáférést a kamerához. ' + UNBLOCK) || false : fail('A kamerát nem sikerült elindítani' + (e && e.name === 'NotReadableError' ? ' (egy másik alkalmazás használja).' : '.')); }
   const vd = $('arVideo'); vd.srcObject = AR.stream; try { await vd.play(); } catch (e) {}
   let pt0 = 0; try { pt0 = +localStorage.getItem('arPt') || 0; } catch (e) {}
   Object.assign(AR, { f: null, u: null, raw: null, rate: 0, rel: false, abs: false, ios: false, yaw: null, yC: 0, yS: 0, yN: 0, sd: null, lock: false, frozen: null, hdOff: 0, ptOff: pt0, gps: null, fovManual: false, ptManual: false, hzT: 0, hzMsg: '' });
@@ -5756,10 +5786,10 @@ $('copyLink').onclick = () => shareLink($('copyMsg'));
 $('shareBtn').onclick = () => shareLink($('shareMsg'));
 $('photoBtn').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('photoIn').click(); } };
 $('photoIn').onchange = () => { const f = $('photoIn').files[0]; $('photoIn').value = ''; if (f) { realMsg('A fotó betöltése…', false); openPhoto(f); } };
-if (AR_OK && matchMedia('(pointer: coarse)').matches) $('arBtn').hidden = false;
+if (TOUCH) $('arBtn').hidden = false;   // telefonon mindig látszik; ha a böngésző nem tudja, a gomb elmondja, mit kell tenni
 else $('realNote').textContent += ' Telefonon élő kamerás nézet is van.';
 $('arBtn').onclick = () => { let seen = false; try { seen = localStorage.getItem('arIntro') === '1'; } catch (e) {} if (seen) startAR(); else openIntro('start'); };
-$('arHow').onclick = () => openIntro(AR_OK && matchMedia('(pointer: coarse)').matches ? 'start' : 'info');
+$('arHow').onclick = () => openIntro(TOUCH ? 'start' : 'info');
 $('arIntroGo').onclick = () => { const m = INTRO.mode; if (m === 'start') { try { if ($('arIntroSkip').checked) localStorage.setItem('arIntro', '1'); } catch (e) {} } closeIntro(); if (m === 'start') startAR(); };
 $('arIntroNo').onclick = closeIntro;
 $('arIntro').onclick = e => { if (e.target === $('arIntro')) closeIntro(); };
