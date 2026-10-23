@@ -1845,7 +1845,7 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
       <button class="btn" type="button" id="mShot" hidden>Pillanatkép mentése</button>
     </div>
     <div class="mont-row" id="mCalRow" hidden>
-      <b class="small">Telefon-kalibráció (egyszer kell, a böngésző megjegyzi):</b>
+      <b class="small">Telefon-kalibráció (nem kötelező, pontosabb képhez; elég egyszer, a böngésző megjegyzi):</b>
       <button class="btn" type="button" id="mCalLevel">Vízszint (asztalon)</button>
       <button class="btn" type="button" id="mCalScale">Lépték (távoli tárgyra célozva)</button>
       <span class="small" id="mCalSt"></span>
@@ -1860,11 +1860,11 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
       <h2 id="arIntroT">Így látod a turbinát a saját szemeddel</h2>
       <ol class="arint-steps">
         <li><b>Indítás:</b> engedélyezd a kamerát, a helymeghatározást és a mozgásérzékelőt.</li>
-        <li><b>Vízszint</b> (csak az első alkalommal): a telefon az asztalon kijelzővel felfelé, a sípszó után átfordítva kijelzővel lefelé.</li>
-        <li><b>Látószög:</b> tartsd magad elé a telefont, és fordítsd lassan jobbra-balra, majd fel-le.</li>
-        <li><b>Irány:</b> fordulj a turbina felé, állítsd meg a képet, és húzd a falunevek vonalát a valódi dombvonalra.</li>
+        <li><b>Irány:</b> tartsd magad elé a telefont, és fordulj a turbina felé. A látószöget a telefon a mozgásból magától méri.</li>
+        <li><b>Igazítás</b> (ha kell): állítsd meg a képet, és húzd a falunevek vonalát a valódi dombvonalra.</li>
+        <li><b>Pontosabb kép</b> (nem kötelező): az élő kép alatt a Vízszint és a Lépték kalibráció; elég egyszer, a böngésző megjegyzi.</li>
       </ol>
-      <p class="small" id="arIntroNote">A képen végig egy kártya mondja, mi a következő lépés. Járművezetés vagy közlekedés közben ne használd.</p>
+      <p class="small" id="arIntroNote">A kamerakép tiszta marad; ha elakadsz, az élő képen az Útmutató gomb lépésről lépésre végigvezet. Járművezetés vagy közlekedés közben ne használd.</p>
       <label class="check" id="arIntroSkipW"><input type="checkbox" id="arIntroSkip"> Legközelebb ne mutasd, egyből induljon</label>
       <div class="arint-btns"><button class="btn primary" type="button" id="arIntroGo">Kezdjük</button><button class="btn" type="button" id="arIntroNo">Mégse</button></div>
     </div>
@@ -5248,7 +5248,7 @@ function montFrame() {
   }
   if (MONT.mode === 'ar' && SCAL.step) drawScal(g, W, H);
   const left = skyWork(MONT.mode === 'ar' ? 7 : 12);
-  $('montHint').textContent = (busy || left ? 'A takarás vonalának számítása… ' : '') + arNote() + MONT.msg;
+  $('montHint').textContent = ((busy || left) && MONT.mode !== 'ar' ? 'A takarás vonalának számítása… ' : '') + arNote() + MONT.msg;
   MONT.raf = requestAnimationFrame(montFrame);
 }
 // húzás a képen: a ráfedés az ujjal együtt mozog (irány és dőlés); két ujjal csippentve a látószög (a modell mérete)
@@ -5416,11 +5416,7 @@ function syncAR() {
 function arNote() {
   if (MONT.mode !== 'ar') return '';
   if (SCAL.step || CAL.busy) return CAL.msg + ' ';
-  if (AR.frozen) return (AR.hzMsg ? AR.hzMsg + ' ' : '') + 'Ha kell, húzd a falunevek vonalát (vagy a Nap-jelet) a valódi helyére. ';
-  if (AR.rel && !AR.fovAuto && !AR.fovManual && COACH.step !== 'fov') return `A kamera látószögének mérése: fordítsd lassan jobbra-balra, majd fel-le a telefont (${Math.min(100, Math.round(FLOW.est.length / 8 * 100))}%). `;
-  if (AR.lock) return 'Igazítás rögzítve: az iránytű ingadozása már nem mozdítja el. ';
-  if (AR.rel && AR.sd > 8) return `Az iránytű most bizonytalan (±${AR.sd.toFixed(0)}°): igazíts a kép megállításával. `;
-  return '';
+  return '';   // a kamerakép tiszta: utasítás nincs rajta (az Útmutató gomb és a bemutató videó mondja el)
 }
 /* ---------- Telefon-kalibráció ----------
    Vízszint: a gyorsulásmérő tengelyenkénti eltolódása (bias) álló telefonnál dőlés- és billenéshibát okoz (0,1 m/s² ≈ 0,6°).
@@ -5648,20 +5644,18 @@ function openIntro(mode) {
   $('arIntroGo').hidden = mode === 'info'; $('arIntroGo').textContent = mode === 'help' ? 'Vissza az élő képhez' : 'Kezdjük';
   $('arIntroNo').textContent = mode === 'start' ? 'Mégse' : 'Bezárás'; $('arIntroNo').hidden = mode === 'help';
   $('arIntroSkipW').hidden = mode !== 'start';
-  $('arIntroNote').textContent = mode === 'info' ? `Az élő kamera telefonon működik: nyisd meg ezt az oldalt a telefonod böngészőjében (${SITE_URL.replace('https://', '')}). Járművezetés vagy közlekedés közben ne használd.` : 'A képen végig egy kártya mondja, mi a következő lépés. Járművezetés vagy közlekedés közben ne használd.';
+  $('arIntroNote').textContent = mode === 'info' ? `Az élő kamera telefonon működik: nyisd meg ezt az oldalt a telefonod böngészőjében (${SITE_URL.replace('https://', '')}). Járművezetés vagy közlekedés közben ne használd.` : 'A kamerakép tiszta marad; ha elakadsz, az élő képen az Útmutató gomb lépésről lépésre végigvezet. Járművezetés vagy közlekedés közben ne használd.';
   box.hidden = false; (mode === 'info' ? $('arIntroNo') : $('arIntroGo')).focus();
 }
 function closeIntro() { const v = $('arIntroV'); v.pause(); v.removeAttribute('src'); v.load(); $('arIntro').hidden = true; if (MONT.mode) $('montClose').focus(); else ($('arBtn').hidden ? $('arHow') : $('arBtn')).focus(); }
 const COACH = { on: false, list: [], skip: {}, step: null, key: '', bkey: '', doneT: 0 };
 function coachStart() {
   Object.assign(COACH, { on: true, skip: {}, step: null, key: '', bkey: '', doneT: 0 });
-  COACH.list = [...(AR.bias ? [] : ['level']), ...(AR.fovAuto || AR.fovCal ? [] : ['fov']), 'aim', 'align'];
+  COACH.list = ['aim', 'align'];   // kalibrációt nem kér: a Vízszint és a Lépték a panel gombjaival indítható, a látószöget a mozgásból méri
   $('arCoach').hidden = false; coachTick();
 }
 function coachStep() {
   if (SCAL.step) return 'scale';
-  if (COACH.list.includes('level') && !AR.bias && !COACH.skip.level) return 'level';
-  if (COACH.list.includes('fov') && !(AR.fovAuto || AR.fovCal || AR.fovManual) && !COACH.skip.fov && !(AR.f && !AR.rel)) return 'fov';
   if (AR.frozen) return 'align';
   return AR.lock ? 'done' : 'aim';
 }
@@ -5674,9 +5668,7 @@ function coachTick() {
   COACH.step = st;
   const L = COACH.list, nr = k => `${L.indexOf(k) + 1}/${L.length}`, pr = Math.min(1, FLOW.est.length / 8);
   const C = {
-    level: [nr('level'), 'Vízszint', CAL.busy ? CAL.msg : (CAL.msg && !AR.bias ? CAL.msg + ' ' : '') + 'Csak az első alkalommal kell. Tedd a telefont kijelzővel felfelé egy asztalra, és nyomd meg az Indítás gombot; a sípszó után fordítsd át kijelzővel lefelé.'],
-    fov: [nr('fov'), 'Látószög', 'Tartsd magad elé a telefont, és fordítsd lassan jobbra-balra, majd fel-le, amíg a csík megtelik.'],
-    scale: [L.includes('fov') ? nr('fov') : '+', 'Lépték', CAL.msg],
+    scale: ['+', 'Lépték', CAL.msg],
     aim: [nr('aim'), 'Irány', 'Fordulj a turbina felé, és állítsd meg a képet. A turbina legyen a kép közepén, ott a legpontosabb.'],
     align: [nr('align'), 'Igazítás', 'Húzd a falunevek vonalát (vagy a sárga Nap-jelet) a valódi dombvonalra, majd koppints a Kész gombra.'],
     done: ['✓', 'Kész', 'A turbina a helyén, valós méretben: ami domb, ház vagy fa mögött van, az nem látszik. Lent pillanatképet is menthetsz.']
@@ -5690,8 +5682,6 @@ function coachTick() {
   if (bk !== COACH.bkey) {
     COACH.bkey = bk; const B = $('acB'); B.textContent = '';
     const add = (txt, fn, pri) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (pri ? ' primary' : ''); b.textContent = txt; b.onclick = fn; B.appendChild(b); };
-    if (st === 'level' && !CAL.busy) { add('Indítás', calLevel, true); add('Kihagyom', () => { COACH.skip.level = true; }); }
-    if (st === 'fov') { add('Pontosabb: lépték-kalibráció', () => $('mCalScale').click()); add('Kihagyom', () => { COACH.skip.fov = true; }); }
     if (st === 'scale') add('Mégse', () => { SCAL.step = 0; CAL.msg = ''; calStatus(); });
     if (st === 'aim') add('Kép megállítása', freezeAR, true);
     if (st === 'align') add('Kész', freezeAR, true);
@@ -5715,9 +5705,9 @@ async function startAR() {
   tick();
   window.addEventListener('deviceorientationabsolute', onOri); window.addEventListener('deviceorientation', onOri);
   MONT.msg = '';
-  montStatus('<b>Járművezetés vagy közlekedés közben ne használd.</b><details><summary>Részletes leírás</summary><b>Első használatkor</b> kalibráld a telefont (lent, egyszer kell): <b>Vízszint</b>: asztalra téve, majd megfordítva, kb. fél perc; <b>Lépték</b>: a kereszttel egy távoli tárgyra célzol, koppintasz, elfordulsz, amíg a tárgy a szaggatott vonalhoz ér, és koppintasz. Ezek után a fehér szaggatott vonal a valódi vízszintes (szemmagasság), és a turbina méretre és magasságra helyes, bárhol állsz. <b>Iránynál</b> fordulj a turbina felé, nyomd meg az <b>„Igazítás: kép megállítása”</b> gombot, és ha kell, húzd a falunevek vonalát vagy a sárga Nap-jelet a helyére; a „Kész” után rögzül. Tipp: a turbinát tartsd a kép közepén, ott a legpontosabb.</details>');
+  montStatus('<b>Járművezetés vagy közlekedés közben ne használd.</b><details><summary>Részletes leírás</summary><b>Pontosabb képhez</b> kalibrálhatod a telefont (lent; nem kötelező, elég egyszer, a böngésző megjegyzi): <b>Vízszint</b>: asztalra téve, majd megfordítva, kb. fél perc; <b>Lépték</b>: a kereszttel egy távoli tárgyra célzol, koppintasz, elfordulsz, amíg a tárgy a szaggatott vonalhoz ér, és koppintasz. Ezek után a fehér szaggatott vonal a valódi vízszintes (szemmagasság), és a turbina méretre és magasságra helyes, bárhol állsz. <b>Iránynál</b> fordulj a turbina felé, nyomd meg az <b>„Igazítás: kép megállítása”</b> gombot, és ha kell, húzd a falunevek vonalát vagy a sárga Nap-jelet a helyére; a „Kész” után rögzül. Tipp: a turbinát tartsd a kép közepén, ott a legpontosabb.</details>');
   if (navigator.geolocation) AR.watch = navigator.geolocation.watchPosition(onGps, () => { AR.gps = 'nincs'; }, { enableHighAccuracy: true, maximumAge: 3000, timeout: 30000 });
-  openMont('ar'); prepReal(); coachStart();
+  openMont('ar'); prepReal();   // tiszta kamerakép: az útmutató-kártya csak az „Útmutató” gombra jön elő
   setTimeout(() => { if (MONT.mode === 'ar' && !arReady()) MONT.msg = ' Nem érkezik iránytű-adat: ez a böngésző vagy készülék nem adja meg, merre nézel.'; }, 4000);
 }
 function onGps(p) {
@@ -5727,7 +5717,8 @@ function onGps(p) {
   const V = state.viewer, moved = Math.hypot((la - V.lat) * 111195, (lo - V.lon) * 111195 * Math.cos(la * RAD));
   if (acc < 150 && moved > Math.max(6, acc / 2)) {
     state.viewer = { lat: la, lon: lo }; buildMarkers(); update().then(prepReal);
-    MONT.msg = ` A nézőpont a GPS szerinti helyeden van (±${Math.round(acc)} m).`;
+    const m = ` A nézőpont a GPS szerinti helyeden van (±${Math.round(acc)} m).`; MONT.msg = m;
+    setTimeout(() => { if (MONT.msg === m) MONT.msg = ''; }, 5000);   // csak tájékoztatás: pár másodperc után eltűnik a képről
   }
 }
 
