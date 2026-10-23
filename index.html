@@ -3475,10 +3475,16 @@ function drawOverlay(ctx, dpr, w, h, az0, c, tl) {
     halo(an % 45 === 0 ? COMPASS[an / 45] : an + '°', p[0], 11, 'center', 'top');
   }
   // turbinacímkék
-  AN.forEach((a, i) => {
-    if (!a.ok) return;
+  // széles látószögnél a közeli turbinák címkéi egymásra csúsznának: ütközéskor feljebb lépnek egy sort
+  const placed = [];
+  AN.map((a, i) => ({ a, i })).filter(o => o.a.ok).sort((x, y) => x.a.D - y.a.D).forEach(({ a, i }) => {
     const p = RV.project(a.D * Math.sin(a.az), a.D * Math.cos(a.az), a.baseApp - renderPano.lastEye + m.tip, w, h);
-    if (p && p[0] > -40 && p[0] < w + 40) halo(`T${i + 1} · ${km(a.D)}`, p[0], Math.max(p[1] - 6, 40), 'center', 'bottom');
+    if (!p || p[0] < -40 || p[0] > w + 40) return;
+    const txt = `T${i + 1} · ${km(a.D)}`, hw = ctx.measureText(txt).width / 2 + 3;
+    let ly = Math.max(p[1] - 6, 40);
+    for (let n = 0; n < 6 && placed.some(q => Math.abs(q.x - p[0]) < q.hw + hw && Math.abs(q.y - ly) < 14); n++) ly = Math.max(ly - 14, 26);
+    placed.push({ x: p[0], y: ly, hw });
+    halo(txt, p[0], ly, 'center', 'bottom');
   });
   if (state.ghost) { ctx.font = '500 11px Barlow, system-ui, sans-serif'; halo('pirosan áttűnő: a takart rész', w - 8, h - 10, 'right'); }
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -3674,9 +3680,14 @@ function renderPano(q = 1) {
   }
   // turbinacímkék
   ctx.textBaseline = 'bottom';
-  for (const L of tLabels) {
-    const ly = Math.max(L.y - 6 * lw, 40 * lw);
-    halo(`T${L.i + 1} · ${km(L.D)}`, L.x, ly, 'center');
+  // széles látószögnél a közeli turbinák címkéi egymásra csúsznának: ütközéskor feljebb lépnek egy sort
+  const placed = [], rowH = 14 * lw;
+  for (const L of [...tLabels].sort((a, b) => a.D - b.D)) {
+    const txt = `T${L.i + 1} · ${km(L.D)}`, hw = ctx.measureText(txt).width / 2 + 3 * lw;
+    let ly = Math.max(L.y - 6 * lw, 40 * lw);
+    for (let n = 0; n < 6 && placed.some(p => Math.abs(p.x - L.x) < p.hw + hw && Math.abs(p.y - ly) < rowH); n++) ly = Math.max(ly - rowH, 26 * lw);
+    placed.push({ x: L.x, y: ly, hw });
+    halo(txt, L.x, ly, 'center');
   }
   if (!vis.length && sel) { ctx.textBaseline = 'top'; halo('A turbina most nincs a képben. Dupla kattintással visszaáll.', W / 2, 30 * lw, 'center'); }
 }
