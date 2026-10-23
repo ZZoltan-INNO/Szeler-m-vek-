@@ -1863,7 +1863,7 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
       <ol class="arint-steps">
         <li><b>Indítás:</b> engedélyezd a kamerát, a helymeghatározást és a mozgásérzékelőt.</li>
         <li><b>Irány:</b> tartsd magad elé a telefont, és fordulj a turbina felé. A látószöget a telefon a mozgásból magától méri.</li>
-        <li><b>Igazítás</b> (ha kell): állítsd meg a képet, és húzd a falunevek vonalát a valódi dombvonalra.</li>
+        <li><b>Igazítás</b> (ha kell): állítsd meg a képet, és húzd a szaggatott templom-körvonalat a valódi tornyokra (vagy a falunevek vonalát a dombvonalra).</li>
         <li><b>Pontosabb kép</b> (nem kötelező): az élő kép alatt a Vízszint és a Lépték kalibráció; elég egyszer, a böngésző megjegyzi.</li>
       </ol>
       <p class="small" id="arIntroNote">A kamerakép tiszta marad; ha elakadsz, az élő képen az Útmutató gomb lépésről lépésre végigvezet. Járművezetés vagy közlekedés közben ne használd.</p>
@@ -5092,13 +5092,14 @@ function drawReal(g, cam, opts) {
     for (let a = azC - half; a <= azC + half; a += 0.5 * RAD) { const p = at(a, 0); if (!p) { on = false; continue; } on ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); on = true; }
     g.setLineDash([10 * sc + 4, 7 * sc + 3]); g.lineWidth = 3 * sc + 1.5; g.strokeStyle = 'rgba(0,0,0,.45)'; g.stroke();
     g.lineWidth = 1.4 * sc + 0.8; g.strokeStyle = 'rgba(255,255,255,.95)'; g.stroke(); g.setLineDash([]);
-    const p = at(azC - half * 0.55, 0);
+    const lmx = opts.labels ? lmSpots(proj, fr, ei, half, dAz).map(q => q[0]) : [], pl = at(azC - half * 0.55, 0);
+    const p = pl && lmx.some(x => Math.abs(x - pl[0] - 70 * sc - 40) < 110 * sc + 70) ? at(azC + half * 0.15, 0) : pl;   // ne takarja a templomot
     if (p) { g.font = `600 ${Math.round(10 * sc + 6)}px system-ui, sans-serif`; g.textAlign = 'left'; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.6)'; g.strokeText('vízszintes (szemmagasság)', p[0], p[1] - 5); g.fillStyle = '#fff'; g.fillText('vízszintes (szemmagasság)', p[0], p[1] - 5); }
     g.restore();
   }
   // falunevek a horizonton (az igazításhoz)
   if (opts.labels) {
-    const V = state.viewer, cl = Math.cos(V.lat * RAD), used = [];
+    const V = state.viewer, cl = Math.cos(V.lat * RAD), used = lmSpots(proj, fr, ei, half, dAz).map(q => q[0]);   // a templom felirata elsőbbséget kap
     g.save(); g.font = `600 ${Math.round(12 * sc + 7)}px system-ui, sans-serif`; g.textAlign = 'center';
     for (const [name, la, lo, w] of [...SETTLE].sort((p, q) => q[3] - p[3])) {
       const x = (lo - V.lon) * 111195 * cl, y = (la - V.lat) * 111195, D = Math.hypot(x, y), az = Math.atan2(x, y);
@@ -5114,6 +5115,8 @@ function drawReal(g, cam, opts) {
     }
     g.restore();
   }
+  // műemlék (a jáki templom) szaggatott körvonala: lapos tájon a két torony a legjobb pont az oldalirány igazításához
+  if (opts.labels) drawLandmarks(g, proj, fr, ei, sc, half, dAz);
   // a Nap (a megadott időpontban, a légköri fénytöréssel): ha látszik, a legpontosabb igazodási pont
   if (opts.sun) {
     const sp = sunPos(opts.sun, state.viewer.lat, state.viewer.lon), h = sp.el / RAD, el = (h + 1.02 / Math.tan((h + 10.3 / (h + 5.11)) * RAD) / 60) * RAD;
@@ -5146,6 +5149,71 @@ function drawReal(g, cam, opts) {
     if (p) { g.save(); g.font = `700 ${Math.round(12 * sc + 7)}px system-ui, sans-serif`; g.textAlign = 'center'; const txt = `T${t.i + 1} · ${km(t.D)}`; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.55)'; g.strokeText(txt, p[0], p[1]); g.fillStyle = '#fff'; g.fillText(txt, p[0], p[1]); g.restore(); }
   }
   return pending || SKY.want.size > 0;
+}
+
+/* A műemlékek körvonala a képen: a 3D-modell részeinek (tornyok gúlasisakkal, hajók, szentélyek, kápolna) vetített
+   konvex burkai együtt adják az épület sziluettjét; ennek csak a külső széle rajzolódik ki szaggatottan (a részek
+   közti belső vonalak nélkül). A körvonal akkor is látszik, ha házak vagy fák takarják: igazítási segédvonal. */
+function lmOutline(L, ei) {   // a részek pontjai a nézőpont helyi rendszerében: [[x, y, z], ...] részenként
+  const P = (s, t, z) => { const x = L.x0 + s * L.u[0] + t * L.v[0], y = L.y0 + s * L.u[1] + t * L.v[1]; return [x, y, L.g + z - drop(Math.hypot(x, y)) - ei.eyeZ]; };
+  const ring = (sc, tc, r, z, n = 16, from = 0, to = 2 * Math.PI) => Array.from({ length: n + 1 }, (_, i) => { const a = from + (to - from) * i / n; return P(sc + r * Math.cos(a), tc + r * Math.sin(a), z); });
+  return L.lm.parts.map(p => {
+    if (p.k === 'box') {
+      const cs = (p.s0 + p.s1) / 2, ct = (p.t0 + p.t1) / 2, out = [];
+      for (const z of [0, p.eave]) for (const [a, b] of [[p.s0, p.t0], [p.s1, p.t0], [p.s1, p.t1], [p.s0, p.t1]]) out.push(P(a, b, z));
+      if (p.roof === 'pyr') out.push(P(cs, ct, p.top));
+      else if (p.roof === 'gable') out.push(P(p.s0, ct, p.top), P(p.s1, ct, p.top));
+      else if (p.roof === 'lean1') out.push(P(p.s0, p.t1, p.top), P(p.s1, p.t1, p.top));
+      else if (p.roof === 'lean0') out.push(P(p.s0, p.t0, p.top), P(p.s1, p.t0, p.top));
+      return out;
+    }
+    if (p.k === 'apse') { const a = ring(p.sc, p.tc, p.r, 0, 12, -Math.PI / 2, Math.PI / 2), b = ring(p.sc, p.tc, p.r, p.eave, 12, -Math.PI / 2, Math.PI / 2);
+      return [...a, ...b, P(p.s0, p.tc - p.r, 0), P(p.s0, p.tc + p.r, 0), P(p.s0, p.tc - p.r, p.eave), P(p.s0, p.tc + p.r, p.eave), P(p.sc, p.tc, p.top)]; }
+    if (p.k === 'quatre') return [...ring(p.sc, p.tc, p.c + p.r, 0), ...ring(p.sc, p.tc, p.c + p.r, p.eave)];
+    if (p.k === 'cone') return [...ring(p.sc, p.tc, p.r, p.z0), P(p.sc, p.tc, p.z1)];
+    if (p.k === 'cyl') return [...ring(p.sc, p.tc, p.r, 0), ...ring(p.sc, p.tc, p.r, p.z1)];
+    if (p.k === 'onion') return [...ring(p.sc, p.tc, p.r, p.z0 + (p.z1 - p.z0) * 0.38), P(p.sc, p.tc, p.z1)];
+    return [];
+  });
+}
+function hull2(pts) {   // síkbeli konvex burok (monoton lánc)
+  const q = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]); if (q.length < 3) return q;
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]), lo = [], up = [];
+  for (const p of q) { while (lo.length > 1 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); }
+  for (const p of q.reverse()) { while (up.length > 1 && cr(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop(); up.push(p); }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}
+let LM_CV = null;
+const lmShown = (L, half, dAz) => { const D = Math.hypot(L.cx, L.cy); return !L.own && D >= 60 && D <= 15000 && Math.abs(dAz(Math.atan2(L.cx, L.cy))) <= half + 0.05; };
+function lmSpots(proj, fr, ei, half, dAz) {   // a látható műemlékek tetejének képpontja (a feliratok ütközéséhez)
+  return lmLocal(fr).filter(L => lmShown(L, half, dAz)).map(L => proj([L.cx, L.cy, L.g + 36 - drop(Math.hypot(L.cx, L.cy)) - ei.eyeZ])).filter(Boolean);
+}
+function drawLandmarks(g, proj, fr, ei, sc, half, dAz) {
+  for (const L of lmLocal(fr)) {
+    const D = Math.hypot(L.cx, L.cy);
+    if (!lmShown(L, half, dAz)) continue;
+    const hulls = []; let top = null;
+    for (const part of lmOutline(L, ei)) {
+      const pp = part.map(v => proj(v)); if (!pp.length || pp.some(v => !v)) continue;
+      const h = hull2(pp); if (h.length > 2) hulls.push(h);
+      for (const v of pp) if (!top || v[1] < top[1]) top = v;
+    }
+    if (!hulls.length) continue;
+    const W = g.canvas.width, H = g.canvas.height, lw = Math.max(1.6, 1.3 * sc + 0.9);
+    if (!LM_CV) LM_CV = document.createElement('canvas');
+    if (LM_CV.width !== W || LM_CV.height !== H) { LM_CV.width = W; LM_CV.height = H; }
+    const o = LM_CV.getContext('2d'); o.clearRect(0, 0, W, H);
+    const path = () => { o.beginPath(); for (const h of hulls) { h.forEach((v, i) => i ? o.lineTo(v[0], v[1]) : o.moveTo(v[0], v[1])); o.closePath(); } };
+    // a körvonal kétszeres vastagsággal, majd az egyesített alak kitörlése: csak a külső szél marad (sötét szegély + fehér szaggatott)
+    o.lineJoin = 'round'; path(); o.lineWidth = 2 * (lw + 1); o.strokeStyle = 'rgba(0,0,0,.5)'; o.stroke();
+    o.setLineDash([5 * lw, 3.5 * lw]); o.lineWidth = 2 * lw; o.strokeStyle = '#fff'; o.stroke(); o.setLineDash([]);
+    o.globalCompositeOperation = 'destination-out'; path(); o.fill('nonzero'); o.globalCompositeOperation = 'source-over';
+    g.drawImage(LM_CV, 0, 0);
+    if (top) { g.save(); g.font = `700 ${Math.round(11 * sc + 7)}px system-ui, sans-serif`; g.textAlign = 'center';
+      const txt = `${L.lm.name.replace(/^a /, '')} · ${km(D)}`, y = top[1] - 34 * sc - 14;
+      g.fillStyle = 'rgba(255,255,255,.8)'; g.fillRect(top[0] - 0.75, y + 4, 1.5, Math.max(0, top[1] - y - 8 - 2 * sc));
+      g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.6)'; g.strokeText(txt, top[0], y); g.fillStyle = '#fff'; g.fillText(txt, top[0], y); g.restore(); }
+  }
 }
 
 /* Fotó adatai (EXIF, JPEG): GPS hely és magasság, irány (iránytű), 35 mm-es egyenértékű fókusz, dátum */
@@ -5197,7 +5265,7 @@ function openMont(mode) {
   for (const id of ['mRlW', 'mSave']) $(id).hidden = mode === 'ar';
   $('mHelp').hidden = mode !== 'ar'; $('arCoach').hidden = true;
   $('mShot').hidden = mode !== 'ar'; $('mFreeze').hidden = mode !== 'ar'; $('mHzW').hidden = $('mCalRow').hidden = mode !== 'ar'; syncAR(); calStatus();
-  $('mHdL').textContent = mode === 'ar' ? 'Iránytű-javítás' : 'Irány'; $('mSkyL').textContent = mode === 'ar' ? 'Falunevek, fokbeosztás és Nap' : 'Modell-horizont és falunevek'; $('mFovL').textContent = mode === 'ar' ? 'A kamera látószöge' : 'Látószög';
+  $('mHdL').textContent = mode === 'ar' ? 'Iránytű-javítás' : 'Irány'; $('mSkyL').textContent = mode === 'ar' ? 'Falunevek, templom, fokbeosztás és Nap' : 'Modell-horizont, falunevek és templom'; $('mFovL').textContent = mode === 'ar' ? 'A kamera látószöge' : 'Látószög';
   $('mGhost').checked = false;   // alapból csak az látszik, ami a valóságban is látszani fog
   syncMontCtl(); cancelAnimationFrame(MONT.raf); MONT.raf = requestAnimationFrame(montFrame);
   $('montClose').focus();
@@ -5676,7 +5744,7 @@ function coachTick() {
   const C = {
     scale: ['+', 'Lépték', CAL.msg],
     aim: [nr('aim'), 'Irány', 'Fordulj a turbina felé, és állítsd meg a képet. A turbina legyen a kép közepén, ott a legpontosabb.'],
-    align: [nr('align'), 'Igazítás', 'Húzd a falunevek vonalát (vagy a sárga Nap-jelet) a valódi dombvonalra, majd koppints a Kész gombra.'],
+    align: [nr('align'), 'Igazítás', 'Húzd a szaggatott templom-körvonalat a valódi tornyokra (vagy a falunevek vonalát a dombvonalra, a sárga Nap-jelet a Napra), majd koppints a Kész gombra.'],
     done: ['✓', 'Kész', 'A turbina a helyén, valós méretben: ami domb, ház vagy fa mögött van, az nem látszik. Lent pillanatképet is menthetsz.']
   }[st];
   const key = st + '|' + C[2] + '|' + (st === 'fov' ? Math.round(pr * 20) : '');
