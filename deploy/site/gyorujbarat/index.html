@@ -5244,7 +5244,7 @@ function exifTiff(v, t) {
     return en.cnt === 1 ? one(p) : Array.from({ length: en.cnt }, (_, i) => one(p + i * sz));
   };
   const i0 = ifd(t + u32(t + 4)), r = { make: val(i0[0x10F]), model: val(i0[0x110]) };
-  if (i0[0x8769]) { const ex = ifd(t + u32(i0[0x8769].vo)); r.f35 = val(ex[0xA405]); r.f = val(ex[0x920A]); r.date = val(ex[0x9003]); r.tz = val(ex[0x9011]); }
+  if (i0[0x8769]) { const ex = ifd(t + u32(i0[0x8769].vo)); r.f35 = val(ex[0xA405]); r.zoom = val(ex[0xA404]); r.f = val(ex[0x920A]); r.date = val(ex[0x9003]); r.tz = val(ex[0x9011]); }
   if (i0[0x8825]) {
     const gp = ifd(t + u32(i0[0x8825].vo)), la = val(gp[2]), lo = val(gp[4]);
     if (la && lo && la.length === 3) { r.lat = (la[0] + la[1] / 60 + la[2] / 3600) * (val(gp[1]) === 'S' ? -1 : 1); r.lon = (lo[0] + lo[1] / 60 + lo[2] / 3600) * (val(gp[3]) === 'W' ? -1 : 1); }
@@ -5365,9 +5365,12 @@ async function openPhoto(file) {
     const mo = ex && ex.date ? +ex.date.slice(5, 7) : 0;
     if (mo) { state.season = mo >= 11 || mo <= 3 ? 'winter' : 'summer'; notes.push(`<b>Évszak:</b> a fotó dátuma alapján ${state.season === 'winter' ? 'tél (lombtalan fák)' : 'nyár (lombos fák)'}.`); }
     // látószög: a 35 mm-es egyenértékű fókuszból (az átlóra vonatkozik), különben a telefonok fő kamerája (26 mm)
-    const f35 = ex && ex.f35 > 8 ? ex.f35 : 26, iw = img.naturalWidth, ih = img.naturalHeight;
+    // Samsung: a „35 mm-es” érték az objektívé, a nagyítás (DigitalZoomRatio) a fő kamerához képest értendő; a fő kamerás 2× így 46 mm,
+    // a 3×-os teleobjektív 69 mm marad, rajta a 10× 230 mm (valódi fotón ellenőrizve: Ják, S22+). Más gyártóknál (pl. iPhone) a nagyítás már benne van.
+    const zr = ex && /samsung/i.test(ex.make || '') && ex.zoom > 1.05 ? ex.zoom : 1;
+    const f0 = ex && ex.f35 > 8 ? ex.f35 : 26, f35 = zr > 1 ? (f0 < 35 ? f0 * zr : Math.max(f0, f0 * zr / Math.max(1, Math.round(f0 / 23)))) : f0, iw = img.naturalWidth, ih = img.naturalHeight;
     MONT.fov = 2 * Math.atan(Math.tan(Math.atan(43.27 / (2 * f35))) * iw / Math.hypot(iw, ih)) / RAD;
-    notes.push(ex && ex.f35 > 8 ? `<b>Látószög:</b> a fotó adatából (${f35} mm-es egyenérték): ${MONT.fov.toFixed(0)}°.` : `<b>Látószög:</b> nincs a fotóban, a telefonok szokásos fő kamerájával számolok (${MONT.fov.toFixed(0)}°); ha nem stimmel, állíts rajta.`);
+    notes.push(ex && ex.f35 > 8 ? `<b>Látószög:</b> a fotó adatából (${Math.round(f35)} mm-es egyenérték${zr > 1 ? `, ${zr.toFixed(1).replace('.', ',')}× nagyítással` : ''}): ${MONT.fov.toFixed(0)}°.` : `<b>Látószög:</b> nincs a fotóban, a telefonok szokásos fő kamerájával számolok (${MONT.fov.toFixed(0)}°); ha nem stimmel, állíts rajta.`);
     // irány: a fotó iránytű-adatából, különben a kijelölt turbina felé
     await update();
     const T = state.turbines[state.sel];
