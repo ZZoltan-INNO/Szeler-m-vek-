@@ -730,6 +730,25 @@ header.top .wrap{display:grid;gap:10px}
 .lede b{color:var(--ink);font-weight:600}
 
 .cols{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:20px;align-items:start;padding-bottom:20px}
+/* asztali elrendezés: nagy térkép teljes szélességben, a szemmagasság-kép úszó ablakban a térkép jobb felső sarkában */
+.map-stage{position:relative}
+.cols.pip-on{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.cols.pip-on .col{display:contents}
+.cols.pip-on #c-map{grid-column:1/-1}
+.cols.pip-on #map{height:clamp(540px,74vh,780px)}
+.cols.pip-on #c-view .pano-hint{display:none}
+.cols.pip-on .leaflet-top.leaflet-right{right:auto;left:54px}   /* a jobb felső sarok az ablaké */
+.pip{position:absolute;z-index:1100;top:12px;right:12px;width:clamp(380px,44%,660px);background:#16181c;border:1px solid rgba(255,255,255,.18);border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.45);overflow:hidden;display:flex;flex-direction:column}
+.pip[hidden]{display:none}
+.pip.big{inset:0;width:auto;border-radius:8px}
+.pip-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px 6px 12px;background:#1f2228;color:#f2f1ee;cursor:grab;touch-action:none;user-select:none}
+.pip.big .pip-bar{cursor:default}
+.pip-bar b{font:600 .85rem/1.2 var(--body)}
+.pip-btn{flex:none;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;border-radius:8px;min-width:34px;height:30px;font-size:1.05rem;cursor:pointer}
+.pip-btn:hover,.pip-btn:focus-visible{background:rgba(255,255,255,.18)}
+.pip-body{position:relative;flex:1;min-height:0}
+.pip-body .pano-wrap{margin:0;border-radius:0}
+.pip-body #pano{border-radius:0}
 .col{display:flex;flex-direction:column;gap:20px;min-width:0}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
 .card-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
@@ -1470,7 +1489,13 @@ document.addEventListener('DOMContentLoaded', () => {
         </form>
       </div>
       <p class="netwarn" id="netStatus" role="status" hidden></p>
-      <div id="map" role="application" aria-label="Domborzati térkép a nézőponttal és a turbinákkal"></div>
+      <div class="map-stage" id="mapStage">
+        <div id="map" role="application" aria-label="Domborzati térkép a nézőponttal és a turbinákkal"></div>
+        <div class="pip" id="pip" hidden role="region" aria-labelledby="pipT">
+          <div class="pip-bar" id="pipBar"><b id="pipT">Amit szemmagasságból látsz</b><button type="button" class="pip-btn" id="pipBig" aria-pressed="false" title="Nagyítás a térkép helyére">⤢</button></div>
+          <div class="pip-body" id="pipBody"></div>
+        </div>
+      </div>
       <div class="map-foot" id="mapFoot">
         <p class="base-info" id="baseInfo" aria-live="polite"></p>
         <div class="map-attr" id="mapAttr"></div>
@@ -1584,6 +1609,7 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
       <div class="pano-tools">
         <span class="tilt" role="group" aria-label="Fel-le nézés"><button class="btn" type="button" id="tiltUp" aria-label="Nézz feljebb">▲</button><button class="btn" type="button" id="tiltDown" aria-label="Nézz lejjebb">▼</button></span>
+        <div class="seg" role="group" aria-label="Látószög"><button type="button" id="fovCam" aria-pressed="true">Mint a telefon (66°)</button><button type="button" id="fovLife" aria-pressed="false">Életnagyság</button></div>
         <div class="seg" role="group" aria-label="Évszak"><button type="button" id="qSummer" aria-pressed="true">Nyár</button><button type="button" id="qWinter" aria-pressed="false">Tél, lombtalan</button></div>
         <p class="small fov-note" id="fovNote"></p>
         <span class="checks"><label class="check"><input type="checkbox" id="ghost" checked> A takart rész pirosan áttűnik</label>
@@ -1701,6 +1727,8 @@ document.addEventListener('DOMContentLoaded', function () {   // a szakasz a lap
   const op = $id('vlOperator'); if (op && I.operator) { op.hidden = false; op.querySelector('span').textContent = I.operator; }
   // a táj filmje a nagytotálnál indul (a nyitókép a ráközelítéssel), és csak akkor fut, ha látszik
   const v = $id('aboutVid'); if (!v) return;
+  const setPoster = () => { if (v.dataset.poster && !v.poster) v.poster = v.dataset.poster; };   // a poszter is csak a közelben töltődik le
+  if (window.IntersectionObserver) { const po = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { po.disconnect(); setPoster(); } }, { rootMargin: '800px 0px' }); po.observe(v); } else setPoster();
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) { v.controls = true; return; }
   for (const [ext, type] of [['webm', 'video/webm; codecs=vp9'], ['mp4', 'video/mp4']]) { const s = document.createElement('source'); s.src = 'assets/hero_loop_720.' + ext; s.type = type; v.appendChild(s); }
   if (!window.IntersectionObserver) return;
@@ -1778,7 +1806,7 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
       <p class="vl-lede">A HorizonLens az <b>InnoLens</b> terméke. Az InnoLens az <b data-grp="name">InnoGroup</b> kamerás méréssel és képelemzéssel foglalkozó tagja: kamerával, objektívvel, fénnyel és számítással dolgozunk. Ugyanebből a tudásból készül a gyártósori VisionLens AOI képellenőrző is.</p>
       <p class="vl-lede">A HorizonLens díjmentes és semleges eszköz: nem foglal állást a beruházások mellett vagy ellen, csak megmutatja, mi fog látszani és mi nem.</p>
     </div>
-    <figure class="vl-media about-media"><video id="aboutVid" muted loop playsinline preload="none" poster="assets/hero_poster.jpg" aria-label="Animáció: Ják valódi domborzata a tervezett turbinákkal, a házakkal, a fákkal és a megfigyelő látómezejével"></video></figure>
+    <figure class="vl-media about-media"><video id="aboutVid" muted loop playsinline preload="none" data-poster="assets/hero_poster.jpg" aria-label="Animáció: Ják valódi domborzata a tervezett turbinákkal, a házakkal, a fákkal és a megfigyelő látómezejével"></video></figure>
     <p class="about-parent"><b data-grp="name">InnoGroup</b><span>a csoport tagjai</span></p>
     <ul class="about-group" id="aboutGroup" aria-label="Az InnoGroup tagjai"></ul>
     <div class="about-co" id="aboutCompany" hidden><h3></h3><p></p><dl class="vl-contact"></dl></div>
@@ -3451,10 +3479,16 @@ function drawOverlay(ctx, dpr, w, h, az0, c, tl) {
     halo(an % 45 === 0 ? COMPASS[an / 45] : an + '°', p[0], 11, 'center', 'top');
   }
   // turbinacímkék
-  AN.forEach((a, i) => {
-    if (!a.ok) return;
+  // széles látószögnél a közeli turbinák címkéi egymásra csúsznának: ütközéskor feljebb lépnek egy sort
+  const placed = [];
+  AN.map((a, i) => ({ a, i })).filter(o => o.a.ok).sort((x, y) => x.a.D - y.a.D).forEach(({ a, i }) => {
     const p = RV.project(a.D * Math.sin(a.az), a.D * Math.cos(a.az), a.baseApp - renderPano.lastEye + m.tip, w, h);
-    if (p && p[0] > -40 && p[0] < w + 40) halo(`T${i + 1} · ${km(a.D)}`, p[0], Math.max(p[1] - 6, 40), 'center', 'bottom');
+    if (!p || p[0] < -40 || p[0] > w + 40) return;
+    const txt = `T${i + 1} · ${km(a.D)}`, hw = ctx.measureText(txt).width / 2 + 3;
+    let ly = Math.max(p[1] - 6, 40);
+    for (let n = 0; n < 6 && placed.some(q => Math.abs(q.x - p[0]) < q.hw + hw && Math.abs(q.y - ly) < 14); n++) ly = Math.max(ly - 14, 26);
+    placed.push({ x: p[0], y: ly, hw });
+    halo(txt, p[0], ly, 'center', 'bottom');
   });
   if (state.ghost) { ctx.font = '500 11px Barlow, system-ui, sans-serif'; halo('pirosan áttűnő: a takart rész', w - 8, h - 10, 'right'); }
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -3468,13 +3502,62 @@ function lifeFov(cssW) {
   const w = cssW * (touch ? 0.0165 : 0.0265);
   return Math.round(clamp(2 * Math.atan(w / 2 / dist) / RAD, 8, 60) * 2) / 2;
 }
+/* ---------- Úszó ablak (asztali gépen) ----------
+   1000 px-nél szélesebb ablakban a térkép teljes szélességű, a szemmagasság-kép pedig a jobb felső sarkában úszik:
+   a fejlécénél fogva elhúzható (a helyét megjegyzi), a ⤢ gombbal a térkép helyére nagyítható. Keskenyebb ablakban és
+   telefonon a kép a saját kártyájában marad. */
+const PIP = { on: false, big: false, home: null };
+function layoutPip() {
+  const want = innerWidth >= 1000, wrap = $('pano').parentElement;
+  if (!PIP.home) { PIP.home = document.createComment('pano-hely'); wrap.parentNode.insertBefore(PIP.home, wrap); }
+  if (want === PIP.on) { pipClamp(); return; }
+  PIP.on = want; document.querySelector('main.cols').classList.toggle('pip-on', want); $('pip').hidden = !want;
+  if (want) $('pipBody').appendChild(wrap); else { PIP.home.parentNode.insertBefore(wrap, PIP.home.nextSibling); pipBig(false); }
+  map.invalidateSize();   // csak indítás után hívódik, akkor a térkép már létezik
+  pipPlace();
+}
+function pipPlace() {   // a megjegyzett hely (a színpadhoz mért arányban), különben a jobb felső sarok
+  const el = $('pip'); let pos = null; try { pos = JSON.parse(localStorage.getItem('pipPos') || 'null'); } catch (e) {}
+  if (pos && !PIP.big) { el.style.left = (pos[0] * 100) + '%'; el.style.top = (pos[1] * 100) + '%'; el.style.right = 'auto'; } else { el.style.left = el.style.top = el.style.right = ''; }
+  pipClamp();
+}
+function pipClamp() {   // ne lógjon ki a térkép területéről (pl. ablakméretezés után)
+  const el = $('pip'), st = $('mapStage'); if (!PIP.on || PIP.big || el.style.right !== 'auto') return;
+  const mx = st.clientWidth - el.offsetWidth, my = st.clientHeight - el.offsetHeight;
+  el.style.left = Math.max(0, Math.min(mx, el.offsetLeft)) + 'px'; el.style.top = Math.max(0, Math.min(my, el.offsetTop)) + 'px';
+}
+function pipBig(b) {
+  PIP.big = b; $('pip').classList.toggle('big', b); $('pipBig').setAttribute('aria-pressed', b);
+  $('pipBig').textContent = b ? '⤡' : '⤢'; $('pipBig').title = b ? 'Vissza a térképre' : 'Nagyítás a térkép helyére';
+  pipPlace(); if (booted) renderPano(1);
+}
+$('pipBig').onclick = () => pipBig(!PIP.big);
+{ let d = null; const bar = $('pipBar');   // húzás a fejlécnél fogva
+  bar.addEventListener('pointerdown', e => { if (PIP.big || e.target.closest('button')) return; const el = $('pip'); d = { x: e.clientX, y: e.clientY, l: el.offsetLeft, t: el.offsetTop }; bar.setPointerCapture(e.pointerId); bar.style.cursor = 'grabbing'; });
+  bar.addEventListener('pointermove', e => { if (!d) return; const el = $('pip'), st = $('mapStage');
+    el.style.right = 'auto'; el.style.left = Math.max(0, Math.min(st.clientWidth - el.offsetWidth, d.l + e.clientX - d.x)) + 'px'; el.style.top = Math.max(0, Math.min(st.clientHeight - el.offsetHeight, d.t + e.clientY - d.y)) + 'px'; });
+  const end = () => { if (!d) return; d = null; bar.style.cursor = ''; const el = $('pip'), st = $('mapStage');
+    try { localStorage.setItem('pipPos', JSON.stringify([el.offsetLeft / st.clientWidth, el.offsetTop / st.clientHeight])); } catch (e) {} };
+  bar.addEventListener('pointerup', end); bar.addEventListener('pointercancel', end);
+  bar.addEventListener('dblclick', e => { if (!e.target.closest('button')) pipBig(!PIP.big); }); }
+const CAM_FOV = 66;   // vízszintes látómező, mint a telefonok fő kamerája (az élő kamera alapértéke is)
+let FOV_MODE = 'cam'; try { if (localStorage.getItem('fovMode') === 'life') FOV_MODE = 'life'; } catch (e) {}
+$('fovCam').onclick = () => setFovMode('cam'); $('fovLife').onclick = () => setFovMode('life');
+$('fovCam').setAttribute('aria-pressed', FOV_MODE === 'cam'); $('fovLife').setAttribute('aria-pressed', FOV_MODE === 'life');
+function setFovMode(m) {
+  FOV_MODE = m; try { localStorage.setItem('fovMode', m); } catch (e) {}
+  $('fovCam').setAttribute('aria-pressed', m === 'cam'); $('fovLife').setAttribute('aria-pressed', m === 'life');
+  renderPano(1);
+}
 function updateFovNote(cssW) {
   const touch = matchMedia('(pointer: coarse)').matches, dist = touch ? (innerWidth < 700 ? 35 : 45) : 60;
+  if (FOV_MODE !== 'life') { $('fovNote').textContent = `Telefonkamera-szerű kép: ${CAM_FOV}° széles látómező, mint az élő kamerán a fő kamerával. A turbina akkora, mint egy ugyanonnan készült fényképen.`; return; }
   $('fovNote').textContent = `Életnagyságú kép: ${nf(state.fov, state.fov % 1 ? 1 : 0)}° széles látómező. Ha a ${touch ? 'telefont' : 'képernyőt'} kb. ${dist} cm-ről nézed, a turbina és a házak akkorának látszanak, mint a valóságban arról a pontról.`;
 }
-const panoAspect = cssW => cssW < 560 ? 1 : 0.5625;
+// a kép oldalaránya: úszó ablakban 16:9, nagyítva a térkép helyének aránya, egyébként keskenyen négyzet, szélesen 16:9
+const panoAspect = cssW => PIP.on && PIP.big ? clamp(($('mapStage').clientHeight - $('pipBar').offsetHeight) / Math.max(1, cssW), 0.3, 1.5) : PIP.on ? 0.5625 : cssW < 560 ? 1 : 0.5625;
 function renderPano(q = 1) {
-  { const cw = $('pano').clientWidth || $('pano').parentElement.clientWidth || 640; state.fov = lifeFov(cw); updateFovNote(cw); }
+  { const cw = $('pano').clientWidth || $('pano').parentElement.clientWidth || 640; state.fov = window.FOV_OVERRIDE || (FOV_MODE === 'life' ? lifeFov(cw) : CAM_FOV); updateFovNote(cw); }
   if (RV === undefined) { try { RV = window.RealView ? window.RealView.create($('pano').parentElement, { assets: 'assets/' }) : null; if (RV) RV.onReady = () => renderPano(1); } catch (e) { RV = null; } }
   if (RV) { renderPano.lastEye = eyeInfo().eyeZ; renderReal(); return; }
   const cv = $('pano'), cssW = cv.clientWidth || cv.parentElement.clientWidth || 640;
@@ -3601,9 +3684,14 @@ function renderPano(q = 1) {
   }
   // turbinacímkék
   ctx.textBaseline = 'bottom';
-  for (const L of tLabels) {
-    const ly = Math.max(L.y - 6 * lw, 40 * lw);
-    halo(`T${L.i + 1} · ${km(L.D)}`, L.x, ly, 'center');
+  // széles látószögnél a közeli turbinák címkéi egymásra csúsznának: ütközéskor feljebb lépnek egy sort
+  const placed = [], rowH = 14 * lw;
+  for (const L of [...tLabels].sort((a, b) => a.D - b.D)) {
+    const txt = `T${L.i + 1} · ${km(L.D)}`, hw = ctx.measureText(txt).width / 2 + 3 * lw;
+    let ly = Math.max(L.y - 6 * lw, 40 * lw);
+    for (let n = 0; n < 6 && placed.some(p => Math.abs(p.x - L.x) < p.hw + hw && Math.abs(p.y - ly) < rowH); n++) ly = Math.max(ly - rowH, 26 * lw);
+    placed.push({ x: L.x, y: ly, hw });
+    halo(txt, L.x, ly, 'center');
   }
   if (!vis.length && sel) { ctx.textBaseline = 'top'; halo('A turbina most nincs a képben. Dupla kattintással visszaáll.', W / 2, 30 * lw, 'center'); }
 }
@@ -4279,7 +4367,7 @@ function esriFailed() {
 }
 const tileXY = (lat, lon, z) => { const n = 2 ** z, s = Math.sin(lat * RAD); return [Math.floor((lon + 180) / 360 * n), Math.floor((0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * n)]; };
 async function esriDiag() {
-  const c = map.getCenter(), z = 14, [x, y] = tileXY(c.lat, c.lng, z);
+  const c = map._loaded ? map.getCenter() : { lat: state.viewer.lat, lng: state.viewer.lon }, z = 14, [x, y] = tileXY(c.lat, c.lng, z);
   let why;
   try {
     const r = await fetch(esriTile(z, x, y, ESRI_KEYED), { cache: 'no-store' });
@@ -5848,6 +5936,7 @@ function arLoop() {   // képkockánként a mozgásból mért látószöghöz; k
   t();
 }
 async function startAR() {
+  boot();   // görgetés nélkül is: előbb az eszköz, hogy utána a GPS-nézőpontot ne írja felül
   const framed = window.top !== window, link = SITE_URL;
   const fail = t => { realMsg(t + (framed || !(LOCAL && LOCAL.web) ? ` Az élő kamera a nyilvános oldalon működik: <a href="${link}" target="_blank" rel="noopener">${link.replace('https://', '')}</a>` : '')); return false; };
   if (!(LOCAL && LOCAL.web)) return fail('Ebben a beágyazott nézetben a böngésző nem engedi a kamerát és az iránytűt.');
@@ -5917,7 +6006,7 @@ async function shareLink(msg) {
 $('copyLink').onclick = () => shareLink($('copyMsg'));
 $('shareBtn').onclick = () => shareLink($('shareMsg'));
 $('photoBtn').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('photoIn').click(); } };
-$('photoIn').onchange = () => { const f = $('photoIn').files[0]; $('photoIn').value = ''; if (f) { realMsg('A fotó betöltése…', false); openPhoto(f); } };
+$('photoIn').onchange = () => { const f = $('photoIn').files[0]; $('photoIn').value = ''; if (f) { boot(); realMsg('A fotó betöltése…', false); openPhoto(f); } };
 if (TOUCH) $('arBtn').hidden = false;   // telefonon mindig látszik; ha a böngésző nem tudja, a gomb elmondja, mit kell tenni
 else $('realNote').textContent += ' Telefonon élő kamerás nézet is van.';
 $('arBtn').onclick = () => { let seen = false; try { seen = localStorage.getItem('arIntro') === '1'; } catch (e) {} if (seen) startAR(); else openIntro('start'); };
@@ -5982,11 +6071,23 @@ syncForLayer();
 syncBldLayer();
 if (LOCAL && !LOCAL.web) { $('copyLink').hidden = true; $('shareBtn').parentElement.hidden = true; }
 if (LOCAL) { $('vsR').querySelector('option[value="20000"]').remove(); }
-loadHash();
-syncControls(); renderObstacles(); buildMarkers();
-fitView();
-let rsT = 0; window.addEventListener('resize', () => { clearTimeout(rsT); rsT = setTimeout(() => { renderPano(1); renderProfile(); }, 150); });
-update();
+/* Késleltetett indítás: az eszköz adatai (domborzat, épületek, fák, térképcsempék, a 3D kép égboltja és textúrái, kb. 6 MB)
+   csak akkor töltődnek le, amikor az eszköz a képernyő közelébe ér; addig a nyitókép gyorsan betölt.
+   Megosztott nézet linkjével (#eyJ…) azonnal indul. */
+let booted = false;
+function boot() {
+  if (booted) return; booted = true;
+  loadHash();
+  syncControls(); renderObstacles(); buildMarkers();
+  layoutPip();
+  fitView();
+  let rsT = 0; window.addEventListener('resize', () => { clearTimeout(rsT); rsT = setTimeout(() => { layoutPip(); renderPano(1); renderProfile(); }, 150); });
+  update();
+}
+window.hlBoot = boot;
+{ const el = $('map');   // a térkép 400 px-re a képernyőtől: asztalon kb. az első görgetésre, telefonon a nyitókép után indul (a kamera- és fotógomb maga is elindítja)
+  if (/^#eyJ/.test(location.hash) || !el || !window.IntersectionObserver) boot();
+  else { const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); boot(); } }, { rootMargin: '400px 0px' }); io.observe(el); } }
 </script>
 </body>
 </html>
