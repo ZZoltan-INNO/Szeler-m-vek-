@@ -6186,12 +6186,12 @@ let booted = false;
 const EXAMPLE_T = [{ lat: 47.09960, lon: 16.55731 }, { lat: 47.09960, lon: 16.56590 }, { lat: 47.09960, lon: 16.57449 }];   // 1. lehetséges terület, Jáktól kb. 4,6 km-re délre
 function boot() {
   if (booted) return; booted = true;
-  if (!loadHash() && !state.turbines.length && EXAMPLE_T.every(t => inRegion(t.lat, t.lon))) { state.turbines = EXAMPLE_T.map(t => ({ ...t })); state.sel = 1; }   // alap turbinák, hogy ne üres képpel induljon
+  if (!loadHash() && !state.turbines.length && inRegion(EXAMPLE_T[1].lat, EXAMPLE_T[1].lon)) { state.turbines = [{ ...EXAMPLE_T[1] }]; state.sel = 0; }   // egy alap turbina (a példa középsője), hogy ne üres képpel induljon
   syncControls(); renderObstacles(); buildMarkers();
   layoutPip();
   fitView();
   let rsT = 0; window.addEventListener('resize', () => { clearTimeout(rsT); rsT = setTimeout(() => { layoutPip(); renderPano(1); renderProfile(); }, 150); });
-  update();
+  window.hlReady = update();   // az első számítás vége (ellenőrzéshez)
 }
 window.hlBoot = boot;
 { const el = $('map');   // a térkép 400 px-re a képernyőtől: asztalon kb. az első görgetésre, telefonon a nyitókép után indul (a kamera- és fotógomb maga is elindítja)
