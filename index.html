@@ -3611,6 +3611,8 @@ function updateFovNote(cssW) {
 // a kép oldalaránya: úszó ablakban 16:9, nagyítva a térkép helyének aránya, egyébként keskenyen négyzet, szélesen 16:9
 const panoAspect = cssW => PIP.on && PIP.big ? clamp(($('mapStage').clientHeight - $('pipBar').offsetHeight) / Math.max(1, cssW), 0.3, 1.5) : PIP.on ? clamp(PIP.asp, 0.25, Math.max(0.25, ($('mapStage').clientHeight - $('pipBar').offsetHeight - 8) / Math.max(1, cssW))) : cssW < 560 ? 1 : 0.5625;
 function renderPano(q = 1) {
+  // amíg az élő kamera / a fotós nézet indul vagy nyitva van, a 3D-kép nem látszik: nem rajzoljuk (telefonon ez fogná a kamerát), bezáráskor egyszer újra
+  if (window.hlMontBusy) { renderPano.dirty = true; if (typeof RV !== 'undefined' && RV && RV.animate) RV.animate(false); return; }
   { const cw = $('pano').clientWidth || $('pano').parentElement.clientWidth || 640; state.fov = window.FOV_OVERRIDE || (FOV_MODE === 'life' ? lifeFov(cw) : CAM_FOV); updateFovNote(cw); }
   if (RV === undefined) { try { RV = window.RealView ? window.RealView.create($('pano').parentElement, { assets: 'assets/' }) : null; if (RV) RV.onReady = () => renderPano(1); } catch (e) { RV = null; } }
   if (RV) { renderPano.lastEye = eyeInfo().eyeZ; renderReal(); return; }
@@ -5412,6 +5414,7 @@ try { AR.fov = 66; AR.bias = JSON.parse(localStorage.getItem('arBias') || 'null'
 const inRegion = (la, lo) => !REGION || Math.hypot((la - REGION.lat) * 111.2, (lo - REGION.lon) * 111.32 * Math.cos(REGION.lat * RAD)) <= REGION.km + 3;
 function montStatus(html) { $('montSt').innerHTML = html; }
 function openMont(mode) {
+  window.hlMontBusy = true; if (typeof RV !== 'undefined' && RV && RV.animate) RV.animate(false);   // a háttérben a 3D-kép áll
   $('mShare').hidden = true; MONT.lastFile = null;
   if (!MONT.mode) try { history.pushState({ hlMont: 1 }, ''); MONT.hist = true; } catch (e) {}
   MONT.mode = mode; $('mont').hidden = false; $('mont').classList.toggle('is-ar', mode === 'ar'); document.body.style.overflow = 'hidden';
@@ -5426,6 +5429,7 @@ function openMont(mode) {
   $('montBack').focus();
 }
 function closeMont(fromPop) {
+  window.hlMontBusy = false; renderPano.dirty = false;
   if (MONT.hist) { MONT.hist = false; if (fromPop !== true) try { history.back(); setTimeout(saveHash, 300); } catch (e) {} }   // a visszalépés a régi címsort hozná vissza
   MONT.mode = null; $('mont').hidden = true; document.body.style.overflow = ''; cancelAnimationFrame(MONT.raf); COACH.on = false; $('arCoach').hidden = true;
   if (AR.stream) { AR.stream.getTracks().forEach(tr => tr.stop()); AR.stream = null; $('arVideo').srcObject = null; }
@@ -6039,6 +6043,11 @@ function arLoop() {   // képkockánként a mozgásból mért látószöghöz; k
   t();
 }
 async function startAR() {
+  window.hlMontBusy = true;
+  try { return await startAR0(); }
+  finally { if (!MONT.mode) { window.hlMontBusy = false; if (renderPano.dirty) { renderPano.dirty = false; renderPano(1); } } }
+}
+async function startAR0() {
   boot();   // görgetés nélkül is: előbb az eszköz, hogy utána a GPS-nézőpontot ne írja felül
   const framed = window.top !== window, link = SITE_URL;
   const fail = t => { realMsg(t + (framed || !(LOCAL && LOCAL.web) ? ` Az élő kamera a nyilvános oldalon működik: <a href="${link}" target="_blank" rel="noopener">${link.replace('https://', '')}</a>` : '')); return false; };
