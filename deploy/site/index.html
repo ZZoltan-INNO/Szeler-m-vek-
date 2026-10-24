@@ -910,7 +910,7 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .pill{display:inline-flex;align-items:center;gap:8px;font:600 1.15rem/1.15 var(--display);padding:7px 12px 7px 10px;border-radius:999px;background:var(--soft);width:fit-content}
 .pill i{width:12px;height:12px;border-radius:50%;flex:none}
 .verdict .main{font-size:1.02rem;max-width:70ch}
-.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .fact{background:var(--card);padding:9px 11px;display:grid;gap:2px}
 .fact span{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
 .fact b{font:500 1.02rem/1.2 var(--mono);font-variant-numeric:tabular-nums}
@@ -1554,18 +1554,13 @@ document.addEventListener('DOMContentLoaded', () => {
     <section class="card" id="c-ctrl" aria-labelledby="h-ctrl">
       <h2 id="h-ctrl">Beállítások</h2>
       <div class="field">
-        <span class="flabel" id="lbl-turbs">Turbinák</span>
-        <div class="turbs" id="turbList" role="list" aria-labelledby="lbl-turbs"></div>
-        <p class="small">Új turbina: válaszd a térkép felett az „Új turbina” módot, és koppints a térképre. A × törli a turbinát.</p>
-      </div>
-      <div class="field">
         <label for="model">Turbinatípus</label>
         <select id="model"></select>
         <div class="custom" id="customBox" hidden>
           <label>Agymagasság (m)<input type="number" id="cHub" min="30" max="260" step="1" value="165"></label>
           <label>Rotorátmérő (m)<input type="number" id="cRot" min="20" max="260" step="1" value="170"></label>
         </div>
-        <p class="small" id="modelNote"></p>
+        <p class="small" id="modelNote" hidden></p>
       </div>
       <div class="field">
         <span class="flabel" id="lbl-floor">Honnan nézed?</span>
@@ -1576,19 +1571,18 @@ document.addEventListener('DOMContentLoaded', () => {
           <button type="button" data-f="12">4. emeletről</button>
         </div>
         <div class="rng"><input type="range" id="floor" min="-3" max="40" step="0.5" value="0" aria-label="A nézőpont emelése a talajszinthez képest"><output id="floorO"></output></div>
-        <p class="small">A szemmagasság mindig 1,7 m a talpadhoz képest. Árokban a szem a környező talaj alá kerül, így az árok pereme is takar.</p>
       </div>
       <div class="field" id="bldField">
-        <label class="check"><input type="checkbox" id="bld" checked> <b>Valós épületek</b> a térképről, 3D-ben és a számításban</label>
+        <label class="check"><input type="checkbox" id="bld" checked> <b>Valós épületek</b></label>
         <p class="small">A házak alaprajza légi- és műholdfelvételekből felismert, illetve OpenStreetMap-adat (Overture Maps). A magasságot ott, ahol nincs megadva, az alapterületből becsüli: melléképület 3–4,5 m, családi ház nyeregtetővel kb. 7 m, csűr, üzem 8–10 m. A kocsiutak úttestétől 3 m-en belül nem marad épület (ahol az adatban mégis belelógna, ott a házat visszavágja).</p>
-        <p class="small" id="bldStat"></p>
+        <p class="small" id="bldStat" hidden></p>
       </div>
       <div class="field" id="siteField">
-        <label class="check"><input type="checkbox" id="sites" checked> <b>Lehetséges telepítési területek</b> egy átvilágítás szerint (áttetsző kék a térképen)</label>
+        <label class="check"><input type="checkbox" id="sites" checked> <b>Lehetséges telepítési területek</b> (kék)</label>
         <p class="small">A Vas vármegyei területrendezési terv mellékletei és a 700 m-es lakóterületi védőtávolság alapján készült átvilágítás szabad területei: a kék foltokat az átvilágítás térképéről vágtuk ki (kb. 50–100 m pontossággal). Turbinát az „Új turbina” módban bárhova tehetsz. Tájékoztató adat, nem hivatalos kijelölés.</p>
       </div>
       <div class="field" id="shadowField">
-        <label class="check"><input type="checkbox" id="shOn"> <b>Árnyékvetés és villódzás</b> a térképen, a választott napon és időpontban (a térkép „☀ Árnyék” gombjával is)</label>
+        <label class="check"><input type="checkbox" id="shOn"> <b>Árnyékvetés és villódzás</b></label>
         <div id="shCtl" class="sh-panel" hidden>
           <div class="sh-head"><b>☀ Árnyék</b><button type="button" id="shClose" aria-label="Árnyék kikapcsolása">×</button></div>
           <label class="flabel" for="shDay">Nap: <output id="shDayO"></output></label>
@@ -1604,7 +1598,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       </div>
       <div class="field" id="forField">
-        <label class="check"><input type="checkbox" id="forest" checked> <b>Fák és erdők</b> a légifotókról felismerve, a térképen, 3D-ben és a számításban</label>
+        <label class="check"><input type="checkbox" id="forest" checked> <b>Fák és erdők</b></label>
         <label class="flabel" for="forD">Famagasság-korrekció</label>
         <div class="rng"><input type="range" id="forD" min="-5" max="20" step="1" value="8"><output id="forDo"></output></div>
         <p class="small">Forrás: a Meta és a World Resources Institute lombkorona-magasság térképe (2024, CC BY 4.0), amely 2016–2019-es légifotókról gépi tanulással becsüli a fák magasságát, kb. 1 m-es rácson. Ebből minden fa a saját helyén, magasságával és koronaméretével kerül a 3D képbe és a számításba (kertek, fasorok, magányos fák; 8 km-en belül), az összefüggő erdők pedig 6,5 m-es rácson, a mért átlagos famagassággal. A térképen 15-ös nagyítástól a fák koronája is látszik. A felvételek óta a fák nőhettek, vagy kivághatták őket: a csúszkával az összes fa magasságán lehet állítani. Az utakat az OpenStreetMap adja: a kocsiutak mentén az úttest szélétől 3 m-ig, a földutakon, járdákon és bejárókon magán az úton nincs fa, így az útra tett nézőpont szabadon áll. A saját kerted fáit kézzel adhatod hozzá.</p>
@@ -1620,7 +1614,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   <div class="col">
     <section class="card" id="c-view" aria-labelledby="h-view">
-      <div class="card-head"><h2 id="h-view">Amit szemmagasságból látsz</h2><span class="hint">Húzd a képet oldalra a körülnézéshez, a ▲ ▼ gombokkal (egérrel húzva is) fel-le nézhetsz; dupla kattintással visszaáll a turbinára.</span></div>
+      <div class="card-head"><h2 id="h-view">Amit szemmagasságból látsz</h2><span class="hint">Húzd a képet a körülnézéshez; dupla kattintás: vissza a turbinára.</span></div>
       <div class="pano-wrap">
         <canvas id="pano" role="img" aria-label="A nézőpontból látott kép: domborzat, takarások és a szélturbina"></canvas>
         <div class="busy" id="busy" hidden>Domborzat betöltése…</div>
@@ -1629,11 +1623,11 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="pano-tools">
         <span class="tilt" role="group" aria-label="Fel-le nézés"><button class="btn" type="button" id="tiltUp" aria-label="Nézz feljebb">▲</button><button class="btn" type="button" id="tiltDown" aria-label="Nézz lejjebb">▼</button></span>
         <div class="seg" role="group" aria-label="Látószög"><button type="button" id="fovCam" aria-pressed="true">Mint a telefon (66°)</button><button type="button" id="fovLife" aria-pressed="false">Életnagyság</button></div>
-        <p class="small fov-note" id="fovNote"></p>
+        <p class="small fov-note" id="fovNote" hidden></p>
         <span class="checks"><label class="check"><input type="checkbox" id="ghost" checked> A takart rész pirosan áttűnik</label>
         <label class="check"><input type="checkbox" id="spin" checked> Forgó lapátok</label></span>
       </div>
-      <div class="real-row"><button class="btn primary ar-big" type="button" id="arBtn" hidden><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg><span><b>Élő kamera (AR)</b><small>Tartsd a telefont a táj felé: a turbina a helyén áll</small></span></button><label class="btn" for="photoIn" id="photoBtn" tabindex="0">Turbina a saját fotódon</label><input type="file" id="photoIn" class="vh" accept="image/*"><button class="linkbtn" type="button" id="arHow">Hogyan működik? (videó)</button><span class="small" id="realNote" role="status" aria-live="polite">Fotózd le a tájat onnan, ahonnan nézed, és a program valós méretben ráteszi a turbinát.</span></div>
+      <div class="real-row"><button class="btn primary ar-big" type="button" id="arBtn" hidden><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg><span><b>Élő kamera (AR)</b><small>Tartsd a telefont a táj felé: a turbina a helyén áll</small></span></button><label class="btn" for="photoIn" id="photoBtn" tabindex="0">Turbina a saját fotódon</label><input type="file" id="photoIn" class="vh" accept="image/*"><button class="linkbtn" type="button" id="arHow">Hogyan működik? (videó)</button><span class="small" id="realNote" role="status" aria-live="polite"></span></div>
       <div class="bld-edit" id="bldEdit" hidden>
         <div class="be-head"><b>Kiválasztott épület</b><button type="button" id="beClose" aria-label="Bezárás">×</button></div>
         <p class="small" id="beInfo"></p>
@@ -1641,7 +1635,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="rng"><input type="range" id="beH" min="2" max="40" step="0.5"><output id="beHo"></output></div>
         <div class="be-btns"><button class="btn" type="button" id="beReset">Vissza a becsült értékre</button><button class="linkbtn" type="button" id="beAll" hidden></button></div>
       </div>
-      <p class="small" id="bldHint">Kattints egy házra a képen, és megadhatod a valódi magasságát; a számítás is azzal számol.</p>
+      <p class="small" id="bldHint">Házra kattintva megadhatod a magasságát.</p>
       <p class="small">A kép úgy készül, mint egy fénykép: a bal szélen lévő fokbeosztás a valódi emelkedési szögeket mutatja. Kinyújtott karral a kisujjad kb. 1°, a hüvelykujjad kb. 2° széles, az öklöd kb. 10° magas. A telihold 0,5°. A fák törzsei között alul átláthatsz, a számítás viszont a fasort a koronája magasságáig tömörnek veszi.</p>
       <div class="share-row"><button class="btn" type="button" id="shareBtn">Megosztás: link ehhez a nézethez</button><span class="hint" id="shareMsg" role="status"></span></div>
       <div class="verdict" id="verdict" aria-live="polite"></div>
@@ -3831,10 +3825,8 @@ function renderResults() {
         <div class="fact"><span>Takarva a talptól</span><b>${h <= 0 ? '0 m' : h >= m.tip ? 'teljesen' : nf(Math.round(h)) + ' m-ig'}</b></div>
         <div class="fact"><span>Lapátvég szöge</span><b>${nf(a.aTip, 1)}°</b></div>
         <div class="fact"><span>Látható rész</span><b>${nf(visDeg, 1)}°</b></div>
-        <div class="fact"><span>Talajszint nálad</span><b>${nf(a.zV)} m</b></div>
-        <div class="fact"><span>Talajszint a turbinánál</span><b>${nf(a.zT)} m</b></div>
       </div>
-      <p class="small">${visDeg > 0 ? `A turbinából függőlegesen ${nf(visDeg, 1)}° látszik. ${cmp} ` : ''}A magasságok tengerszint feletti értékek. A Föld görbülete ezen a távolságon ${nf(drop(a.D), 1)} m-rel süllyeszti a turbina talppontját.</p>
+      <p class="small">${visDeg > 0 ? `A turbinából függőlegesen ${nf(visDeg, 1)}° látszik. ${cmp}` : ''}</p>
 `;
   }
   if (AN.length > 1) {
@@ -3848,7 +3840,8 @@ function renderResults() {
   } else $('tblWrap').innerHTML = '';
   renderTurbList();
 }
-function renderTurbList() {
+function renderTurbList() {   // a turbinák listája kikerült (a térképen látszanak); a kijelölés és törlés a turbina felugró ablakában
+  if (!$('turbList')) return;
   const m = model();
   $('turbList').innerHTML = !AN.length ? '<p class="empty">Nincs turbina. Válaszd a térkép felett az „Új turbina” módot, és koppints a térképre.</p>' : AN.map((x, i) => {
     let info = '<span class="hint">nincs adat</span>';
@@ -4971,7 +4964,7 @@ function renderObstacles() {
   const box = $('obs');
   if (!obDragging) buildObHandles();
   drawObstacles();
-  if (!state.obstacles.length) { box.innerHTML = '<p class="empty">Nincs takarás megadva: most csak a domborzat takar. Válassz alább egy elemet, és koppints a térképre.</p>'; return; }
+  if (!state.obstacles.length) { box.innerHTML = '<p class="empty">Nincs saját takarás.</p>'; return; }
   box.innerHTML = state.obstacles.map(o => {
     const d = OB[o.type], wi = WIDTHS.findIndex(w => w >= o.w), pd = obPolar(o).d, lin = LINEAR(o.type);
     return `<div class="ob" data-id="${o.id}">
@@ -6130,7 +6123,6 @@ $('shareBtn').onclick = () => shareLink($('shareMsg'));
 $('photoBtn').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('photoIn').click(); } };
 $('photoIn').onchange = () => { const f = $('photoIn').files[0]; $('photoIn').value = ''; if (f) { boot(); realMsg('A fotó betöltése…', false); openPhoto(f); } };
 if (TOUCH) $('arBtn').hidden = false;   // telefonon mindig látszik; ha a böngésző nem tudja, a gomb elmondja, mit kell tenni
-else $('realNote').textContent += ' Telefonon élő kamerás nézet is van.';
 // telefonon az élő kamera a fő élmény: gomb a nyitóképen és lebegő gomb, amíg az eszköz AR-gombja nem látszik
 if (TOUCH) {
   const go = () => $('arBtn').click();
