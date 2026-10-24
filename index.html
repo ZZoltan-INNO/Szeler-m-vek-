@@ -5261,7 +5261,7 @@ function drawReal(g, cam, opts) {
   // turbinák: a távolabbitól a közelebbi felé
   const list = state.turbines.map((T, i) => { const [x, y] = fr.fromLL(T.lat, T.lon), D = Math.hypot(x, y), z = fr.elev(x, y); return { i, x, y, D, z0: z - drop(D) - ei.eyeZ }; })
     .filter(t => t.z0 === t.z0 && t.D > 60).sort((a, b) => b.D - a.D);
-  let pending = false;
+  let pending = false; const placedL = [];   // a turbinafeliratok helye: ütközéskor egy sorral feljebb lépnek, vékony vonallal a lapátvéghez
   for (const t of list) {
     const az = Math.atan2(t.x, t.y), hw = Math.atan((m.R + 8) / t.D) + 0.003;
     if (Math.abs(dAz(az)) > half + hw) continue;
@@ -5274,8 +5274,13 @@ function drawReal(g, cam, opts) {
     if (opts.ghost || hidden) { g.save(); if (clip(false)) { g.globalAlpha = opts.ghost ? 0.5 : 0.35; drawTurbine2D(g, proj, t, m, opts.rot, turbineColors(t.D, true)); } g.restore(); }
     // felirat a lapátvég fölött
     const p = opts.tlabel === false ? null : proj([t.x, t.y, t.z0 + m.tip + 12]);
-    if (p) { g.save(); g.font = `700 ${Math.round(12 * sc + 7)}px system-ui, sans-serif`; g.textAlign = 'center'; const txt = `T${t.i + 1} · ${km(t.D)}`; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.55)'; g.strokeText(txt, p[0], p[1]); g.fillStyle = '#fff'; g.fillText(txt, p[0], p[1]);
-      if (hidden) { const y2 = p[1] + 14 * sc + 9; g.font = `600 ${Math.round(10 * sc + 6)}px system-ui, sans-serif`; g.strokeText('takarásban: házak, fák mögött', p[0], y2); g.fillStyle = '#ffd9c2'; g.fillText('takarásban: házak, fák mögött', p[0], y2); }
+    if (p) { g.save(); g.font = `700 ${Math.round(12 * sc + 7)}px system-ui, sans-serif`; g.textAlign = 'center'; const txt = `T${t.i + 1} · ${km(t.D)}`;
+      const lw = g.measureText(txt).width / 2 + 4 * sc + 3, lh = 14 * sc + 10; let ly = p[1];
+      for (let n = 0; n < 8 && placedL.some(q => Math.abs(q.x - p[0]) < q.w + lw && Math.abs(q.y - ly) < lh); n++) ly -= lh;
+      placedL.push({ x: p[0], y: ly, w: lw });
+      if (ly < p[1]) { g.beginPath(); g.moveTo(p[0], ly + 3); g.lineTo(p[0], p[1] - 4); g.lineWidth = 1; g.strokeStyle = 'rgba(255,255,255,.75)'; g.stroke(); }
+      g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.55)'; g.strokeText(txt, p[0], ly); g.fillStyle = '#fff'; g.fillText(txt, p[0], ly);
+      if (hidden) { const y2 = ly + 14 * sc + 9; g.font = `600 ${Math.round(10 * sc + 6)}px system-ui, sans-serif`; g.strokeText('takarásban: házak, fák mögött', p[0], y2); g.fillStyle = '#ffd9c2'; g.fillText('takarásban: házak, fák mögött', p[0], y2); }
       g.restore(); }
   }
   // élő kamerán: ha egy turbina sincs a képben, nyíl mutatja, merre kell fordulni (a kijelölt, különben a legközelebbi irányú felé)
