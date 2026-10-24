@@ -1877,6 +1877,7 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
     <div class="mont-row">
       <label class="check"><input type="checkbox" id="mSky" checked> <span id="mSkyL">Modell-horizont és falunevek</span></label>
       <label class="check"><input type="checkbox" id="mGhost"> A takart rész is látszódjon (pirosan)</label>
+      <label class="check" title="A mentett JPEG-fájlba beírja a helyet, az irányt és a látószöget, így utólag ellenőrizhető a méretarány. A kép látványa nem változik."><input type="checkbox" id="mMeta"> Mérési adatok a mentett képbe (a pontos helyed is!)</label>
       <label class="check" id="mHzW" hidden><input type="checkbox" id="mHz" checked> Vízszintes vonal (szemmagasság)</label>
       <button class="btn" type="button" id="mSave">Kép mentése</button>
       <button class="btn primary" type="button" id="mFreeze" hidden>Igazítás: kép megállítása</button>
@@ -5514,6 +5515,21 @@ function exifTime(ex) {
   return u >= s0 && u < e0 ? u : t - 36e5;
 }
 // a kész kép a fotó eredeti felbontásában (legfeljebb 4096 px), a forrás feltüntetésével
+// ellenőrzéshez: a felvétel adatai (hely, kamera-tengelyek, látószög), hogy utólag a modell a képre vetíthető legyen
+function shotMeta(fromVideo, cam) {
+  const r = v => Array.isArray(v) ? v.map(r) : typeof v === 'number' ? +v.toFixed(6) : v, c = AR.cams && AR.cams[AR.cam];
+  return { app: 'HorizonLens', v: 1, mode: fromVideo ? 'ar' : 'photo', t: new Date().toISOString(), region: LOCAL && LOCAL.region ? LOCAL.region.name || '' : '',
+    viewer: r([state.viewer.lat, state.viewer.lon]), floor: state.floor, eyeZ: r(eyeInfo().eyeZ), W: cam.W, H: cam.H, F: r(cam.F), b: r([cam.b.f, cam.b.r, cam.b.u]),
+    fov: r(fromVideo ? AR.fov : MONT.fov), fovSrc: fromVideo ? (AR.fovCal ? 'kalibrált' : AR.fovManual ? 'kézi' : AR.fovAuto ? 'mozgásból mért' : 'becsült') : 'fotó',
+    cam: fromVideo && c ? c.label : '', gps: fromVideo ? AR.gps : null, compassSd: fromVideo && AR.sd != null ? r(AR.sd) : null, hdOff: fromVideo ? r(AR.hdOff) : r(MONT.hd - MONT.hd0), ptOff: fromVideo ? r(AR.ptOff) : 0,
+    frozen: fromVideo ? !!AR.frozen : false, model: state.model, custom: state.custom, turbines: state.turbines.map(t => r([t.lat, t.lon])), sel: state.sel };
+}
+async function jpegMeta(blob, meta) {   // JPEG megjegyzés-szegmens (COM) közvetlenül a fájl eleje után
+  const buf = new Uint8Array(await blob.arrayBuffer()), txt = new TextEncoder().encode('HorizonLens ' + JSON.stringify(meta));
+  if (buf[0] !== 0xFF || buf[1] !== 0xD8 || txt.length > 65000) return blob;
+  const seg = new Uint8Array(4 + txt.length); seg[0] = 0xFF; seg[1] = 0xFE; seg[2] = (txt.length + 2) >> 8; seg[3] = (txt.length + 2) & 255; seg.set(txt, 4);
+  return new Blob([buf.slice(0, 2), seg, buf.slice(2)], { type: 'image/jpeg' });
+}
 async function saveMontage(fromVideo) {
   let W, H, c, cam;
   if (fromVideo) {
@@ -5531,8 +5547,9 @@ async function saveMontage(fromVideo) {
   g.font = `600 ${fs}px system-ui, sans-serif`; let tw = g.measureText(txt).width;
   if (tw > W * 0.96) { fs = Math.max(8, Math.floor(fs * W * 0.96 / tw)); g.font = `600 ${fs}px system-ui, sans-serif`; tw = g.measureText(txt).width; }
   g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(0, H - fs * 1.9, Math.min(W, tw + fs * 1.4), fs * 1.9); g.fillStyle = '#fff'; g.fillText(txt, fs * 0.7, H - fs * 0.62);
-  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.9)); if (!blob) return;
-  const name = `szeleromu-${new Date().toISOString().slice(0, 10)}.jpg`, file = new File([blob], name, { type: 'image/jpeg' });
+  let blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.9)); if (!blob) return;
+  if ($('mMeta').checked) blob = await jpegMeta(blob, shotMeta(fromVideo, cam));
+  const dt = new Date(), p2 = n => String(n).padStart(2, '0'), name = `szeleromu-${dt.getFullYear()}-${p2(dt.getMonth() + 1)}-${p2(dt.getDate())}-${p2(dt.getHours())}${p2(dt.getMinutes())}${p2(dt.getSeconds())}.jpg`, file = new File([blob], name, { type: 'image/jpeg' });
   if (window.claude && window.claude.use) {
     const dl = await window.claude.use('downloads').catch(() => null);
     if (dl) { try { await dl.save({ filename: name, data: blob }); MONT.msg = ' A kép elmentve.'; return; } catch (e) { if (e && e.code === 'declined') return; } }
@@ -6056,6 +6073,8 @@ $('mRl').oninput = () => { MONT.rl = +$('mRl').value; syncMontCtl(); };
 $('mFov').oninput = () => { const v = +$('mFov').value; if (MONT.mode === 'ar') { AR.fov = v; AR.fovManual = true; camSave(); } else MONT.fov = v; syncMontCtl(); };
 $('mSave').onclick = () => saveMontage(false);
 $('mShot').onclick = () => saveMontage(true);
+try { $('mMeta').checked = localStorage.getItem('shotMeta') === '1'; } catch (e) {}
+$('mMeta').onchange = () => { try { localStorage.setItem('shotMeta', $('mMeta').checked ? '1' : '0'); } catch (e) {} };
 $('mFreeze').onclick = freezeAR;
 $('mCalLevel').onclick = calLevel;
 $('mCalScale').onclick = () => {
