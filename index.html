@@ -772,10 +772,6 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .be-btns{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .tdist{font:600 .74rem/1.25 var(--body);padding:3px 6px;background:rgba(255,255,255,.92);border:1px solid #e8590c;color:#3a2a20;box-shadow:none}
 .tdist::before{display:none}
-.site-ic{display:flex;align-items:center;gap:4px;transform:translate(-14px,-14px);white-space:nowrap}
-.site-ic b{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#fff;color:#1d3f8f;border:2.5px solid #1f5fd6;font:800 .85rem var(--body);box-shadow:0 1px 4px rgba(0,0,0,.35)}
-.site-ic.jak b{background:#1f5fd6;color:#fff;border-color:#fff}
-.site-ic span{font:700 .72rem var(--body);color:#fff;background:rgba(31,95,214,.9);padding:1px 5px;border-radius:4px}
 .sh-panel{background:var(--soft);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 10px 6px;margin-top:8px;font-size:.85rem;display:grid;gap:3px}
 .sh-panel[hidden]{display:none}
 .sh-panel input[type=range]{width:100%}
@@ -1590,7 +1586,7 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
       <div class="field" id="siteField">
         <label class="check"><input type="checkbox" id="sites" checked> <b>Lehetséges telepítési területek</b> egy átvilágítás szerint (áttetsző kék a térképen)</label>
-        <p class="small">A Vas vármegyei területrendezési terv mellékletei és a 700 m-es lakóterületi védőtávolság alapján készült átvilágítás szabad területei: a kék foltokat az átvilágítás térképéről vágtuk ki, és a térkép számozott köreire illesztettük (kb. 50–100 m pontossággal). A számok a táblázat 14 területe (az 1–4. érinti Ják határát); a számra koppintva egy turbinát is odatehetsz. Tájékoztató adat, nem hivatalos kijelölés.</p>
+        <p class="small">A Vas vármegyei területrendezési terv mellékletei és a 700 m-es lakóterületi védőtávolság alapján készült átvilágítás szabad területei: a kék foltokat az átvilágítás térképéről vágtuk ki (kb. 50–100 m pontossággal). Turbinát az „Új turbina” módban bárhova tehetsz. Tájékoztató adat, nem hivatalos kijelölés.</p>
       </div>
       <div class="field" id="shadowField">
         <label class="check"><input type="checkbox" id="shOn"> <b>Árnyékvetés és villódzás</b> a térképen, a választott napon és időpontban (a térkép „☀ Árnyék” gombjával is)</label>
@@ -4541,34 +4537,13 @@ if (VILLAGES.length) {
 /* ---------- Lehetséges telepítési területek egy átvilágítás szerint ----------
    Forrás: „Ják és környéke – szélerőmű-telepítési átvilágítás” (Vas vármegye területrendezési tervének mellékletei:
    ökológiai hálózat, kiváló szántók, erdők, tájképvédelem, honvédelmi terület, nagyvízi meder, vízminőség-védelem,
-   valamint a 700 m-es lakóterületi védőtávolság alapján). A térkép táblázata a szabad területek középpontját
-   (±100 m) és méretét adja; a kék területek határát a térkép képéről vágtuk ki (a számozott körökre illesztve,
-   kb. 50–100 m-es pontossággal).
-   [sorszám, terület (ha), szélesség, hosszúság, legközelebbi települések, ebből Ják közigazgatási területén (ha)] */
-const SITES = [
-  [1, 2725, 47.0996, 16.5659, 'Rádóckölked 2,3 km · Nagykölked 2,5 km', 1050], [2, 553, 47.1491, 16.5256, 'Pornóapáti 2,9 km · Ják 3,5 km', 364],
-  [3, 489, 47.1671, 16.5550, 'Nárai 2,6 km · Ják 3,3 km', 275], [4, 40, 47.1671, 16.5797, 'Ják 3,2 km · Nárai 3,6 km', 40],
-  [5, 1811, 47.0959, 16.6886, 'Nemesrempehollós 0,7 km · Sorokpolány 4,1 km', 0], [6, 1012, 47.0615, 16.6037, 'Rádóckölked 2,9 km · Harasztifalu 3,6 km', 0],
-  [7, 779, 47.2169, 16.4765, 'Felsőcsatár 0,5 km · Dozmat 2,3 km', 0], [8, 399, 47.2003, 16.5114, 'Dozmat 2,5 km · Nárai 2,8 km', 0],
-  [9, 377, 47.0524, 16.6462, 'Magyarszecsőd 1,3 km · Molnaszecsőd 2,7 km', 0], [10, 153, 47.1266, 16.6384, 'Kisunyom 1,1 km · Sorokpolány 2,8 km', 0],
-  [11, 149, 47.2158, 16.5336, 'Torony 1,7 km · Dozmat 2,3 km', 0], [12, 120, 47.1828, 16.4969, 'Horvátlövő 1,0 km · Pornóapáti 2,4 km', 0],
-  [13, 113, 47.1737, 16.4740, 'Horvátlövő 1,1 km · Pornóapáti 1,9 km', 0], [14, 76, 47.1499, 16.4518, 'Pornóapáti 3,3 km · Horvátlövő 4,2 km', 0]
-];
+   valamint a 700 m-es lakóterületi védőtávolság alapján). A kék területek határát a térkép képéről vágtuk ki
+   (kb. 50–100 m-es pontossággal); a területek sorszáma és mérete nem jelenik meg. */
 const siteLayer = L.layerGroup();
 if (REGION && Math.hypot(REGION.lat - 47.14, REGION.lon - 16.58) < 0.3) {
   // a szabad (kék) területek az átvilágítás térképéről kivágva (tools/build_sites.py), áttetsző kékkel
   if (LOCAL.sites) L.polygon(LOCAL.sites.polys, { color: '#1f5fd6', weight: 1, opacity: 0.8, fillColor: '#1f5fd6', fillOpacity: 0.32, interactive: false, smoothFactor: 0.5 }).addTo(siteLayer);
-  for (const [n, ha, la, lo, near, jak] of SITES) {
-    const m = L.marker([la, lo], { icon: L.divIcon({ className: 'site-ic' + (jak ? ' jak' : ''), html: `<b>${n}</b><span>${nf(ha)} ha</span>`, iconSize: null }), keyboard: true, title: `${n}. lehetséges terület` }).addTo(siteLayer);
-    m.bindPopup(`<b>${n}. lehetséges telepítési terület</b><br>kb. ${nf(ha)} ha szabad terület${jak ? `, ebből ${nf(jak)} ha Ják közigazgatási területén` : ''}<br>Legközelebbi települések: ${near}<br>
-      <button class="btn" type="button" data-site="${n}" style="margin-top:6px">Turbina ide (a terület közepére)</button>
-      <p class="small" style="margin:6px 0 0">Egy szélerőmű-telepítési átvilágítás térképéről (területrendezési terv mellékletei, 700 m-es védőtávolság). A kék folt a térkép képéről kivágott szabad terület (kb. 50–100 m pontossággal), a szám a táblázat szerinti középpont. Tájékoztató adat, nem hivatalos kijelölés.</p>`);
-  }
   siteLayer.addTo(map);
-  map.on('popupopen', e => {
-    const b = e.popup.getElement().querySelector('[data-site]'); if (!b) return;
-    b.onclick = () => { const st = SITES.find(x => x[0] === +b.dataset.site); state.turbines.push({ lat: st[2], lon: st[3] }); hlCount('turbines'); state.sel = state.turbines.length - 1; map.closePopup(); buildMarkers(); update(); fitView(); };
-  });
 }
 /* ---------- Árnyékvetés és villódzás ----------
    A Nap helyzete csillagászati közelítéssel (kb. 0,01°), a választott napon és magyar idő szerint (CET, nyáron CEST).
