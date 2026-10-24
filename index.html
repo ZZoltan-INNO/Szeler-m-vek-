@@ -739,6 +739,11 @@ header.top .wrap{display:grid;gap:10px}
 .pip-body{position:relative;flex:1;min-height:0}
 .pip-body .pano-wrap{margin:0;border-radius:0}
 .pip-body #pano{border-radius:0}
+.pip-rs{position:absolute;bottom:0;width:22px;height:22px;z-index:2;touch-action:none;opacity:.85}
+.pip-rs.l{left:0;cursor:nesw-resize;background:linear-gradient(225deg,transparent 48%,rgba(255,255,255,.75) 49% 56%,transparent 57% 66%,rgba(255,255,255,.75) 67% 74%,transparent 75%)}
+.pip-rs.r{right:0;cursor:nwse-resize;background:linear-gradient(135deg,transparent 48%,rgba(255,255,255,.75) 49% 56%,transparent 57% 66%,rgba(255,255,255,.75) 67% 74%,transparent 75%)}
+.pip-rs:hover{opacity:1}
+.pip.big .pip-rs{display:none}
 .col{display:flex;flex-direction:column;gap:20px;min-width:0}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
 .card-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
@@ -860,7 +865,9 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .obh.e{background:#fff;border-color:#17221d;width:12px;height:12px;margin:5px}
 #obType{max-width:12rem}
 .popbtns{display:flex;gap:6px;margin-top:6px}
-.popbtns button{font:600 12px/1 var(--body);padding:6px 8px;border-radius:6px;border:1px solid #c9d1c8;background:#f1f4f0;cursor:pointer}
+.popbtns button{font:600 12px/1 var(--body);padding:6px 8px;border-radius:6px;border:1px solid #c9d1c8;background:#f1f4f0;cursor:pointer;color:#1d2621}
+.popbtns button:hover,.popbtns button:focus-visible{background:#e2e8e0;border-color:#9aa79b}
+.popbtns button[data-a=del]{color:#a3330d}
 
 /* szemmagasságú kép */
 .pano-wrap{position:relative;border-radius:8px;overflow:hidden;background:#cddbe6;border:1px solid var(--line)}
@@ -1484,6 +1491,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="pip" id="pip" hidden role="region" aria-labelledby="pipT">
           <div class="pip-bar" id="pipBar"><b id="pipT">Amit szemmagasságból látsz</b><button type="button" class="pip-btn" id="pipBig" aria-pressed="false" title="Nagyítás a térkép helyére">⤢</button></div>
           <div class="pip-body" id="pipBody"></div>
+    <span class="pip-rs l" data-rs="l" title="Méretezés: húzd a sarkot (dupla kattintás: alapméret)" aria-hidden="true"></span><span class="pip-rs r" data-rs="r" title="Méretezés: húzd a sarkot (dupla kattintás: alapméret)" aria-hidden="true"></span>
         </div>
       </div>
       <div class="map-foot" id="mapFoot">
@@ -2972,7 +2980,7 @@ const DEFAULT = {
   // Ják főtere (más régiónál a build --place pontja); turbina és kézi takarás nincs (a házak és a fák a beépített adatból jönnek)
   viewer: window.LOCAL_DATA && window.LOCAL_DATA.home ? { lat: window.LOCAL_DATA.home.lat, lon: window.LOCAL_DATA.home.lon } : { lat: 47.14105, lon: 16.58072 },
   turbines: [],
-  sel: 0, model: 'sg170', custom: { hub: 165, rotor: 170 }, floor: 0, season: 'summer',
+  sel: 0, model: 'v172h', custom: { hub: 165, rotor: 170 }, floor: 0, season: 'summer',
   obstacles: [],
   fov: 40, pan: 0, tilt: 0, ghost: true, spin: true, bld: true, bldH: {}, forest: true, forD: 0, isExample: true
 };
@@ -3502,7 +3510,8 @@ function lifeFov(cssW) {
    1000 px-nél szélesebb ablakban a térkép teljes szélességű, a szemmagasság-kép pedig a jobb felső sarkában úszik:
    a fejlécénél fogva elhúzható (a helyét megjegyzi), a ⤢ gombbal a térkép helyére nagyítható. Keskenyebb ablakban és
    telefonon a kép a saját kártyájában marad. */
-const PIP = { on: false, big: false, home: null };
+const PIP = { on: false, big: false, home: null, w: 0, asp: 0.5625 };   // w: a térkép szélességéhez mért arány (0: alapméret), asp: a kép magasság/szélesség aránya
+try { const z = JSON.parse(localStorage.getItem('pipSize') || 'null'); if (z) { PIP.w = z[0]; PIP.asp = z[1]; } } catch (e) {}
 function layoutPip() {
   const want = innerWidth >= 1000, wrap = $('pano').parentElement;
   if (!PIP.home) { PIP.home = document.createComment('pano-hely'); wrap.parentNode.insertBefore(PIP.home, wrap); }
@@ -3515,11 +3524,12 @@ function layoutPip() {
 function pipPlace() {   // a megjegyzett hely (a színpadhoz mért arányban), különben a jobb felső sarok
   const el = $('pip'); let pos = null; try { pos = JSON.parse(localStorage.getItem('pipPos') || 'null'); } catch (e) {}
   if (pos && !PIP.big) { el.style.left = (pos[0] * 100) + '%'; el.style.top = (pos[1] * 100) + '%'; el.style.right = 'auto'; } else { el.style.left = el.style.top = el.style.right = ''; }
+  el.style.width = PIP.w && !PIP.big ? (PIP.w * 100) + '%' : '';
   pipClamp();
 }
 function pipClamp() {   // ne lógjon ki a térkép területéről (pl. ablakméretezés után)
   const el = $('pip'), st = $('mapStage'); if (!PIP.on || PIP.big || el.style.right !== 'auto') return;
-  const mx = st.clientWidth - el.offsetWidth, my = st.clientHeight - el.offsetHeight;
+  const mx = Math.max(0, st.clientWidth - el.offsetWidth), my = Math.max(0, st.clientHeight - el.offsetHeight);
   el.style.left = Math.max(0, Math.min(mx, el.offsetLeft)) + 'px'; el.style.top = Math.max(0, Math.min(my, el.offsetTop)) + 'px';
 }
 function pipBig(b) {
@@ -3536,6 +3546,24 @@ $('pipBig').onclick = () => pipBig(!PIP.big);
     try { localStorage.setItem('pipPos', JSON.stringify([el.offsetLeft / st.clientWidth, el.offsetTop / st.clientHeight])); } catch (e) {} };
   bar.addEventListener('pointerup', end); bar.addEventListener('pointercancel', end);
   bar.addEventListener('dblclick', e => { if (!e.target.closest('button')) pipBig(!PIP.big); }); }
+// méretezés az alsó sarkoknál: szélesség és magasság (a kép oldalaránya) is; a bal sarok a jobb szélet helyben hagyja
+{ let d = null, raf = 0;
+  const maxH = () => $('mapStage').clientHeight - $('pipBar').offsetHeight - 8;
+  const save = () => { try { localStorage.setItem('pipSize', JSON.stringify([+PIP.w.toFixed(4), +PIP.asp.toFixed(4)])); localStorage.setItem('pipPos', JSON.stringify([$('pip').offsetLeft / $('mapStage').clientWidth, $('pip').offsetTop / $('mapStage').clientHeight])); } catch (e) {} };
+  document.querySelectorAll('.pip-rs').forEach(h => {
+    h.addEventListener('pointerdown', e => { if (PIP.big) return; e.preventDefault(); const el = $('pip');
+      d = { side: h.dataset.rs, x: e.clientX, y: e.clientY, l: el.offsetLeft, t: el.offsetTop, w: el.offsetWidth, h: $('pano').getBoundingClientRect().height };
+      el.style.right = 'auto'; el.style.left = d.l + 'px'; el.style.top = d.t + 'px'; h.setPointerCapture(e.pointerId); });
+    h.addEventListener('pointermove', e => { if (!d) return; const el = $('pip'), st = $('mapStage'), dx = e.clientX - d.x;
+      const wMax = d.side === 'l' ? d.l + d.w : st.clientWidth - d.l, w = clamp(d.side === 'l' ? d.w - dx : d.w + dx, 300, wMax);
+      const ph = clamp(d.h + e.clientY - d.y, 150, Math.max(150, maxH() - d.t));
+      el.style.width = w + 'px'; if (d.side === 'l') el.style.left = (d.l + d.w - w) + 'px';
+      PIP.w = w / st.clientWidth; PIP.asp = ph / w;
+      cancelAnimationFrame(raf); raf = requestAnimationFrame(() => booted && renderPano(0.5)); });
+    const end = () => { if (!d) return; d = null; save(); if (booted) renderPano(1); };
+    h.addEventListener('pointerup', end); h.addEventListener('pointercancel', end);
+    h.addEventListener('dblclick', () => { PIP.w = 0; PIP.asp = 0.5625; try { localStorage.removeItem('pipSize'); localStorage.removeItem('pipPos'); } catch (e) {} pipPlace(); if (booted) renderPano(1); });
+  }); }
 const CAM_FOV = 66;   // vízszintes látómező, mint a telefonok fő kamerája (az élő kamera alapértéke is)
 let FOV_MODE = 'cam'; try { if (localStorage.getItem('fovMode') === 'life') FOV_MODE = 'life'; } catch (e) {}
 $('fovCam').onclick = () => setFovMode('cam'); $('fovLife').onclick = () => setFovMode('life');
@@ -3551,7 +3579,7 @@ function updateFovNote(cssW) {
   $('fovNote').textContent = `Életnagyságú kép: ${nf(state.fov, state.fov % 1 ? 1 : 0)}° széles látómező. Ha a ${touch ? 'telefont' : 'képernyőt'} kb. ${dist} cm-ről nézed, a turbina és a házak akkorának látszanak, mint a valóságban arról a pontról.`;
 }
 // a kép oldalaránya: úszó ablakban 16:9, nagyítva a térkép helyének aránya, egyébként keskenyen négyzet, szélesen 16:9
-const panoAspect = cssW => PIP.on && PIP.big ? clamp(($('mapStage').clientHeight - $('pipBar').offsetHeight) / Math.max(1, cssW), 0.3, 1.5) : PIP.on ? 0.5625 : cssW < 560 ? 1 : 0.5625;
+const panoAspect = cssW => PIP.on && PIP.big ? clamp(($('mapStage').clientHeight - $('pipBar').offsetHeight) / Math.max(1, cssW), 0.3, 1.5) : PIP.on ? clamp(PIP.asp, 0.25, Math.max(0.25, ($('mapStage').clientHeight - $('pipBar').offsetHeight - 8) / Math.max(1, cssW))) : cssW < 560 ? 1 : 0.5625;
 function renderPano(q = 1) {
   { const cw = $('pano').clientWidth || $('pano').parentElement.clientWidth || 640; state.fov = window.FOV_OVERRIDE || (FOV_MODE === 'life' ? lifeFov(cw) : CAM_FOV); updateFovNote(cw); }
   if (RV === undefined) { try { RV = window.RealView ? window.RealView.create($('pano').parentElement, { assets: 'assets/' }) : null; if (RV) RV.onReady = () => renderPano(1); } catch (e) { RV = null; } }
