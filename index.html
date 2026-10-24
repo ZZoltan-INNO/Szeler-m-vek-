@@ -5087,7 +5087,7 @@ async function update() {
   saveHash();
 }
 
-/* ---------- Turbina a valódi képen: saját fotó (fotómontázs) és élő kamera (AR) ----------
+/* ---------- Turbina a valódi képen: saját fotó (fotómontázs) és élő kamerakép ----------
    Közös rész: lyukkamera-vetítés (irány, dőlés, billenés, látószög); a modell horizontja (minden irányban a takarás
    emelkedési szöge, ugyanazzal a számítással, mint a turbinák takarása); és a turbina rajza, amelyet e horizont fölé
    vágunk: ami a modell szerint takarásban van, az a valódi képen is a takaró tárgy mögé kerül (kérésre pirosan
@@ -5597,7 +5597,7 @@ async function saveMontage(fromVideo) {
   MONT.msg = sm; setTimeout(() => { if (MONT.msg === sm) MONT.msg = ''; }, 7000);
 }
 
-/* ---------- Élő kamera (AR) ----------
+/* ---------- Élő kamerakép ----------
    Tájolás: a kép a giroszkóp alapú (relatív) tájolást követi, ez sima és nem ugrál; az égtájat az iránytűből (Androidon az
    abszolút tájolás, iOS-en a webkitCompassHeading) csak egy lassan átlagolt eltérésként veszi át, így az iránytű remegése
    és a fémtárgyak okozta kilengése nem látszik. Kézi igazítás (húzás, a kép megállításával is) után az eltérés rögzül:
