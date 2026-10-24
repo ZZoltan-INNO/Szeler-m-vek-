@@ -800,6 +800,14 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .vlabel span{display:inline-block;transform:translate(-50%,-130%);white-space:nowrap;font:700 .78rem var(--body);color:#fff;background:#e8590c;padding:2px 6px;border-radius:4px}
 .share-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
 .real-row{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap;margin-top:10px}
+.real-row .btn.ar-big{display:flex;align-items:center;gap:12px;text-align:left;padding:12px 16px;flex:1 1 100%;font-size:1rem;white-space:normal;border-radius:12px}
+.real-row .btn.ar-big[hidden]{display:none}
+.ar-big svg{flex:none;width:26px;height:26px}
+.ar-big span{display:grid;gap:3px}.ar-big small{font-weight:500;font-size:.8rem;opacity:.92}
+@media (pointer:coarse){.real-row #photoBtn{background:var(--soft);color:var(--ink);border-color:var(--line)}}
+.ar-fab{position:fixed;z-index:1500;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:8px;padding:12px 20px;border:0;border-radius:999px;background:#ec651d;color:#fff;font:600 15px/1 var(--body);box-shadow:0 10px 30px -8px rgba(0,0,0,.6),0 6px 20px -8px rgba(236,101,29,.9);cursor:pointer}
+.ar-fab[hidden]{display:none}
+@media (prefers-reduced-motion:no-preference){.ar-fab{animation:fabIn .25s ease-out}@keyframes fabIn{from{opacity:0;transform:translate(-50%,12px)}}}
 .real-row .btn{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);display:inline-block}
 .vh{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0);pointer-events:none}
 .real-msg{color:#b3261e;font-weight:600}
@@ -842,6 +850,10 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .mont-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px 16px}
 .mont-grid label{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;font-size:.85rem}
 .mont-row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.mont-ctl .mont-more{font-size:inherit;color:var(--ink);border-top:1px solid var(--line);padding-top:6px}
+.mont-ctl .mont-more>summary{padding:4px 0;color:var(--muted);font-weight:600;font-size:.86rem;list-style-position:inside}
+.mont-ctl .mont-more[open]>summary{margin-bottom:8px}
+.mont-more>.mont-grid,.mont-more>.mont-row{margin-top:8px}
 .btn.warn{border-color:var(--shadow);color:var(--shadow)}
 .turbs{display:grid;gap:6px}
 .tb{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:4px 10px;border:1px solid var(--line);border-radius:8px;padding:8px 6px 8px 12px;background:var(--paper)}
@@ -1333,6 +1345,13 @@ details.more>p{margin:8px 0 0}
 
 /* mondat felül, teljes szélességben; alatta a film, rajta balra a jelenet szövege */
 .hx-top{position:relative;z-index:3;width:100%;padding-top:calc(108px + env(safe-area-inset-top,0px));padding-bottom:6px}
+.hx-ar{margin-top:14px;display:flex;align-items:center;gap:12px;width:100%;max-width:440px;padding:12px 14px;border:0;border-radius:14px;background:#ec651d;color:#fff;text-align:left;cursor:pointer;box-shadow:0 12px 30px -12px rgba(236,101,29,.9)}
+.hx-ar[hidden]{display:none}
+.hx-ar svg{flex:none;width:28px;height:28px}
+.hx-ar span{display:grid;gap:3px;flex:1;min-width:0}
+.hx-ar b{font:650 16px/1.15 var(--body)}
+.hx-ar small{font:500 12.5px/1.3 var(--body);opacity:.92}
+.hx-ar i{font-style:normal;font-size:20px}
 .hx-hero .hx-top .hx-slogan{font:650 clamp(30px,4.3vw,66px)/1.04 var(--display);letter-spacing:-.04em}
 .hx-hero .hx-scene{top:var(--st,0px);transform:translateX(-50%);height:max(calc(var(--hh,100svh) - var(--st,0px)),56.25vw);width:max(100vw,calc((var(--hh,100svh) - var(--st,0px)) * 1.7778))}
 .hx-hero .hx-scene::after{background:linear-gradient(180deg,#2b2c31 0%,rgba(43,44,49,0) 14%),linear-gradient(90deg,rgba(43,44,49,.85) 0%,rgba(43,44,49,.45) 34%,rgba(43,44,49,0) 56%),linear-gradient(0deg,#2b2c31 0%,rgba(43,44,49,0) 26%)}
@@ -1359,7 +1378,8 @@ details.more>p{margin:8px 0 0}
   <button type="button" class="hx-btn hx-pri" data-scroll="eszkoz">Indítás</button>
 </div></div></nav>
 <header class="hx-hero" id="hxHero" data-scene="hl">
-  <div class="hx-in hx-top" id="hxTop"><h1 class="hx-slogan hx-title"><span class="s1">Honnan látszik</span> <span class="s2">a szélerőmű?</span></h1></div>
+  <div class="hx-in hx-top" id="hxTop"><h1 class="hx-slogan hx-title"><span class="s1">Honnan látszik</span> <span class="s2">a szélerőmű?</span></h1>
+    <button type="button" class="hx-ar" id="heroAr" hidden><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg><span><b>Nézd meg élőben a kamerával</b><small>A turbina ott áll a telefonod képén, ahová tervezik</small></span><i aria-hidden="true">→</i></button></div>
   <div class="hx-scene" aria-hidden="true">
     <img id="heroImg" src="assets/hero_layers_poster.jpg" alt=""><video id="heroVid" muted loop playsinline preload="none" poster="assets/hero_layers_poster.jpg"></video>
     <div class="hx-chip hx-glass hx-hl" data-jak data-k="2" style="left:48.29%;top:37.07%"><b>63%<i> látszik</i></b><span>4,6 km a főtértől</span></div>
@@ -1623,7 +1643,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <span class="checks"><label class="check"><input type="checkbox" id="ghost" checked> A takart rész pirosan áttűnik</label>
         <label class="check"><input type="checkbox" id="spin" checked> Forgó lapátok</label></span>
       </div>
-      <div class="real-row"><label class="btn" for="photoIn" id="photoBtn" tabindex="0">Turbina a saját fotódon</label><input type="file" id="photoIn" class="vh" accept="image/*"><button class="btn" type="button" id="arBtn" hidden>Élő kamera (AR)</button><button class="linkbtn" type="button" id="arHow">Hogyan működik? (videó)</button><span class="small" id="realNote" role="status" aria-live="polite">Fotózd le a tájat onnan, ahonnan nézed, és a program valós méretben ráteszi a turbinát.</span></div>
+      <div class="real-row"><button class="btn primary ar-big" type="button" id="arBtn" hidden><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg><span><b>Élő kamera (AR)</b><small>Tartsd a telefont a táj felé: a turbina a helyén áll</small></span></button><label class="btn" for="photoIn" id="photoBtn" tabindex="0">Turbina a saját fotódon</label><input type="file" id="photoIn" class="vh" accept="image/*"><button class="linkbtn" type="button" id="arHow">Hogyan működik? (videó)</button><span class="small" id="realNote" role="status" aria-live="polite">Fotózd le a tájat onnan, ahonnan nézed, és a program valós méretben ráteszi a turbinát.</span></div>
       <div class="bld-edit" id="bldEdit" hidden>
         <div class="be-head"><b>Kiválasztott épület</b><button type="button" id="beClose" aria-label="Bezárás">×</button></div>
         <p class="small" id="beInfo"></p>
@@ -1844,6 +1864,7 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
     </div>
   </details>
 </section>
+<button type="button" class="ar-fab" id="arFab" hidden><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Élő kamera</span></button>
 <div class="legal-bar" id="legalBar" hidden role="region" aria-label="Jogi tájékoztatás">
   <p>Ez egy <b>tájékoztató, szemléltető modell</b>, nem hivatalos látványterv vagy szakvélemény; használata saját felelősségre. Az oldal használatával elfogadod a <button type="button" class="linklike" id="legalOpen">jogi nyilatkozatot</button>.</p>
   <button type="button" class="btn" id="legalOk">Rendben</button>
@@ -1868,28 +1889,32 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
     <div class="ar-coach" id="arCoach" hidden role="status" aria-live="polite"><div class="ac-head"><b id="acN"></b><strong id="acH"></strong><button type="button" id="acVid">Videó</button><button type="button" id="acX" aria-label="Az útmutató elrejtése">✕</button></div><p id="acT"></p><div class="ac-prog" id="acP" hidden><i></i></div><div class="ac-btns" id="acB"></div></div></div>
   <div class="mont-ctl">
     <p class="small" id="montSt"></p>
-    <div class="mont-grid">
-      <label><span id="mHdL">Irány</span><input type="range" id="mHd" min="-40" max="40" step="0.1" value="0"><output id="mHdO"></output></label>
-      <label><span>Dőlés</span><input type="range" id="mPt" min="-15" max="15" step="0.1" value="0"><output id="mPtO"></output></label>
-      <label id="mRlW"><span>Billenés</span><input type="range" id="mRl" min="-8" max="8" step="0.1" value="0"><output id="mRlO"></output></label>
-      <label><span id="mFovL">Látószög</span><input type="range" id="mFov" min="15" max="110" step="0.5" value="66"><output id="mFovO"></output></label>
-    </div>
-    <div class="mont-row">
-      <label class="check"><input type="checkbox" id="mSky" checked> <span id="mSkyL">Modell-horizont és falunevek</span></label>
-      <label class="check"><input type="checkbox" id="mGhost"> A takart rész is látszódjon (pirosan)</label>
-      <label class="check" title="A mentett JPEG-fájlba beírja a helyet, az irányt és a látószöget, így utólag ellenőrizhető a méretarány. A kép látványa nem változik."><input type="checkbox" id="mMeta"> Mérési adatok a mentett képbe (a pontos helyed is!)</label>
-      <label class="check" id="mHzW" hidden><input type="checkbox" id="mHz" checked> Vízszintes vonal (szemmagasság)</label>
+    <div class="mont-row mont-act">
       <button class="btn" type="button" id="mSave">Kép mentése</button>
       <button class="btn primary" type="button" id="mFreeze" hidden>Igazítás: kép megállítása</button>
       <button class="btn" type="button" id="mUnlock" hidden>Iránytű szerint újra</button>
       <button class="btn" type="button" id="mShot" hidden>Pillanatkép mentése</button>
     </div>
-    <div class="mont-row" id="mCalRow" hidden>
+    <details class="mont-more" id="mMore"><summary>Finomhangolás: csúszkák, kalibráció, beállítások</summary>
+      <div class="mont-grid">
+      <label><span id="mHdL">Irány</span><input type="range" id="mHd" min="-40" max="40" step="0.1" value="0"><output id="mHdO"></output></label>
+      <label><span>Dőlés</span><input type="range" id="mPt" min="-15" max="15" step="0.1" value="0"><output id="mPtO"></output></label>
+      <label id="mRlW"><span>Billenés</span><input type="range" id="mRl" min="-8" max="8" step="0.1" value="0"><output id="mRlO"></output></label>
+      <label><span id="mFovL">Látószög</span><input type="range" id="mFov" min="15" max="110" step="0.5" value="66"><output id="mFovO"></output></label>
+    </div>
+      <div class="mont-row">
+        <label class="check"><input type="checkbox" id="mSky" checked> <span id="mSkyL">Modell-horizont és falunevek</span></label>
+        <label class="check"><input type="checkbox" id="mGhost"> A takart rész is látszódjon (pirosan)</label>
+        <label class="check" title="A mentett JPEG-fájlba beírja a helyet, az irányt és a látószöget, így utólag ellenőrizhető a méretarány. A kép látványa nem változik."><input type="checkbox" id="mMeta"> Mérési adatok a mentett képbe (a pontos helyed is!)</label>
+        <label class="check" id="mHzW" hidden><input type="checkbox" id="mHz" checked> Vízszintes vonal (szemmagasság)</label>
+      </div>
+      <div class="mont-row" id="mCalRow" hidden>
       <b class="small">Telefon-kalibráció (nem kötelező, pontosabb képhez; elég egyszer, a böngésző megjegyzi):</b>
       <button class="btn" type="button" id="mCalLevel">Vízszint (asztalon)</button>
       <button class="btn" type="button" id="mCalScale">Lépték (távoli tárgyra célozva)</button>
       <span class="small" id="mCalSt"></span>
     </div>
+    </details>
   </div>
 </div>
 <div class="arint" id="arIntro" hidden role="dialog" aria-modal="true" aria-labelledby="arIntroT">
@@ -1902,7 +1927,7 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
         <li><b>Indítás:</b> engedélyezd a kamerát, a helymeghatározást és a mozgásérzékelőt.</li>
         <li><b>Irány:</b> tartsd magad elé a telefont, és fordulj a turbina felé. A látószöget a telefon a mozgásból magától méri.</li>
         <li><b>Igazítás</b> (ha kell): állítsd meg a képet, és húzd a szaggatott templom-körvonalat a valódi tornyokra (vagy a falunevek vonalát a dombvonalra).</li>
-        <li><b>Pontosabb kép</b> (nem kötelező): az élő kép alatt a Vízszint és a Lépték kalibráció; elég egyszer, a böngésző megjegyzi.</li>
+        <li><b>Pontosabb kép</b> (nem kötelező): az élő kép alatt, a <b>Finomhangolás</b> részben a Vízszint és a Lépték kalibráció; elég egyszer, a böngésző megjegyzi.</li>
       </ol>
       <p class="small" id="arIntroNote">A kamerakép tiszta marad; ha elakadsz, az élő képen az Útmutató gomb lépésről lépésre végigvezet. Járművezetés vagy közlekedés közben ne használd.</p>
       <label class="check" id="arIntroSkipW"><input type="checkbox" id="arIntroSkip"> Legközelebb ne mutasd, egyből induljon</label>
@@ -5221,16 +5246,17 @@ function drawReal(g, cam, opts) {
   }
   // falunevek a horizonton (az igazításhoz)
   if (opts.labels) {
-    const V = state.viewer, cl = Math.cos(V.lat * RAD), used = lmSpots(proj, fr, ei, half, dAz).map(q => q[0]);   // a templom és a turbinák elsőbbséget kapnak
-    for (const T of state.turbines) { const [x, y] = fr.fromLL(T.lat, T.lon), q = proj([x, y, fr.elev(x, y) - drop(Math.hypot(x, y)) - ei.eyeZ + m.hub]); if (q) used.push(q[0]); }
+    // foglalt vízszintes sávok [közép, félszélesség]: a templom és a turbinák elsőbbséget kapnak, a feliratok nem érhetnek egymásba
+    const V = state.viewer, cl = Math.cos(V.lat * RAD), used = lmSpots(proj, fr, ei, half, dAz).map(q => [q[0], 60 * sc + 30]);
+    for (const T of state.turbines) { const [x, y] = fr.fromLL(T.lat, T.lon), q = proj([x, y, fr.elev(x, y) - drop(Math.hypot(x, y)) - ei.eyeZ + m.hub]); if (q) used.push([q[0], 20 * sc + 10]); }
     g.save(); g.font = `600 ${Math.round(12 * sc + 7)}px system-ui, sans-serif`; g.textAlign = 'center';
     for (const [name, la, lo, w] of [...SETTLE].sort((p, q) => q[3] - p[3])) {
       const x = (lo - V.lon) * 111195 * cl, y = (la - V.lat) * 111195, D = Math.hypot(x, y), az = Math.atan2(x, y);
       if (D < 400 || D > 25000 || Math.abs(dAz(az)) > half) continue;
       const p = at(az, skyOr(az, 0)); if (!p) continue;
-      const txt = `${name} ${km(D)}`, tw = g.measureText(txt).width;
-      if (used.some(u => Math.abs(u - p[0]) < tw * 0.6 + 20)) continue;
-      used.push(p[0]);
+      const txt = `${name} ${km(D)}`, hw = g.measureText(txt).width / 2 + 6 * sc + 4;
+      if (used.some(([x, w]) => Math.abs(x - p[0]) < w + hw)) continue;
+      used.push([p[0], hw]);
       const y0 = p[1] - 34 * sc - 14;
       g.fillStyle = 'rgba(255,255,255,.8)'; g.fillRect(p[0] - 0.75, y0 + 4, 1.5, p[1] - y0 - 4);
       g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.6)'; g.strokeText(txt, p[0], y0); g.fillStyle = '#fff'; g.fillText(txt, p[0], y0);
@@ -5500,7 +5526,7 @@ async function openPhoto(file) {
     if (MONT_SUN.t) { const sp = sunPos(MONT_SUN.t, state.viewer.lat, state.viewer.lon); if (sp.el > 0) notes.push('<b>Nap:</b> a fotó időpontjából tudom, hol volt a Nap (sárga kör); ha látszik a fotón, arra a legpontosabb igazítani.'); }
     if (!state.turbines.length) notes.push('Még nincs turbina a térképen: tegyél le egyet, és itt is megjelenik.');
     MONT.msg = '';
-    montStatus(notes.join(' ') + ' <b>Igazítás:</b> húzd a képet (vagy használd a csúszkákat), amíg a sárga modell-horizont és a falunevek a fotón látható dombokra, erdőszélekre, templomtornyokra nem kerülnek.');
+    montStatus(notes.join(' ') + ' <b>Igazítás:</b> húzd a képet (vagy használd a csúszkákat a <b>Finomhangolás</b> alatt), amíg a sárga modell-horizont és a falunevek a fotón látható dombokra, erdőszélekre, templomtornyokra nem kerülnek.');
     syncControls(); openMont('photo'); prepReal();
   };
   img.src = url;
@@ -6001,7 +6027,7 @@ async function startAR() {
   if (AR.cams.length > 1 && AR.cam !== 0) await camOpen(0); else camLoad();
   window.addEventListener('deviceorientationabsolute', onOri); window.addEventListener('deviceorientation', onOri);
   MONT.msg = '';
-  montStatus('<b>Járművezetés vagy közlekedés közben ne használd.</b><details><summary>Részletes leírás</summary><b>Pontosabb képhez</b> kalibrálhatod a telefont (lent; nem kötelező, elég egyszer, a böngésző megjegyzi): <b>Vízszint</b>: asztalra téve, majd megfordítva, kb. fél perc; <b>Lépték</b>: a kereszttel egy távoli tárgyra célzol, koppintasz, elfordulsz, amíg a tárgy a szaggatott vonalhoz ér, és koppintasz. Ezek után a fehér szaggatott vonal a valódi vízszintes (szemmagasság), és a turbina méretre és magasságra helyes, bárhol állsz. <b>Iránynál</b> fordulj a turbina felé, nyomd meg az <b>„Igazítás: kép megállítása”</b> gombot, és ha kell, húzd a falunevek vonalát vagy a sárga Nap-jelet a helyére; a „Kész” után rögzül. Tipp: a turbinát tartsd a kép közepén, ott a legpontosabb.</details>');
+  montStatus('<b>Járművezetés vagy közlekedés közben ne használd.</b><details><summary>Részletes leírás</summary><b>Pontosabb képhez</b> kalibrálhatod a telefont (lent, a <b>Finomhangolás</b> alatt; nem kötelező, elég egyszer, a böngésző megjegyzi): <b>Vízszint</b>: asztalra téve, majd megfordítva, kb. fél perc; <b>Lépték</b>: a kereszttel egy távoli tárgyra célzol, koppintasz, elfordulsz, amíg a tárgy a szaggatott vonalhoz ér, és koppintasz. Ezek után a fehér szaggatott vonal a valódi vízszintes (szemmagasság), és a turbina méretre és magasságra helyes, bárhol állsz. <b>Iránynál</b> fordulj a turbina felé, nyomd meg az <b>„Igazítás: kép megállítása”</b> gombot, és ha kell, húzd a falunevek vonalát vagy a sárga Nap-jelet a helyére; a „Kész” után rögzül. Tipp: a turbinát tartsd a kép közepén, ott a legpontosabb.</details>');
   if (navigator.geolocation) AR.watch = navigator.geolocation.watchPosition(onGps, () => { AR.gps = 'nincs'; }, { enableHighAccuracy: true, maximumAge: 3000, timeout: 30000 });
   openMont('ar'); prepReal();   // tiszta kamerakép: az útmutató-kártya csak az „Útmutató” gombra jön elő
   setTimeout(() => { if (MONT.mode === 'ar' && !arReady()) MONT.msg = ' Nem érkezik iránytű-adat: ez a böngésző vagy készülék nem adja meg, merre nézel.'; }, 4000);
@@ -6054,6 +6080,16 @@ $('photoBtn').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.pre
 $('photoIn').onchange = () => { const f = $('photoIn').files[0]; $('photoIn').value = ''; if (f) { boot(); realMsg('A fotó betöltése…', false); openPhoto(f); } };
 if (TOUCH) $('arBtn').hidden = false;   // telefonon mindig látszik; ha a böngésző nem tudja, a gomb elmondja, mit kell tenni
 else $('realNote').textContent += ' Telefonon élő kamerás nézet is van.';
+// telefonon az élő kamera a fő élmény: gomb a nyitóképen és lebegő gomb, amíg az eszköz AR-gombja nem látszik
+if (TOUCH) {
+  const go = () => $('arBtn').click();
+  $('heroAr').hidden = false; $('heroAr').onclick = go; $('arFab').onclick = go;
+  const seen = new Set(), fab = () => { const h = seen.size > 0 || scrollY < innerHeight * 0.6 || !$('mont').hidden || !$('arIntro').hidden || !$('legalBar').hidden; if ($('arFab').hidden !== h) $('arFab').hidden = h; };
+  if (window.IntersectionObserver) { const io = new IntersectionObserver(es => { es.forEach(e => e.isIntersecting ? seen.add(e.target) : seen.delete(e.target)); fab(); }); ['heroAr', 'arBtn'].forEach(id => io.observe($(id))); }
+  addEventListener('scroll', fab, { passive: true }); const mo = new MutationObserver(fab); ['mont', 'arIntro', 'legalBar'].forEach(id => mo.observe($(id), { attributes: true, attributeFilter: ['hidden'] })); fab();
+}
+try { $('mMore').open = localStorage.getItem('montMore') === '1'; } catch (e) {}
+$('mMore').addEventListener('toggle', () => { try { localStorage.setItem('montMore', $('mMore').open ? '1' : '0'); } catch (e) {} });
 $('arBtn').onclick = () => { let seen = false; try { seen = localStorage.getItem('arIntro') === '1'; } catch (e) {} if (seen) startAR(); else openIntro('start'); };
 $('arHow').onclick = () => openIntro(TOUCH ? 'start' : 'info');
 $('arIntroGo').onclick = () => { const m = INTRO.mode; if (m === 'start') { try { if ($('arIntroSkip').checked) localStorage.setItem('arIntro', '1'); } catch (e) {} } closeIntro(); if (m === 'start') startAR(); };
