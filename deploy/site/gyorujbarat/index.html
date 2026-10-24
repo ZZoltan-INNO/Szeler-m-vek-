@@ -846,6 +846,7 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .arint-txt h2{font-size:1.3rem}
 .arint-steps{margin:0;padding-left:1.25em;display:grid;gap:6px;font-size:.92rem;max-width:68ch}
 .arint-btns{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+@media (prefers-reduced-motion:no-preference){#arIntroGo.pulse{animation:goPulse 1.2s ease-in-out infinite}@keyframes goPulse{50%{box-shadow:0 0 0 8px rgba(236,101,29,.35)}}}
 .mont-hint{position:absolute;left:8px;bottom:8px;right:8px;font:600 .8rem/1.3 var(--body);color:#fff;text-shadow:0 1px 3px #000;pointer-events:none}
 .mont-ctl{background:var(--card);color:var(--ink);padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));max-height:42vh;overflow:auto;display:grid;gap:8px}
 .mont-ctl p{margin:0}
@@ -1409,7 +1410,7 @@ details.more>p{margin:8px 0 0}
         <div><dd data-stat="km">30<small>km</small></dd><dt>vizsgált körzet</dt></div>
         <div><dd data-stat="bld">–</dd><dt>épület a modellben</dt></div>
         <div><dd data-stat="trees">–</dd><dt>egyedi fa, kb. 1 m-es felbontás</dt></div>
-        <div><dd>AR</dd><dt>élő kamerakép a telefonon</dt></div>
+        <div><dd>Élő</dd><dt>kamerakép a telefonon</dt></div>
       </dl>
     </div>
     <p class="hx-by"><span class="hx-hl" data-jak>A film Ják környékének valódi adataiból készült: domborzat (magasságban 2,5× nagyítva), 33 520 épület és 115 131 egyedi fa valós méretben, az erdők a lombkorona-térkép szerint, három példa-turbina az 1. lehetséges területen.</span><span><b>HorizonLens</b> · az InnoLens terméke</span></p>
@@ -1495,7 +1496,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 <div class="tool-band">
-<div class="wrap tool-head" id="eszkoz"><div class="tool-row"><div class="sec-head"><p class="kicker">Az eszköz · HorizonLens by Innomotion</p><h2>Tedd le a turbinát, <span class="hl2">válaszd ki, honnan nézed.</span></h2><p class="live-stats" id="liveStats" hidden aria-live="polite"></p><p>A térképen mozgathatod a nézőpontot és a turbinákat; jobb oldalon szemmagasságból látod az eredményt, alatta az oldalnézetet. Telefonon élő kamerával is kipróbálhatod.</p></div><button class="btn" type="button" id="resetBtn" title="Minden beállítás visszaáll a kiinduló állapotra: nézőpont Ják főterén, turbina és kézi takarás nélkül">Alaphelyzet</button></div></div>
+<div class="wrap tool-head" id="eszkoz"><div class="tool-row"><div class="sec-head"><p class="kicker">Az eszköz · HorizonLens by Innomotion</p><h2>Tedd le a turbinát, <span class="hl2">válaszd ki, honnan nézed.</span></h2><p class="live-stats" id="liveStats" hidden aria-live="polite"></p><p>A térképen mozgathatod a nézőpontot és a turbinákat; jobb oldalon szemmagasságból látod az eredményt, alatta az oldalnézetet. Telefonon élő kameraképen is kipróbálhatod.</p></div><button class="btn" type="button" id="resetBtn" title="Minden beállítás visszaáll a kiinduló állapotra: nézőpont Ják főterén, turbina és kézi takarás nélkül">Alaphelyzet</button></div></div>
 <main class="wrap cols">
   <div class="col">
     <section class="card" id="c-map" aria-labelledby="h-map">
@@ -1627,7 +1628,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <span class="checks"><label class="check"><input type="checkbox" id="ghost" checked> A takart rész pirosan áttűnik</label>
         <label class="check"><input type="checkbox" id="spin" checked> Forgó lapátok</label></span>
       </div>
-      <div class="real-row"><button class="btn primary ar-big" type="button" id="arBtn" hidden><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg><span><b>Élő kamera (AR)</b><small>Tartsd a telefont a táj felé: a turbina a helyén áll</small></span></button><label class="btn" for="photoIn" id="photoBtn" tabindex="0">Turbina a saját fotódon</label><input type="file" id="photoIn" class="vh" accept="image/*"><button class="linkbtn" type="button" id="arHow">Hogyan működik? (videó)</button><span class="small" id="realNote" role="status" aria-live="polite"></span></div>
+      <div class="real-row"><button class="btn primary ar-big" type="button" id="arBtn" hidden><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg><span><b>Élő kamerakép</b><small>Tartsd a telefont a táj felé: a turbina a helyén áll</small></span></button><label class="btn" for="photoIn" id="photoBtn" tabindex="0">Turbina a saját fotódon</label><input type="file" id="photoIn" class="vh" accept="image/*"><button class="linkbtn" type="button" id="arHow">Hogyan működik? (videó)</button><span class="small" id="realNote" role="status" aria-live="polite"></span></div>
       <div class="bld-edit" id="bldEdit" hidden>
         <div class="be-head"><b>Kiválasztott épület</b><button type="button" id="beClose" aria-label="Bezárás">×</button></div>
         <p class="small" id="beInfo"></p>
@@ -1835,7 +1836,7 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
     <div class="legal-body">
       <p id="vlOperator" hidden><b>Üzemeltető:</b> <span></span></p>
       <p><b>1. Az oldal jellege.</b> A HorizonLens az InnoLens (InnoGroup) terméke, üzemeltetője az Innomotion Kft. Az InnoLens csapata díjmentes, tájékoztató és szemléltető célú számítási eszközként készítette. Semleges eszköz: nem foglal állást a szélerőmű-beruházások mellett vagy ellen. Nem hatósági, szakhatósági vagy igazságügyi szakértői vélemény, nem látványterv és nem környezeti hatásvizsgálat, és nem helyettesíti a hivatalos eljárásokban készülő dokumentációt. Az oldal nem a beruházó, nem hatóság és nem önkormányzat kiadványa.</p>
-      <p><b>2. Pontosság.</b> Az eredmények modellszámítások, közelítésekkel és feltételezésekkel (domborzat; az épületek és fák magasságának gépi becslése; a turbinák helye, száma, típusa és mérete; a lehetséges telepítési területek kézi illesztése; az árnyék és a villódzás legrosszabb esetre számolt becslése). A felhasznált adatok hibásak, hiányosak vagy elavultak lehetnek. A tervezett turbinák pontos helye, száma és típusa nem ismert: a megjelenített turbinák a felhasználó által elhelyezett, feltételezett szemléltetések. Az élő kamerás és a fotós nézet pontossága a készülék érzékelőitől, a kalibrációtól és a használat módjától függ. A valóság a modelltől jelentősen eltérhet.</p>
+      <p><b>2. Pontosság.</b> Az eredmények modellszámítások, közelítésekkel és feltételezésekkel (domborzat; az épületek és fák magasságának gépi becslése; a turbinák helye, száma, típusa és mérete; a lehetséges telepítési területek kézi illesztése; az árnyék és a villódzás legrosszabb esetre számolt becslése). A felhasznált adatok hibásak, hiányosak vagy elavultak lehetnek. A tervezett turbinák pontos helye, száma és típusa nem ismert: a megjelenített turbinák a felhasználó által elhelyezett, feltételezett szemléltetések. Az élő kamerakép és a fotós nézet pontossága a készülék érzékelőitől, a kalibrációtól és a használat módjától függ. A valóság a modelltől jelentősen eltérhet.</p>
       <p><b>3. Szavatosság és jótállás kizárása.</b> Az oldalt „ahogy van” és „ahogy elérhető” állapotában bocsátjuk rendelkezésre, mindenféle kifejezett vagy hallgatólagos szavatosság és jótállás nélkül, különösen az eredmények pontosságára, teljességére, naprakészségére, egy adott célra való alkalmasságára és az oldal folyamatos elérhetőségére vonatkozóan.</p>
       <p><b>4. Felelősség kizárása.</b> A jogszabályok által megengedett legteljesebb mértékben az oldal készítője, üzemeltetője és közreműködői semmilyen felelősséget nem vállalnak semmilyen közvetlen vagy közvetett kárért, elmaradt haszonért, költségért vagy egyéb hátrányért, amely az oldal használatából vagy használhatatlanságából, az eredmények és a képek felhasználásából, megosztásából, az ezek alapján hozott döntésekből (például ingatlanvásárlás, beruházás, észrevétel, jogi lépés), illetve harmadik felek adataiból vagy szolgáltatásaiból ered. Ez a kizárás nem terjed ki azokra az esetekre, amelyekben jogszabály a felelősség kizárását vagy korlátozását nem engedi (így különösen a szándékosan vagy súlyos gondatlansággal okozott, illetve az életet, a testi épséget vagy az egészséget megsértő károkra).</p>
       <p><b>5. Saját felelősség és biztonság.</b> Az oldalt mindenki saját felelősségére használja. Járművezetés vagy a forgalomban való közlekedés közben ne használd; figyelj a környezetedre, és engedély nélkül ne lépj magánterületre.</p>
@@ -1847,7 +1848,7 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
     </div>
   </details>
 </section>
-<button type="button" class="ar-fab" id="arFab" hidden><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Élő kamera</span></button>
+<button type="button" class="ar-fab" id="arFab" hidden><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Élő kamerakép</span></button>
 <div class="legal-bar" id="legalBar" hidden role="region" aria-label="Jogi tájékoztatás">
   <p>Ez egy <b>tájékoztató, szemléltető modell</b>, nem hivatalos látványterv vagy szakvélemény; használata saját felelősségre. Az oldal használatával elfogadod a <button type="button" class="linklike" id="legalOpen">jogi nyilatkozatot</button>.</p>
   <button type="button" class="btn" id="legalOk">Rendben</button>
@@ -1904,9 +1905,9 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
 </div>
 <div class="arint" id="arIntro" hidden role="dialog" aria-modal="true" aria-labelledby="arIntroT">
   <div class="arint-box">
-    <div class="arint-vid"><video id="arIntroV" muted loop playsinline preload="none" aria-label="Bemutató videó: az élő kamera használata lépésről lépésre"></video></div>
+    <div class="arint-vid"><video id="arIntroV" muted loop playsinline preload="none" aria-label="Bemutató videó: az élő kamerakép használata lépésről lépésre"></video></div>
     <div class="arint-txt">
-      <p class="eyebrow">Élő kamera (AR)</p>
+      <p class="eyebrow">Élő kamerakép</p>
       <h2 id="arIntroT">Így látod a turbinát a saját szemeddel</h2>
       <ol class="arint-steps">
         <li><b>Indítás:</b> engedélyezd a kamerát, a helymeghatározást és a mozgásérzékelőt.</li>
@@ -1915,7 +1916,6 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
         <li><b>Pontosabb kép</b> (nem kötelező): az élő kép alatt, a <b>Finomhangolás</b> részben a Vízszint és a Lépték kalibráció; elég egyszer, a böngésző megjegyzi.</li>
       </ol>
       <p class="small" id="arIntroNote">A kamerakép tiszta marad; ha elakadsz, az élő képen az Útmutató gomb lépésről lépésre végigvezet. Járművezetés vagy közlekedés közben ne használd.</p>
-      <label class="check" id="arIntroSkipW"><input type="checkbox" id="arIntroSkip"> Legközelebb ne mutasd, egyből induljon</label>
       <div class="arint-btns"><button class="btn primary" type="button" id="arIntroGo">Kezdjük</button><button class="btn" type="button" id="arIntroNo">Mégse</button></div>
     </div>
   </div>
@@ -3592,7 +3592,7 @@ function setFovMode(m) {
 }
 function updateFovNote(cssW) {
   const touch = matchMedia('(pointer: coarse)').matches, dist = touch ? (innerWidth < 700 ? 35 : 45) : 60;
-  if (FOV_MODE !== 'life') { $('fovNote').textContent = `Telefonkamera-szerű kép: ${CAM_FOV}° széles látómező, mint az élő kamerán a fő kamerával. A turbina akkora, mint egy ugyanonnan készült fényképen.`; return; }
+  if (FOV_MODE !== 'life') { $('fovNote').textContent = `Telefonkamera-szerű kép: ${CAM_FOV}° széles látómező, mint az élő kameraképen a fő kamerával. A turbina akkora, mint egy ugyanonnan készült fényképen.`; return; }
   $('fovNote').textContent = `Életnagyságú kép: ${nf(state.fov, state.fov % 1 ? 1 : 0)}° széles látómező. Ha a ${touch ? 'telefont' : 'képernyőt'} kb. ${dist} cm-ről nézed, a turbina és a házak akkorának látszanak, mint a valóságban arról a pontról.`;
 }
 // a kép oldalaránya: úszó ablakban 16:9, nagyítva a térkép helyének aránya, egyébként keskenyen négyzet, szélesen 16:9
@@ -5424,7 +5424,7 @@ function openMont(mode) {
   $('mShare').hidden = true; MONT.lastFile = null;
   if (!MONT.mode) try { history.pushState({ hlMont: 1 }, ''); MONT.hist = true; } catch (e) {}
   MONT.mode = mode; $('mont').hidden = false; $('mont').classList.toggle('is-ar', mode === 'ar'); document.body.style.overflow = 'hidden';
-  $('montTitle').textContent = mode === 'ar' ? 'Élő kamera: a turbina a helyén' : 'A turbina a saját fotódon';
+  $('montTitle').textContent = mode === 'ar' ? 'Élő kamerakép: a turbina a helyén' : 'A turbina a saját fotódon';
   $('arVideo').hidden = mode !== 'ar';
   for (const id of ['mRlW', 'mSave']) $(id).hidden = mode === 'ar';
   $('mHelp').hidden = mode !== 'ar'; $('arCoach').hidden = true; camButton();
@@ -5900,11 +5900,13 @@ function openIntro(mode) {
   INTRO.mode = mode; const box = $('arIntro'), v = $('arIntroV'), port = innerHeight > innerWidth || innerWidth < 700;
   box.classList.toggle('port', port);
   const nm = 'ar_guide' + (port ? '' : '_wide');
+  v.loop = mode !== 'start';   // indításkor egyszer megy végig, a végén jön a kamerakép
+  v.onended = mode === 'start' ? () => { if (INTRO.mode !== 'start' || $('arIntro').hidden) return; if (IOS) { $('arIntroGo').classList.add('pulse'); $('arIntroGo').focus(); } else $('arIntroGo').click(); } : null;   // iPhone-on az iránytű-engedélyhez koppintás kell
+  $('arIntroGo').classList.remove('pulse');
   v.poster = AV + nm + '_poster.jpg'; v.src = AV + nm + (v.canPlayType('video/mp4; codecs="avc1.42E01E"') ? '.mp4' : '.webm'); v.play().catch(() => {});
   $('arIntroGo').hidden = mode === 'info'; $('arIntroGo').textContent = mode === 'help' ? 'Vissza az élő képhez' : 'Kezdjük';
   $('arIntroNo').textContent = mode === 'start' ? 'Mégse' : 'Bezárás'; $('arIntroNo').hidden = mode === 'help';
-  $('arIntroSkipW').hidden = mode !== 'start';
-  $('arIntroNote').textContent = mode === 'info' ? `Az élő kamera telefonon működik: nyisd meg ezt az oldalt a telefonod böngészőjében (${SITE_URL.replace('https://', '')}). Járművezetés vagy közlekedés közben ne használd.` : 'A kamerakép tiszta marad; ha elakadsz, az élő képen az Útmutató gomb lépésről lépésre végigvezet. Járművezetés vagy közlekedés közben ne használd.';
+  $('arIntroNote').textContent = mode === 'info' ? `Az élő kamerakép telefonon működik: nyisd meg ezt az oldalt a telefonod böngészőjében (${SITE_URL.replace('https://', '')}). Járművezetés vagy közlekedés közben ne használd.` : 'A kamerakép tiszta marad; ha elakadsz, az élő képen az Útmutató gomb lépésről lépésre végigvezet. Járművezetés vagy közlekedés közben ne használd.';
   box.hidden = false; (mode === 'info' ? $('arIntroNo') : $('arIntroGo')).focus();
 }
 function closeIntro() { const v = $('arIntroV'); v.pause(); v.removeAttribute('src'); v.load(); $('arIntro').hidden = true; if (MONT.mode) $('montBack').focus(); else ($('arBtn').hidden ? $('arHow') : $('arBtn')).focus(); }
@@ -5963,7 +5965,7 @@ function arElsewhere() {   // beépített vagy támogatás nélküli böngésző
   const how = IOS ? 'Koppints a jobb alsó vagy jobb felső sarokban a … (vagy az iránytű) ikonra, és válaszd a „Megnyitás Safariban” lehetőséget.'
     : 'Koppints a jobb felső sarokban a ⋮ ikonra, és válaszd a „Megnyitás böngészőben” vagy a „Megnyitás Chrome-ban” lehetőséget.';
   const chrome = android ? `<a class="btn primary" href="intent://${location.host}${location.pathname}${location.search}#Intent;scheme=https;package=com.android.chrome;end">Megnyitás Chrome-ban</a>` : '';
-  realMsg(`${app ? app + ' beépített böngészője' : 'Ez a böngésző'} nem engedi a kamerát és az iránytűt, ezért az élő kamera itt nem indul el. ${app ? how : 'Nyisd meg az oldalt Chrome-ban (Android) vagy Safariban (iPhone).'}`
+  realMsg(`${app ? app + ' beépített böngészője' : 'Ez a böngésző'} nem engedi a kamerát és az iránytűt, ezért az élő kamerakép itt nem indul el. ${app ? how : 'Nyisd meg az oldalt Chrome-ban (Android) vagy Safariban (iPhone).'}`
     + `<span class="real-row">${chrome}<button class="btn" type="button" id="arCopy">Link másolása</button></span>`);
   $('arCopy').onclick = async () => { let ok = false; try { await navigator.clipboard.writeText(url); ok = true; } catch (e) {}
     if (!ok) { const t = document.createElement('textarea'); t.value = url; document.body.appendChild(t); t.select(); try { ok = document.execCommand('copy'); } catch (e) {} t.remove(); }
@@ -6053,11 +6055,11 @@ async function startAR() {
 async function startAR0() {
   boot();   // görgetés nélkül is: előbb az eszköz, hogy utána a GPS-nézőpontot ne írja felül
   const framed = window.top !== window, link = SITE_URL;
-  const fail = t => { realMsg(t + (framed || !(LOCAL && LOCAL.web) ? ` Az élő kamera a nyilvános oldalon működik: <a href="${link}" target="_blank" rel="noopener">${link.replace('https://', '')}</a>` : '')); return false; };
+  const fail = t => { realMsg(t + (framed || !(LOCAL && LOCAL.web) ? ` Az élő kamerakép a nyilvános oldalon működik: <a href="${link}" target="_blank" rel="noopener">${link.replace('https://', '')}</a>` : '')); return false; };
   if (!(LOCAL && LOCAL.web)) return fail('Ebben a beágyazott nézetben a böngésző nem engedi a kamerát és az iránytűt.');
   if (IN_APP || !AR_OK) return arElsewhere();
   realMsg('Engedélyezd a kamerát, a helymeghatározást és a mozgásérzékelőt…', false);
-  try { if (DeviceOrientationEvent.requestPermission && await DeviceOrientationEvent.requestPermission() !== 'granted') return realMsg('Az iránytű és a dőlésérzékelő („Mozgás és tájolás”) nincs engedélyezve, enélkül nem tudom, merre nézel. ' + (IOS ? 'iPhone-on a Safari ezt csak egyszer kérdezi meg: zárd be ezt a lapot, nyisd meg újra az oldalt, és az Élő kamera gombnál válaszd az Engedélyezést.' : UNBLOCK)) || false; }
+  try { if (DeviceOrientationEvent.requestPermission && await DeviceOrientationEvent.requestPermission() !== 'granted') return realMsg('Az iránytű és a dőlésérzékelő („Mozgás és tájolás”) nincs engedélyezve, enélkül nem tudom, merre nézel. ' + (IOS ? 'iPhone-on a Safari ezt csak egyszer kérdezi meg: zárd be ezt a lapot, nyisd meg újra az oldalt, és az Élő kamerakép gombnál válaszd az Engedélyezést.' : UNBLOCK)) || false; }
   catch (e) { return fail('Az iránytűt ez az oldal nem érheti el.'); }
   if (await permDenied()) return false;   // az iránytű-engedély után (iPhone-on azt közvetlenül a koppintásra kell kérni)
   try { AR.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false }); }
@@ -6133,9 +6135,10 @@ if (TOUCH) {
 }
 try { $('mMore').open = localStorage.getItem('montMore') === '1'; } catch (e) {}
 $('mMore').addEventListener('toggle', () => { try { localStorage.setItem('montMore', $('mMore').open ? '1' : '0'); } catch (e) {} });
-$('arBtn').onclick = () => { let seen = false; try { seen = localStorage.getItem('arIntro') === '1'; } catch (e) {} if (seen) startAR(); else openIntro('start'); };
+// telefonon mindig a kalibrálós bemutató videóval indul, utána a valódi kamerakép (a hlNoIntro kulcs csak az automatikus ellenőrzéshez)
+$('arBtn').onclick = () => { let skip = false; try { skip = localStorage.getItem('hlNoIntro') === '1'; } catch (e) {} if (skip) startAR(); else openIntro('start'); };
 $('arHow').onclick = () => openIntro(TOUCH ? 'start' : 'info');
-$('arIntroGo').onclick = () => { const m = INTRO.mode; if (m === 'start') { try { if ($('arIntroSkip').checked) localStorage.setItem('arIntro', '1'); } catch (e) {} } closeIntro(); if (m === 'start') startAR(); };
+$('arIntroGo').onclick = () => { const m = INTRO.mode; closeIntro(); if (m === 'start') startAR(); };
 $('arIntroNo').onclick = closeIntro;
 $('arIntro').onclick = e => { if (e.target === $('arIntro')) closeIntro(); };
 $('mHelp').onclick = () => { coachStart(); };
