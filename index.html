@@ -1901,6 +1901,7 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
         <label class="check" title="A mentett JPEG-fájlba beírja a helyet, az irányt és a látószöget, így utólag ellenőrizhető a méretarány. A kép látványa nem változik."><input type="checkbox" id="mMeta"> Mérési adatok a mentett képbe (a pontos helyed is!)</label>
         <label class="check" id="mHzW" hidden><input type="checkbox" id="mHz" checked> Vízszintes vonal (szemmagasság)</label>
       </div>
+      <p class="small" id="mCamInfo"></p>
       <div class="mont-row" id="mCalRow" hidden>
       <b class="small">Telefon-kalibráció (nem kötelező, pontosabb képhez; elég egyszer, a böngésző megjegyzi):</b>
       <button class="btn" type="button" id="mCalLevel">Vízszint (asztalon)</button>
@@ -5987,15 +5988,25 @@ async function camList() {
   } catch (e) {}
   camButton();
 }
-function camKey() { const c = AR.cams[AR.cam]; return 'arCam:' + (c ? c.label || c.id : 'alap'); }
+function camZoomCap() { const tr = AR.stream && AR.stream.getVideoTracks()[0], cap = tr && tr.getCapabilities ? tr.getCapabilities() : {}; return cap.zoom && cap.zoom.max > cap.zoom.min ? { tr, min: cap.zoom.min, max: cap.zoom.max, cur: (tr.getSettings && tr.getSettings().zoom) || 1 } : null; }
+async function camSetZoom(z) { const Z = camZoomCap(); if (!Z) return false; z = clamp(z, Z.min, Z.max); try { await Z.tr.applyConstraints({ advanced: [{ zoom: z }] }); AR.zoom = z; return true; } catch (e) { return false; } }
+// ha a böngésző 1× alatti nagyítással (a nagylátószögű objektívvel) indította, 1×-re állítjuk: így a kép olyan, mint a fő kamerán
+async function camZoomInit() { const Z = camZoomCap(); AR.zoom = Z ? Z.cur : null; if (Z && Z.cur < 0.99 && Z.max >= 1) await camSetZoom(1); }
+const zTxt = z => `${String(+z.toFixed(1)).replace('.', ',')}×`;
+function camKey() { const c = AR.cams[AR.cam]; return 'arCam:' + (c ? c.label || c.id : 'alap') + (AR.zoom && Math.abs(AR.zoom - 1) > 0.01 ? '@' + AR.zoom.toFixed(2) : ''); }
 function camLoad() {   // a kiválasztott kamera megjegyzett látószöge; új kameránál a mozgásból méri
   let d = null; try { d = JSON.parse(localStorage.getItem(camKey()) || 'null'); } catch (e) {}
-  const c = AR.cams[AR.cam] || { label: '' }, guess = /ultra|ultraszéles/i.test(c.label) ? 100 : /tele/i.test(c.label) ? 30 : 66;
+  const c = AR.cams[AR.cam] || { label: '' }, z = AR.zoom || 1, guess = /ultra|ultraszéles/i.test(c.label) ? 100 : /tele/i.test(c.label) ? 30 : 2 * Math.atan(Math.tan(33 * RAD) / z) / RAD;
   Object.assign(AR, { fov: d ? d.fov : guess, fovAuto: !!(d && d.auto), fovCal: !!(d && d.cal), fovManual: !!(d && d.man) });
   FLOW.buf.length = 0; FLOW.est.length = 0; syncMontCtl(); calStatus();
 }
 function camSave() { try { localStorage.setItem(camKey(), JSON.stringify({ fov: +AR.fov.toFixed(2), auto: AR.fovAuto, cal: AR.fovCal, man: AR.fovManual })); } catch (e) {} camButton(); }
-function camButton() { const b = $('mCam'); if (!b) return; b.hidden = MONT.mode !== 'ar' || AR.cams.length < 2; if (!b.hidden) b.textContent = 'Kamera: ' + camName(AR.cams[AR.cam], AR.cam); }
+function camButton() {
+  const b = $('mCam'); if (!b) return; const Z = AR.cams.length < 2 ? camZoomCap() : null;
+  b.hidden = MONT.mode !== 'ar' || (AR.cams.length < 2 && !(Z && Z.min < 0.99));
+  if (!b.hidden) b.textContent = AR.cams.length > 1 ? 'Kamera: ' + camName(AR.cams[AR.cam], AR.cam) : 'Kamera: ' + (AR.zoom && AR.zoom < 0.99 ? 'nagylátószögű ' + zTxt(AR.zoom) : 'fő (1×)');
+  const i = $('mCamInfo'); if (i) { const c = AR.cams[AR.cam], Zc = camZoomCap(); i.textContent = MONT.mode !== 'ar' ? '' : `Kamera: ${c ? c.label || 'névtelen' : '–'} · a böngésző ${AR.cams.length} hátsó kamerát ad${Zc ? ` · nagyítás ${zTxt(Zc.min)}–${zTxt(Zc.max)}, most ${zTxt(AR.zoom || Zc.cur)}` : ''}.`; }
+}
 async function camOpen(i) {
   const c = AR.cams[i]; if (!c || AR.camBusy) return;
   AR.camBusy = true; $('mCam').disabled = true;
@@ -6004,7 +6015,7 @@ async function camOpen(i) {
     try { st = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: c.id }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false }); }
     catch (e) { MONT.msg = ' Ezt a kamerát nem sikerült elindítani.'; return; }
     if (AR.stream) AR.stream.getTracks().forEach(tr => tr.stop());
-    AR.stream = st; AR.cam = i; camLoad(); camButton();   // a kamera, a látószöge és a felirat egyszerre vált
+    AR.stream = st; AR.cam = i; await camZoomInit(); camLoad(); camButton();   // a kamera, a látószöge és a felirat egyszerre vált
     const vd = $('arVideo'); vd.srcObject = st; try { await vd.play(); } catch (e) {}
   } finally { AR.camBusy = false; $('mCam').disabled = false; }
   if (AR.frozen) freezeAR();   // megállított képnél vissza az élő képre
@@ -6034,7 +6045,7 @@ async function startAR() {
   Object.assign(AR, { f: null, u: null, raw: null, rate: 0, rel: false, abs: false, ios: false, yaw: null, yC: 0, yS: 0, yN: 0, sd: null, lock: false, frozen: null, hdOff: 0, ptOff: pt0, gps: null, fovManual: false, ptManual: false, hzT: 0, hzMsg: '' });
   FLOW.buf.length = 0; FLOW.est.length = 0;
   arLoop();
-  if (AR.cams.length > 1 && AR.cam !== 0) await camOpen(0); else camLoad();
+  if (AR.cams.length > 1 && AR.cam !== 0) await camOpen(0); else { await camZoomInit(); camLoad(); camButton(); }
   window.addEventListener('deviceorientationabsolute', onOri); window.addEventListener('deviceorientation', onOri);
   MONT.msg = '';
   montStatus('<b>Járművezetés vagy közlekedés közben ne használd.</b><details><summary>Részletes leírás</summary><b>Pontosabb képhez</b> kalibrálhatod a telefont (lent, a <b>Finomhangolás</b> alatt; nem kötelező, elég egyszer, a böngésző megjegyzi): <b>Vízszint</b>: asztalra téve, majd megfordítva, kb. fél perc; <b>Lépték</b>: a kereszttel egy távoli tárgyra célzol, koppintasz, elfordulsz, amíg a tárgy a szaggatott vonalhoz ér, és koppintasz. Ezek után a fehér szaggatott vonal a valódi vízszintes (szemmagasság), és a turbina méretre és magasságra helyes, bárhol állsz. <b>Iránynál</b> fordulj a turbina felé, nyomd meg a <b>Finomhangolás</b> alatt az <b>„Irány igazítása: kép megállítása”</b> gombot, és ha kell, húzd a falunevek vonalát vagy a sárga Nap-jelet a helyére; a „Kész” után rögzül. Tipp: a turbinát tartsd a kép közepén, ott a legpontosabb.</details>');
@@ -6106,7 +6117,12 @@ $('arIntroGo').onclick = () => { const m = INTRO.mode; if (m === 'start') { try 
 $('arIntroNo').onclick = closeIntro;
 $('arIntro').onclick = e => { if (e.target === $('arIntro')) closeIntro(); };
 $('mHelp').onclick = () => { coachStart(); };
-$('mCam').onclick = () => { if (AR.cams.length > 1) camOpen((AR.cam + 1) % AR.cams.length); };
+$('mCam').onclick = async () => {
+  if (AR.cams.length > 1) return camOpen((AR.cam + 1) % AR.cams.length);
+  const Z = camZoomCap(); if (!Z || AR.camBusy) return;   // egyetlen (logikai) kamera: 1× ↔ a legkisebb nagyítás (nagylátószögű)
+  AR.camBusy = true; try { await camSetZoom((AR.zoom || 1) < 0.99 ? 1 : Z.min); camLoad(); camButton(); if (AR.frozen) freezeAR(); } finally { AR.camBusy = false; }
+  const m = ` Kamera: ${AR.zoom < 0.99 ? 'nagylátószögű ' + zTxt(AR.zoom) : 'fő (1×)'}${AR.fovAuto || AR.fovCal || AR.fovManual ? '' : ' – a látószöget a mozgásból méri: fordítsd lassan jobbra-balra'}.`; MONT.msg = m; setTimeout(() => { if (MONT.msg === m) MONT.msg = ''; }, 5000);
+};
 $('acX').onclick = () => { COACH.on = false; $('arCoach').hidden = true; };
 $('acVid').onclick = () => openIntro('help');
 for (const ev of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']) $('arCoach').addEventListener(ev, e => e.stopPropagation());
