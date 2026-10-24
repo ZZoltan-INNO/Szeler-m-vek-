@@ -5966,7 +5966,8 @@ function arElsewhere() {   // beépített vagy támogatás nélküli böngésző
    A böngésző a „hátsó kamera” kérésre telefononként mást ad (Samsungon gyakran a 0,6×-os nagylátószögűt, amin minden
    apró). A fő kamerával indulunk; ha több hátsó kamera van, a fejléc gombja vált köztük. A látószög kameránként más,
    ezért kameránként tároljuk (mozgásból mérve, kalibrálva vagy kézzel állítva). */
-const CAM_ORDER = l => /camera2 (\d+)/.test(l) ? +RegExp.$1 : /^back camera$|^hátsó kamera$/i.test(l) ? 0 : /dual|triple|kettős|hármas/i.test(l) ? 5 : /ultra|ultraszéles/i.test(l) ? 6 : /tele/i.test(l) ? 7 : 3;
+const CAM_ORDER = l => /camera2? ?(\d+)/.test(l) ? +RegExp.$1 :   // Chrome Androidon: régebben „camera2 0, facing back”, újabban „camera 0, facing back” (a 0 a fő kamera)
+  /^back camera$|^hátsó kamera$/i.test(l) ? 0 : /dual|triple|kettős|hármas/i.test(l) ? 5 : /ultra|ultraszéles/i.test(l) ? 6 : /tele/i.test(l) ? 7 : 3;
 function camName(c, i) {   // iPhone-on a név elárulja a kamerát; Androidon a már megmért látószögből derül ki
   if (/ultra|ultraszéles/i.test(c.label)) return 'Nagylátószögű';
   if (/tele/i.test(c.label)) return 'Tele';
