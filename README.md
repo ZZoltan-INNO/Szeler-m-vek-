@@ -106,7 +106,7 @@ A https://jak-szeleromu.pages.dev a repó `deploy/` mappájából épül, minden
   valós méretben rárajzolja, és a modell szerinti takarás vonala fölé vágja (a takart rész kérésre pirosan áttűnik).
   Igazításhoz a modell horizontja (sárga vonal), a falunevek és a fokbeosztás látszik; a kép húzható, és csúszkák is
   vannak. A kész kép menthető, a sarkában a forrás feltüntetésével.
-- **Élő kamera (AR, telefonon, a nyilvános weboldalon):** a hátsó kamera képére rajzolja a turbinát a GPS, az iránytű és
+- **Élő kamerakép (telefonon, a nyilvános weboldalon):** a hátsó kamera képére rajzolja a turbinát a GPS, az iránytű és
   a giroszkóp alapján. A kép a giroszkópot követi (sima, nem ugrál), az égtájat az iránytűből csak lassan átlagolva veszi
   át, így az iránytű remegése nem látszik. Igazítás: az „Igazítás: kép megállítása” gombbal a kép megáll, és nyugodtan
   ráhúzható a falunevek vonala vagy (ha süt) a sárga Nap-jel a valódi helyére (az élő képen nincs modell-horizont vonal); két ujjal
