@@ -6015,9 +6015,20 @@ async function camOpen(i) {
   const c = AR.cams[i]; if (!c || AR.camBusy) return;
   AR.camBusy = true; $('mCam').disabled = true;
   try {
-    let st;
-    try { st = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: c.id }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false }); }
-    catch (e) { MONT.msg = ' Ezt a kamerát nem sikerült elindítani.'; return; }
+    // előbb a régi mellett próbáljuk (nincs fekete villanás); sok Android-telefon két kamerát egyszerre nem nyit meg, ilyenkor a régit leállítjuk és újra
+    const open = id => navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: id }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+    const prev = AR.cams[AR.cam]; let st = null, err = null;
+    try { st = await open(c.id); } catch (e) { err = e; }
+    if (!st) {
+      if (AR.stream) { AR.stream.getTracks().forEach(tr => tr.stop()); AR.stream = null; }
+      await new Promise(r => setTimeout(r, 400));
+      try { st = await open(c.id); } catch (e) { err = e; }
+      if (!st) {   // vissza az előző kamerára, hogy ne maradjon kép nélkül
+        let back = null; try { back = prev ? await open(prev.id) : await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false }); } catch (e) {}
+        if (back) { AR.stream = back; const vd = $('arVideo'); vd.srcObject = back; try { await vd.play(); } catch (e) {} arLoop(); }
+        MONT.msg = ` Ezt a kamerát a böngésző nem engedte elindítani (${err && err.name || 'ismeretlen hiba'}).`; return;
+      }
+    }
     if (AR.stream) AR.stream.getTracks().forEach(tr => tr.stop());
     AR.stream = st; AR.cam = i; await camZoomInit(); camLoad(); camButton();   // a kamera, a látószöge és a felirat egyszerre vált
     const vd = $('arVideo'); vd.srcObject = st; try { await vd.play(); } catch (e) {}
