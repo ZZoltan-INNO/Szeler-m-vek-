@@ -820,7 +820,13 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .ac-btns{display:flex;gap:8px;flex-wrap:wrap}
 .ac-btns:empty{display:none}
 .mont-bar .ac-btns{flex-wrap:nowrap;flex:none}
-@media (max-width:560px){.mont.is-ar .mont-bar b{display:none}.mont.is-ar .mont-bar{justify-content:flex-end}.mont.is-ar .mont-bar .btn{padding:7px 10px;font-size:.85rem}}   /* telefonon az élő képnél a gomboknak kell a hely */
+#montClose{display:none}   /* a bal felső „← Vissza” zár; a gomb csak a régi hivatkozások miatt maradt */
+.mont-back{flex:none}
+.mont-brand{flex:1;min-width:0;text-align:center;font:600 .72rem/1.1 var(--body);letter-spacing:.06em;text-transform:uppercase;color:#f2a06f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mont-brand i{font-style:normal;color:#8d8f96}
+.mont:not(.is-ar) .mont-brand{display:none}
+@media (max-width:440px){.mont-brand .mb-hl{display:none}}
+@media (max-width:560px){.mont.is-ar .mont-bar b{display:none}.mont.is-ar .mont-bar .btn{padding:7px 10px;font-size:.85rem}}   /* telefonon az élő képnél a gomboknak kell a hely */
 .ar-coach{-webkit-user-select:none;user-select:none}
 .mont-ctl details{font-size:.82rem;color:var(--muted)}
 .mont-ctl summary{cursor:pointer;color:var(--ink);font-weight:600}
@@ -1480,14 +1486,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const sync = () => { const none = typeof state !== 'undefined' && !(state.turbines && state.turbines.length); if (ve) ve.hidden = !none; if (pe) pe.hidden = !none; const pr = document.getElementById('prof'); if (pr) pr.style.visibility = none ? 'hidden' : ''; };
   setInterval(sync, 400); sync();
   if (ex) ex.onclick = () => { // a nyitófilm három példa-turbinája (1. lehetséges terület, Jáktól kb. 4,6 km-re délre)
-    state.turbines = [{ lat: 47.09960, lon: 16.55731 }, { lat: 47.09960, lon: 16.56590 }, { lat: 47.09960, lon: 16.57449 }]; state.sel = 1; state.isExample = false;
+    state.turbines = EXAMPLE_T.map(t => ({ ...t })); state.sel = 1; state.isExample = false;
     if (typeof buildMarkers === 'function') buildMarkers(); update(); sync(); };
 });
 </script>
 
 
 <div class="tool-band">
-<div class="wrap tool-head" id="eszkoz"><div class="tool-row"><div class="sec-head"><p class="kicker">Az eszköz</p><h2>Tedd le a turbinát, <span class="hl2">válaszd ki, honnan nézed.</span></h2><p class="live-stats" id="liveStats" hidden aria-live="polite"></p><p>A térképen mozgathatod a nézőpontot és a turbinákat; jobb oldalon szemmagasságból látod az eredményt, alatta az oldalnézetet. Telefonon élő kamerával is kipróbálhatod.</p></div><button class="btn" type="button" id="resetBtn" title="Minden beállítás visszaáll a kiinduló állapotra: nézőpont Ják főterén, turbina és kézi takarás nélkül">Alaphelyzet</button></div></div>
+<div class="wrap tool-head" id="eszkoz"><div class="tool-row"><div class="sec-head"><p class="kicker">Az eszköz · HorizonLens by Innomotion</p><h2>Tedd le a turbinát, <span class="hl2">válaszd ki, honnan nézed.</span></h2><p class="live-stats" id="liveStats" hidden aria-live="polite"></p><p>A térképen mozgathatod a nézőpontot és a turbinákat; jobb oldalon szemmagasságból látod az eredményt, alatta az oldalnézetet. Telefonon élő kamerával is kipróbálhatod.</p></div><button class="btn" type="button" id="resetBtn" title="Minden beállítás visszaáll a kiinduló állapotra: nézőpont Ják főterén, turbina és kézi takarás nélkül">Alaphelyzet</button></div></div>
 <main class="wrap cols">
   <div class="col">
     <section class="card" id="c-map" aria-labelledby="h-map">
@@ -1874,18 +1880,18 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
 </div></footer>
 
 <div class="mont" id="mont" hidden role="dialog" aria-modal="true" aria-labelledby="montTitle">
-  <div class="mont-bar"><b id="montTitle">A turbina a saját fotódon</b><span class="ac-btns"><button class="btn" type="button" id="mCam" hidden aria-label="Kamera váltása">Kamera</button><button class="btn" type="button" id="mHelp" hidden>Útmutató</button><button class="btn" type="button" id="montClose">Bezárás</button></span></div>
+  <div class="mont-bar"><button class="btn mont-back" type="button" id="montBack" aria-label="Vissza az oldalra">← Vissza</button><b id="montTitle">A turbina a saját fotódon</b><span class="mont-brand" aria-label="HorizonLens, az Innomotion terméke"><span class="mb-hl">HorizonLens <i>·</i> </span>Innomotion</span><span class="ac-btns"><button class="btn" type="button" id="mCam" hidden aria-label="Kamera váltása">Kamera</button><button class="btn" type="button" id="mHelp" hidden>Útmutató</button><button class="btn" type="button" id="montClose">Bezárás</button></span></div>
   <div class="mont-stage" id="montStage"><video id="arVideo" playsinline muted autoplay hidden></video><canvas id="montCv" role="img" aria-label="A kép a turbinával"></canvas><div class="mont-hint" id="montHint" aria-live="polite"></div>
     <div class="ar-coach" id="arCoach" hidden role="status" aria-live="polite"><div class="ac-head"><b id="acN"></b><strong id="acH"></strong><button type="button" id="acVid">Videó</button><button type="button" id="acX" aria-label="Az útmutató elrejtése">✕</button></div><p id="acT"></p><div class="ac-prog" id="acP" hidden><i></i></div><div class="ac-btns" id="acB"></div></div></div>
   <div class="mont-ctl">
     <p class="small" id="montSt"></p>
     <div class="mont-row mont-act">
       <button class="btn" type="button" id="mSave">Kép mentése</button>
-      <button class="btn primary" type="button" id="mFreeze" hidden>Igazítás: kép megállítása</button>
       <button class="btn" type="button" id="mUnlock" hidden>Iránytű szerint újra</button>
-      <button class="btn" type="button" id="mShot" hidden>Pillanatkép mentése</button>
+      <button class="btn primary" type="button" id="mShot" hidden>Pillanatkép mentése</button>
     </div>
     <details class="mont-more" id="mMore"><summary>Finomhangolás: csúszkák, kalibráció, beállítások</summary>
+      <div class="mont-row"><button class="btn" type="button" id="mFreeze" hidden>Irány igazítása: kép megállítása</button></div>
       <div class="mont-grid">
       <label><span id="mHdL">Irány</span><input type="range" id="mHd" min="-40" max="40" step="0.1" value="0"><output id="mHdO"></output></label>
       <label><span>Dőlés</span><input type="range" id="mPt" min="-15" max="15" step="0.1" value="0"><output id="mPtO"></output></label>
@@ -5288,10 +5294,29 @@ function drawReal(g, cam, opts) {
     const a0 = pts[0][0], a1 = pts[pts.length - 1][0];
     const clip = up => { g.beginPath(); const sk = pts.map(([a, e]) => at(a, e)); if (sk.some(p => !p)) return false; sk.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); for (const [a, e] of [[a1, up ? 1.3 : -1.3], [a0, up ? 1.3 : -1.3]]) { const p = at(a, e); if (!p) return false; g.lineTo(p[0], p[1]); } g.closePath(); g.clip(); return true; };
     g.save(); if (clip(true)) drawTurbine2D(g, proj, t, m, opts.rot, turbineColors(t.D, false, opts.contrast ? 0.3 : 1), opts.contrast ? Math.max(1.2, 0.9 * sc + 0.6) : 0); g.restore();
-    if (opts.ghost) { g.save(); if (clip(false)) { g.globalAlpha = 0.5; drawTurbine2D(g, proj, t, m, opts.rot, turbineColors(t.D, true)); } g.restore(); }
+    // teljesen takarásban (a lapátvég sem ér a takaró tárgyak fölé): halványan a helyén, hogy ne tűnjön el nyomtalanul
+    const hidden = !pts.some(([, e]) => e === -0.2) && Math.max(...pts.map(([, e]) => e)) >= Math.atan2(t.z0 + m.tip, t.D);
+    if (opts.ghost || hidden) { g.save(); if (clip(false)) { g.globalAlpha = opts.ghost ? 0.5 : 0.35; drawTurbine2D(g, proj, t, m, opts.rot, turbineColors(t.D, true)); } g.restore(); }
     // felirat a lapátvég fölött
     const p = opts.tlabel === false ? null : proj([t.x, t.y, t.z0 + m.tip + 12]);
-    if (p) { g.save(); g.font = `700 ${Math.round(12 * sc + 7)}px system-ui, sans-serif`; g.textAlign = 'center'; const txt = `T${t.i + 1} · ${km(t.D)}`; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.55)'; g.strokeText(txt, p[0], p[1]); g.fillStyle = '#fff'; g.fillText(txt, p[0], p[1]); g.restore(); }
+    if (p) { g.save(); g.font = `700 ${Math.round(12 * sc + 7)}px system-ui, sans-serif`; g.textAlign = 'center'; const txt = `T${t.i + 1} · ${km(t.D)}`; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.55)'; g.strokeText(txt, p[0], p[1]); g.fillStyle = '#fff'; g.fillText(txt, p[0], p[1]);
+      if (hidden) { const y2 = p[1] + 14 * sc + 9; g.font = `600 ${Math.round(10 * sc + 6)}px system-ui, sans-serif`; g.strokeText('takarásban: házak, fák mögött', p[0], y2); g.fillStyle = '#ffd9c2'; g.fillText('takarásban: házak, fák mögött', p[0], y2); }
+      g.restore(); }
+  }
+  // élő kamerán: ha egy turbina sincs a képben, nyíl mutatja, merre kell fordulni (a kijelölt, különben a legközelebbi irányú felé)
+  if (opts.arrows && list.length) {
+    const hh = Math.atan(cam.W / 2 / cam.F), dOf = t => dAz(Math.atan2(t.x, t.y));
+    if (!list.some(t => Math.abs(dOf(t)) < hh * 0.92)) {
+      const t = list.find(q => q.i === state.sel) || list.reduce((a, b) => Math.abs(dOf(a)) < Math.abs(dOf(b)) ? a : b);
+      const d = dOf(t), dir = d > 0 ? 1 : -1, s = 22 * sc + 14, x = dir > 0 ? cam.W - s - 10 * sc - 6 : s + 10 * sc + 6, y = cam.H * 0.45;
+      g.save(); g.lineJoin = 'round'; g.beginPath(); g.moveTo(x + dir * s, y); g.lineTo(x - dir * s * 0.55, y - s * 0.8); g.lineTo(x - dir * s * 0.55, y + s * 0.8); g.closePath();
+      g.lineWidth = 4; g.strokeStyle = 'rgba(0,0,0,.45)'; g.stroke(); g.fillStyle = '#ec651d'; g.fill();
+      g.textAlign = dir > 0 ? 'right' : 'left'; const tx = x - dir * (s * 0.55 + 10 * sc + 6); g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.6)';
+      g.font = `700 ${Math.round(14 * sc + 8)}px system-ui, sans-serif`; const l1 = `Fordulj ${dir > 0 ? 'jobbra' : 'balra'} ${Math.round(Math.abs(d) / RAD)}°`;
+      g.strokeText(l1, tx, y - 2); g.fillStyle = '#fff'; g.fillText(l1, tx, y - 2);
+      g.font = `600 ${Math.round(11 * sc + 6)}px system-ui, sans-serif`; const l2 = `T${t.i + 1} turbina · ${km(t.D)}`;
+      g.strokeText(l2, tx, y + 14 * sc + 10); g.fillText(l2, tx, y + 14 * sc + 10); g.restore();
+    }
   }
   return pending || SKY.want.size > 0;
 }
@@ -5405,6 +5430,7 @@ try { AR.fov = 66; AR.bias = JSON.parse(localStorage.getItem('arBias') || 'null'
 const inRegion = (la, lo) => !REGION || Math.hypot((la - REGION.lat) * 111.2, (lo - REGION.lon) * 111.32 * Math.cos(REGION.lat * RAD)) <= REGION.km + 3;
 function montStatus(html) { $('montSt').innerHTML = html; }
 function openMont(mode) {
+  if (!MONT.mode) try { history.pushState({ hlMont: 1 }, ''); MONT.hist = true; } catch (e) {}
   MONT.mode = mode; $('mont').hidden = false; $('mont').classList.toggle('is-ar', mode === 'ar'); document.body.style.overflow = 'hidden';
   $('montTitle').textContent = mode === 'ar' ? 'Élő kamera: a turbina a helyén' : 'A turbina a saját fotódon';
   $('arVideo').hidden = mode !== 'ar';
@@ -5414,9 +5440,10 @@ function openMont(mode) {
   $('mHdL').textContent = mode === 'ar' ? 'Iránytű-javítás' : 'Irány'; $('mSkyL').textContent = mode === 'ar' ? 'Falunevek, templom, fokbeosztás és Nap' : 'Modell-horizont, falunevek és templom'; $('mFovL').textContent = mode === 'ar' ? 'A kamera látószöge' : 'Látószög';
   $('mGhost').checked = false;   // alapból csak az látszik, ami a valóságban is látszani fog
   syncMontCtl(); cancelAnimationFrame(MONT.raf); MONT.raf = requestAnimationFrame(montFrame);
-  $('montClose').focus();
+  $('montBack').focus();
 }
-function closeMont() {
+function closeMont(fromPop) {
+  if (MONT.hist) { MONT.hist = false; if (fromPop !== true) try { history.back(); setTimeout(saveHash, 300); } catch (e) {} }   // a visszalépés a régi címsort hozná vissza
   MONT.mode = null; $('mont').hidden = true; document.body.style.overflow = ''; cancelAnimationFrame(MONT.raf); COACH.on = false; $('arCoach').hidden = true;
   if (AR.stream) { AR.stream.getTracks().forEach(tr => tr.stop()); AR.stream = null; $('arVideo').srcObject = null; }
   AR.frozen = null; MONT_SUN.t = null; SCAL.step = 0; CAL.msg = '';
@@ -5457,10 +5484,10 @@ function montFrame() {
   } else if (MONT.mode === 'ar' && AR.frozen) {
     const c = AR.frozen.cv, s = Math.max(W / c.width, H / c.height);
     g.drawImage(c, (W - c.width * s) / 2, (H - c.height * s) / 2, c.width * s, c.height * s);
-    busy = drawReal(g, montCam(W, H), { sky: false, hline: $('mHz').checked, ghost: $('mGhost').checked, labels: $('mSky').checked, rot: rotorAngle(), sun: $('mSky').checked && AR.frozen.t, contrast: true });
+    busy = drawReal(g, montCam(W, H), { sky: false, hline: $('mHz').checked, ghost: $('mGhost').checked, labels: $('mSky').checked, rot: rotorAngle(), sun: $('mSky').checked && AR.frozen.t, contrast: true, arrows: true });
   } else if (MONT.mode === 'ar' && arReady()) {
     horizonLive();
-    busy = drawReal(g, montCam(W, H), { sky: false, hline: $('mHz').checked, ghost: $('mGhost').checked, labels: $('mSky').checked, rot: rotorAngle(), sun: $('mSky').checked && Date.now(), contrast: true });
+    busy = drawReal(g, montCam(W, H), { sky: false, hline: $('mHz').checked, ghost: $('mGhost').checked, labels: $('mSky').checked, rot: rotorAngle(), sun: $('mSky').checked && Date.now(), contrast: true, arrows: true });
   }
   if (MONT.mode === 'ar' && SCAL.step) drawScal(g, W, H);
   const left = skyWork(MONT.mode === 'ar' ? 7 : 12);
@@ -5565,7 +5592,7 @@ async function saveMontage(fromVideo) {
   }
   const g = c.getContext('2d');
   drawReal(g, cam, { sky: false, ghost: $('mGhost').checked, labels: false, rot: rotorAngle() });
-  const m = model(); let fs = Math.max(11, Math.round(W / 70)); const txt = `Tájékoztató látványmodell: ${MODELS[state.model] ? MODELS[state.model].name.split(' · ')[0] : 'egyedi turbina'} (${m.tip} m lapátvég) · a takarás a domborzat, a házak és a fák modellje szerint · ${LOCAL && LOCAL.web ? location.host : 'HorizonLens'} · InnoLens`;
+  const m = model(); let fs = Math.max(11, Math.round(W / 70)); const txt = `Tájékoztató látványmodell: ${MODELS[state.model] ? MODELS[state.model].name.split(' · ')[0] : 'egyedi turbina'} (${m.tip} m lapátvég) · a takarás a domborzat, a házak és a fák modellje szerint · ${LOCAL && LOCAL.web ? location.host : 'HorizonLens'} · Innomotion · InnoLens`;
   g.font = `600 ${fs}px system-ui, sans-serif`; let tw = g.measureText(txt).width;
   if (tw > W * 0.96) { fs = Math.max(8, Math.floor(fs * W * 0.96 / tw)); g.font = `600 ${fs}px system-ui, sans-serif`; tw = g.measureText(txt).width; }
   g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(0, H - fs * 1.9, Math.min(W, tw + fs * 1.4), fs * 1.9); g.fillStyle = '#fff'; g.fillText(txt, fs * 0.7, H - fs * 0.62);
@@ -5640,6 +5667,7 @@ function arBasis(o = AR) {
 function freezeAR() {
   if (AR.frozen) { AR.frozen = null; MONT.msg = ''; }
   else {
+    $('mMore').open = true;   // a „Kész, vissza az élő képre” gomb a Finomhangolás alatt van
     const vd = $('arVideo'); if (!vd.videoWidth || !arReady()) return;
     const cv = document.createElement('canvas'); cv.width = vd.videoWidth; cv.height = vd.videoHeight; cv.getContext('2d').drawImage(vd, 0, 0);
     AR.lock = true; AR.frozen = { cv, f: AR.f.slice(), u: AR.u.slice(), rel: AR.rel, yaw: AR.yaw, t: Date.now() };
@@ -5648,7 +5676,7 @@ function freezeAR() {
   syncAR();
 }
 function syncAR() {
-  $('mFreeze').textContent = AR.frozen ? 'Kész, vissza az élő képre' : 'Igazítás: kép megállítása';
+  $('mFreeze').textContent = AR.frozen ? 'Kész, vissza az élő képre' : 'Irány igazítása: kép megállítása';
   $('mUnlock').hidden = MONT.mode !== 'ar' || !AR.lock || !!AR.frozen;
   $('arVideo').style.visibility = AR.frozen ? 'hidden' : '';
 }
@@ -5886,7 +5914,7 @@ function openIntro(mode) {
   $('arIntroNote').textContent = mode === 'info' ? `Az élő kamera telefonon működik: nyisd meg ezt az oldalt a telefonod böngészőjében (${SITE_URL.replace('https://', '')}). Járművezetés vagy közlekedés közben ne használd.` : 'A kamerakép tiszta marad; ha elakadsz, az élő képen az Útmutató gomb lépésről lépésre végigvezet. Járművezetés vagy közlekedés közben ne használd.';
   box.hidden = false; (mode === 'info' ? $('arIntroNo') : $('arIntroGo')).focus();
 }
-function closeIntro() { const v = $('arIntroV'); v.pause(); v.removeAttribute('src'); v.load(); $('arIntro').hidden = true; if (MONT.mode) $('montClose').focus(); else ($('arBtn').hidden ? $('arHow') : $('arBtn')).focus(); }
+function closeIntro() { const v = $('arIntroV'); v.pause(); v.removeAttribute('src'); v.load(); $('arIntro').hidden = true; if (MONT.mode) $('montBack').focus(); else ($('arBtn').hidden ? $('arHow') : $('arBtn')).focus(); }
 const COACH = { on: false, list: [], skip: {}, step: null, key: '', bkey: '', doneT: 0 };
 function coachStart() {
   Object.assign(COACH, { on: true, skip: {}, step: null, key: '', bkey: '', doneT: 0 });
@@ -6023,7 +6051,7 @@ async function startAR() {
   if (AR.cams.length > 1 && AR.cam !== 0) await camOpen(0); else camLoad();
   window.addEventListener('deviceorientationabsolute', onOri); window.addEventListener('deviceorientation', onOri);
   MONT.msg = '';
-  montStatus('<b>Járművezetés vagy közlekedés közben ne használd.</b><details><summary>Részletes leírás</summary><b>Pontosabb képhez</b> kalibrálhatod a telefont (lent, a <b>Finomhangolás</b> alatt; nem kötelező, elég egyszer, a böngésző megjegyzi): <b>Vízszint</b>: asztalra téve, majd megfordítva, kb. fél perc; <b>Lépték</b>: a kereszttel egy távoli tárgyra célzol, koppintasz, elfordulsz, amíg a tárgy a szaggatott vonalhoz ér, és koppintasz. Ezek után a fehér szaggatott vonal a valódi vízszintes (szemmagasság), és a turbina méretre és magasságra helyes, bárhol állsz. <b>Iránynál</b> fordulj a turbina felé, nyomd meg az <b>„Igazítás: kép megállítása”</b> gombot, és ha kell, húzd a falunevek vonalát vagy a sárga Nap-jelet a helyére; a „Kész” után rögzül. Tipp: a turbinát tartsd a kép közepén, ott a legpontosabb.</details>');
+  montStatus('<b>Járművezetés vagy közlekedés közben ne használd.</b><details><summary>Részletes leírás</summary><b>Pontosabb képhez</b> kalibrálhatod a telefont (lent, a <b>Finomhangolás</b> alatt; nem kötelező, elég egyszer, a böngésző megjegyzi): <b>Vízszint</b>: asztalra téve, majd megfordítva, kb. fél perc; <b>Lépték</b>: a kereszttel egy távoli tárgyra célzol, koppintasz, elfordulsz, amíg a tárgy a szaggatott vonalhoz ér, és koppintasz. Ezek után a fehér szaggatott vonal a valódi vízszintes (szemmagasság), és a turbina méretre és magasságra helyes, bárhol állsz. <b>Iránynál</b> fordulj a turbina felé, nyomd meg a <b>Finomhangolás</b> alatt az <b>„Irány igazítása: kép megállítása”</b> gombot, és ha kell, húzd a falunevek vonalát vagy a sárga Nap-jelet a helyére; a „Kész” után rögzül. Tipp: a turbinát tartsd a kép közepén, ott a legpontosabb.</details>');
   if (navigator.geolocation) AR.watch = navigator.geolocation.watchPosition(onGps, () => { AR.gps = 'nincs'; }, { enableHighAccuracy: true, maximumAge: 3000, timeout: 30000 });
   openMont('ar'); prepReal();   // tiszta kamerakép: az útmutató-kártya csak az „Útmutató” gombra jön elő
   setTimeout(() => { if (MONT.mode === 'ar' && !arReady()) MONT.msg = ' Nem érkezik iránytű-adat: ez a böngésző vagy készülék nem adja meg, merre nézel.'; }, 4000);
@@ -6096,7 +6124,8 @@ $('mCam').onclick = () => { if (AR.cams.length > 1) camOpen((AR.cam + 1) % AR.ca
 $('acX').onclick = () => { COACH.on = false; $('arCoach').hidden = true; };
 $('acVid').onclick = () => openIntro('help');
 for (const ev of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']) $('arCoach').addEventListener(ev, e => e.stopPropagation());
-$('montClose').onclick = closeMont;
+$('montClose').onclick = closeMont; $('montBack').onclick = closeMont;
+addEventListener('popstate', () => { if (MONT.mode) closeMont(true); else if (MONT.hist) MONT.hist = false; });
 document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (!$('arIntro').hidden) closeIntro(); else if (MONT.mode) closeMont(); });
 for (const ev of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']) $('montStage').addEventListener(ev, montDrag);
 $('mHd').oninput = () => { const v = +$('mHd').value; if (MONT.mode === 'ar') { AR.hdOff = v; AR.lock = true; syncAR(); } else MONT.hd = MONT.hd0 + v; syncMontCtl(); };
@@ -6154,9 +6183,10 @@ if (LOCAL) { $('vsR').querySelector('option[value="20000"]').remove(); }
    csak akkor töltődnek le, amikor az eszköz a képernyő közelébe ér; addig a nyitókép gyorsan betölt.
    Megosztott nézet linkjével (#eyJ…) azonnal indul. */
 let booted = false;
+const EXAMPLE_T = [{ lat: 47.09960, lon: 16.55731 }, { lat: 47.09960, lon: 16.56590 }, { lat: 47.09960, lon: 16.57449 }];   // 1. lehetséges terület, Jáktól kb. 4,6 km-re délre
 function boot() {
   if (booted) return; booted = true;
-  loadHash();
+  if (!loadHash() && !state.turbines.length && EXAMPLE_T.every(t => inRegion(t.lat, t.lon))) { state.turbines = EXAMPLE_T.map(t => ({ ...t })); state.sel = 1; }   // alap turbinák, hogy ne üres képpel induljon
   syncControls(); renderObstacles(); buildMarkers();
   layoutPip();
   fitView();
