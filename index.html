@@ -904,9 +904,6 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .fact{background:var(--card);padding:9px 11px;display:grid;gap:2px}
 .fact span{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
 .fact b{font:500 1.02rem/1.2 var(--mono);font-variant-numeric:tabular-nums}
-.season{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.season div{border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-size:.9rem}
-.season div b{display:block;font-family:var(--display);font-size:1rem}
 .tbl-wrap{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:.88rem}
 th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
@@ -1150,7 +1147,6 @@ footer a{color:var(--accent)}
 }
 @media (max-width:520px){
   .ob-grid{grid-template-columns:1fr}
-  .season{grid-template-columns:1fr}
   .facts{grid-template-columns:repeat(2,minmax(0,1fr))}
   .seg button{padding:9px 9px;font-size:.84rem}
 }
@@ -1502,7 +1498,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <select id="obType" aria-label="Milyen takarást tegyen le a kattintás" hidden></select>
         <form class="search" id="searchForm" role="search">
-          <input type="text" id="q" placeholder="Település vagy koordináta (46.46, 17.85)" aria-label="Település vagy cím keresése" autocomplete="off">
+          <input type="text" id="q" placeholder="Cím, pl. Ják, Petőfi Sándor utca 10" aria-label="Település vagy cím keresése" autocomplete="off">
           <button class="btn" type="submit">Keres</button>
           <div class="results-pop" id="qres" hidden></div>
         </form>
@@ -1572,13 +1568,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="rng"><input type="range" id="floor" min="-3" max="40" step="0.5" value="0" aria-label="A nézőpont emelése a talajszinthez képest"><output id="floorO"></output></div>
         <p class="small">A szemmagasság mindig 1,7 m a talpadhoz képest. Árokban a szem a környező talaj alá kerül, így az árok pereme is takar.</p>
       </div>
-      <div class="field">
-        <span class="flabel" id="lbl-season">Évszak</span>
-        <div class="seg" role="group" aria-labelledby="lbl-season">
-          <button type="button" id="sSummer" aria-pressed="true">Nyár, lombos fák</button>
-          <button type="button" id="sWinter" aria-pressed="false">Tél, lombtalan fák</button>
-        </div>
-      </div>
       <div class="field" id="bldField">
         <label class="check"><input type="checkbox" id="bld" checked> <b>Valós épületek</b> a térképről, 3D-ben és a számításban</label>
         <p class="small">A házak alaprajza légi- és műholdfelvételekből felismert, illetve OpenStreetMap-adat (Overture Maps). A magasságot ott, ahol nincs megadva, az alapterületből becsüli: melléképület 3–4,5 m, családi ház nyeregtetővel kb. 7 m, csűr, üzem 8–10 m. A kocsiutak úttestétől 3 m-en belül nem marad épület (ahol az adatban mégis belelógna, ott a házat visszavágja).</p>
@@ -1607,8 +1596,8 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="field" id="forField">
         <label class="check"><input type="checkbox" id="forest" checked> <b>Fák és erdők</b> a légifotókról felismerve, a térképen, 3D-ben és a számításban</label>
         <label class="flabel" for="forD">Famagasság-korrekció</label>
-        <div class="rng"><input type="range" id="forD" min="-5" max="10" step="1" value="0"><output id="forDo"></output></div>
-        <p class="small">Forrás: a Meta és a World Resources Institute lombkorona-magasság térképe (2024, CC BY 4.0), amely 2016–2019-es légifotókról gépi tanulással becsüli a fák magasságát, kb. 1 m-es rácson. Ebből minden fa a saját helyén, magasságával és koronaméretével kerül a 3D képbe és a számításba (kertek, fasorok, magányos fák; 8 km-en belül), az összefüggő erdők pedig 6,5 m-es rácson, a mért átlagos famagassággal. A térképen 15-ös nagyítástól a fák koronája is látszik. A felvételek óta a fák nőhettek, vagy kivághatták őket: a csúszkával az összes fa magasságán lehet állítani. Az utakat az OpenStreetMap adja: a kocsiutak mentén az úttest szélétől 3 m-ig, a földutakon, járdákon és bejárókon magán az úton nincs fa, így az útra tett nézőpont szabadon áll. Télen csak az erdők belseje (a széltől 40 m-nél beljebb) számít tömörnek, a lombtalan fákon, fasorokon és erdőszéleken át lehet látni. A saját kerted fáit kézzel adhatod hozzá.</p>
+        <div class="rng"><input type="range" id="forD" min="-5" max="20" step="1" value="8"><output id="forDo"></output></div>
+        <p class="small">Forrás: a Meta és a World Resources Institute lombkorona-magasság térképe (2024, CC BY 4.0), amely 2016–2019-es légifotókról gépi tanulással becsüli a fák magasságát, kb. 1 m-es rácson. Ebből minden fa a saját helyén, magasságával és koronaméretével kerül a 3D képbe és a számításba (kertek, fasorok, magányos fák; 8 km-en belül), az összefüggő erdők pedig 6,5 m-es rácson, a mért átlagos famagassággal. A térképen 15-ös nagyítástól a fák koronája is látszik. A felvételek óta a fák nőhettek, vagy kivághatták őket: a csúszkával az összes fa magasságán lehet állítani. Az utakat az OpenStreetMap adja: a kocsiutak mentén az úttest szélétől 3 m-ig, a földutakon, járdákon és bejárókon magán az úton nincs fa, így az útra tett nézőpont szabadon áll. A saját kerted fáit kézzel adhatod hozzá.</p>
       </div>
       <div class="field">
         <span class="flabel">Előtte álló takarások</span>
@@ -1630,7 +1619,6 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="pano-tools">
         <span class="tilt" role="group" aria-label="Fel-le nézés"><button class="btn" type="button" id="tiltUp" aria-label="Nézz feljebb">▲</button><button class="btn" type="button" id="tiltDown" aria-label="Nézz lejjebb">▼</button></span>
         <div class="seg" role="group" aria-label="Látószög"><button type="button" id="fovCam" aria-pressed="true">Mint a telefon (66°)</button><button type="button" id="fovLife" aria-pressed="false">Életnagyság</button></div>
-        <div class="seg" role="group" aria-label="Évszak"><button type="button" id="qSummer" aria-pressed="true">Nyár</button><button type="button" id="qWinter" aria-pressed="false">Tél, lombtalan</button></div>
         <p class="small fov-note" id="fovNote"></p>
         <span class="checks"><label class="check"><input type="checkbox" id="ghost" checked> A takart rész pirosan áttűnik</label>
         <label class="check"><input type="checkbox" id="spin" checked> Forgó lapátok</label></span>
@@ -1687,7 +1675,6 @@ h_takart = z_szem + D · tan(α_max) − z_talppont</div>
     <ul>
       <li>A domborzati modell nem lát kis árkokat, töltéseket és egyes fákat; ezeket kézzel add hozzá takarásként.</li>
       <li>Az erdős területeken a modell részben a lombkorona tetejét méri, ott a terep a valóságnál magasabbnak tűnhet.</li>
-      <li>Télen a lombhullató fák áttetszőek, a turbina átsejlik az ágak között.</li>
       <li>Magasabb nézőpontról (emelet, domb, kilátó) a közeli takarás gyorsan elveszti a hatását.</li>
       <li>A lapát a legmagasabb állásban van, a rotor szemből látszik. Ez a legnagyobb látható felület.</li>
     </ul>
@@ -3006,13 +2993,15 @@ const OB_ORDER = ['bush', 'fence', 'trees', 'forest', 'house', 'block', 'mound']
 const LINEAR = t => t !== 'house' && t !== 'block';   // vonalas takarás (sor, sáv) vagy épület
 
 /* ---------- Állapot ---------- */
+// a lombkorona-térkép a terepi összevetés (Ják, 2026. okt.) szerint alacsonyabb a valóságnál: alapból +8 m minden fához és erdőhöz
+const TREE_BASE = 8;
 const DEFAULT = {
   // Ják főtere (más régiónál a build --place pontja); turbina és kézi takarás nincs (a házak és a fák a beépített adatból jönnek)
   viewer: window.LOCAL_DATA && window.LOCAL_DATA.home ? { lat: window.LOCAL_DATA.home.lat, lon: window.LOCAL_DATA.home.lon } : { lat: 47.14105, lon: 16.58072 },
   turbines: [],
-  sel: 0, model: 'v172h', custom: { hub: 165, rotor: 170 }, floor: 0, season: 'summer',
+  sel: 0, model: 'v172h', custom: { hub: 165, rotor: 170 }, floor: 0,
   obstacles: [],
-  fov: 40, pan: 0, tilt: 0, ghost: true, spin: true, bld: true, bldH: {}, forest: true, forD: 0, isExample: true
+  fov: 40, pan: 0, tilt: 0, ghost: true, spin: true, bld: true, bldH: {}, forest: true, forD: TREE_BASE, isExample: true
 };
 let state = JSON.parse(JSON.stringify(DEFAULT, (k, v) => v === Infinity ? 'inf' : v), (k, v) => v === 'inf' ? Infinity : v);
 let uid = 1;
@@ -3198,7 +3187,7 @@ function analyze(t, ei) {
     if (d <= stopOcc) { const a = Math.atan2(za - eyeZ, d); if (a > best.a) best = { a, kind: 'terrain', d, z: za, zg: z }; }
     if (!prof.length || d - prof[prof.length - 1][0] >= dEnd / 700) prof.push([d, za]);
   }
-  // fák és erdők: a 3D kép koronái a rálátás vonala mentén (nyáron és télen külön, a téli tömörség szerint)
+  // fák és erdők: a 3D kép koronái a rálátás vonala mentén (lombos állapotban)
   const crossCrown = (t, winter) => {
     const tc = t.x * sx + t.y * sy, q = Math.abs(t.x * sy - t.y * sx), R = t.R; if (q > R || tc + R < 1 || tc - R > stopOcc) return;
     const half = Math.sqrt(R * R - q * q), z = fr.elev(t.x, t.y); if (z !== z) return;
@@ -3210,13 +3199,13 @@ function analyze(t, ei) {
       else { if (a > fS.a) fS = b; if (k === 4) fprof.push([dd, z - drop(dd), z + t.H - drop(dd), t.f]); }
     }
   };
-  if (fl) for (const winter of [false, true]) for (const [r0, r1, sp] of FOREST_RINGS) {
+  if (fl) for (const winter of [false]) for (const [r0, r1, sp] of FOREST_RINGS) {
     for (let r = r0 + sp / 2; r < Math.min(r1, stopOcc + sp); r += sp) {
       const i0 = Math.round(az / (sp / r));
       for (let i = i0 - 2; i <= i0 + 2; i++) { const t = forestCrown(fl, r, i, sp, winter); if (t && t.solid) crossCrown(t, winter); }
     }
   }
-  // egyes fák: nyáron takarnak, télen lombtalanul átlátszók
+  // egyes fák
   for (const q of treeLocal(fr)) { if (q.d - q.r > stopOcc) continue; const t = treeItem(q); if (t.solid) crossCrown(t, false); }
   fprof.sort((p, q) => p[0] - q[0]);
   res.terrain = best.kind === 'terrain' ? { ...best } : null;
@@ -3253,7 +3242,7 @@ function analyze(t, ei) {
   res.aTip = A(m.tip); res.aHub = A(m.hub); res.aBase = A(0);
   return res;
 }
-function hiddenFor(a) { return state.season === 'winter' ? { h: a.hidW, b: a.blockW } : { h: a.hidS, b: a.blockS }; }
+function hiddenFor(a) { return { h: a.hidS, b: a.blockS }; }
 function classify(h) {
   const m = model();
   if (h >= m.tip) return 0;
@@ -3446,7 +3435,7 @@ function renderReal() {
     }
     return { kind: o.type, x0, y0, ex, ey, len: o.w, w: o.w, h: o.h };
   });
-  RV.setObstacles(ol, vk + JSON.stringify(ol.map(o => [o.kind, Math.round(o.x0), Math.round(o.y0), o.ex.toFixed(3), o.len, o.h])), gY, state.season === 'winter');
+  RV.setObstacles(ol, vk + JSON.stringify(ol.map(o => [o.kind, Math.round(o.x0), Math.round(o.y0), o.ex.toFixed(3), o.len, o.h])), gY, false);
   // valós épületek a látott ékben (a nézőpontot tartalmazó, saját házat kihagyja)
   const bl = [];
   if (state.bld) {
@@ -3464,7 +3453,7 @@ function renderReal() {
   const lms = lmLocal(fr).filter(L => Math.hypot(L.cx, L.cy) <= dMax).map(L => ({ ...L, Y0: L.g - drop(Math.hypot(L.cx, L.cy)) - eyeZ }));
   RV.setLandmarks(lms, `${vk}|${lms.map(L => L.Y0.toFixed(2)).join()}|${demOk}`);
   // erdők: koronák a látott ékben, a távolsággal ritkuló (de összezáró) rácson, a turbináig; egyes fák TREE_R-ig
-  const fl = forestLookup(fr), fItems = [], winterF = state.season === 'winter';
+  const fl = forestLookup(fr), fItems = [], winterF = false;
   if (fl) {
     const Rf = Math.min(dMax, 25000, Math.max(1500, ...AN.filter(a => a.ok).map(a => a.D + 200)));
     for (const [r0, r1, sp] of FOREST_RINGS) {
@@ -3480,7 +3469,7 @@ function renderReal() {
     return q.d <= dMax && da <= half + 0.03 + Math.atan2(q.r, q.d);
   }).sort((p, q) => p.d - q.d).slice(0, 20000);
   for (const q of tNear) fItems.push(treeItem(q));
-  RV.setForest(fItems, `${vk}|${cAz.toFixed(3)}|${state.fov}|${state.forD}|${state.season}|${forLoadedKey()}|${demOk}|${fItems.length}`, gY, state.season === 'winter');
+  RV.setForest(fItems, `${vk}|${cAz.toFixed(3)}|${state.fov}|${state.forD}|${forLoadedKey()}|${demOk}|${fItems.length}`, gY, false);
   RV.setView(az0 / RAD, c, state.fov, cssW, cssH);
   RV.setGhost(state.ghost);
   if (!state.spin) { RV.fixRotor(); RV.render(); }
@@ -3638,7 +3627,7 @@ function renderPano(q = 1) {
     const t = clamp(degOfY(y) / 22, 0, 1), col = rgba(214 - 90 * t | 0, 226 - 60 * t | 0, 236 - 20 * t | 0);
     buf.fill(col, y * W, y * W + W);
   }
-  const winter = state.season === 'winter';
+  const winter = false;
   const ovl = winter ? new Uint8ClampedArray(W * H * 4) : null;
   const vis = AN.map((a, i) => ({ a, i })).filter(({ a }) => a.ok && Math.abs(wrapPi(a.az - az0)) < fov / 2 + Math.atan(m.R / a.D) + 0.02);
   vis.forEach(v => { v.clip = new Float32Array(W).fill(-1); });
@@ -3782,11 +3771,11 @@ function renderProfile() {
   s += `<path d="${p}" fill="var(--terrain)" stroke="var(--terrain-edge)" stroke-width="1.2"/>`;
   // takarások
   let lastX = -1e9, lvl = 0;
-  (a.fprof || []).forEach(([d, g, top, f]) => { s += `<line x1="${X(d)}" y1="${Y(g)}" x2="${X(d)}" y2="${Y(top)}" stroke="#3f7a35" stroke-width="2" stroke-opacity="${state.season === 'winter' && f === 1 ? .3 : .75}"/>`; });
+  (a.fprof || []).forEach(([d, g, top, f]) => { s += `<line x1="${X(d)}" y1="${Y(g)}" x2="${X(d)}" y2="${Y(top)}" stroke="#3f7a35" stroke-width="2" stroke-opacity=".75"/>`; });
   (a.bld || []).forEach(ob => { s += `<rect x="${X(ob.d) - 2}" y="${Y(ob.top)}" width="4" height="${Math.max(1.5, Y(ob.g) - Y(ob.top))}" fill="#8b8f8c"/>`; });
   a.obs.slice().sort((p1, p2) => p1.d - p2.d).forEach(ob => {
     const col = OB[ob.o.type].col, x = X(ob.d), w = Math.max(3, Math.min(10, ob.o.type === 'forest' ? 30 * sx : 4));
-    s += `<rect x="${x - w / 2}" y="${Y(ob.top)}" width="${w}" height="${Math.max(1.5, Y(ob.g) - Y(ob.top))}" fill="${col}" ${state.season === 'winter' && OB[ob.o.type].leafy ? 'fill-opacity=".45"' : ''}/>`;
+    s += `<rect x="${x - w / 2}" y="${Y(ob.top)}" width="${w}" height="${Math.max(1.5, Y(ob.g) - Y(ob.top))}" fill="${col}"/>`;
     lvl = x - lastX < 80 ? lvl + 1 : 0; lastX = x;
     const ly = Y(ob.top) - 8 - lvl * 14;
     s += `<line x1="${x}" x2="${x}" y1="${ly + 3}" y2="${Y(ob.top) - 1}" stroke="${col}" stroke-width="1" opacity=".6"/><text x="${x + 3}" y="${ly}" font-size="11">${OB[ob.o.type].name.toLowerCase()} ${nf(ob.o.h, ob.o.h % 1 ? 1 : 0)} m</text>`;
@@ -3829,7 +3818,7 @@ function renderResults() {
     const occ = isFinite(b.a) ? Math.max(b.a / RAD, a.aBase) : a.aBase;
     const visDeg = Math.max(0, a.aTip - occ);
     const cmp = visDeg <= 0 ? '' : visDeg < 0.5 ? `Ez kisebb, mint a telihold (0,5°).` : visDeg < 1.6 ? `Ez nagyjából kisujjnyi kinyújtott karral.` : visDeg < 4 ? `Ez nagyjából ${nf(visDeg / 2, 1)} hüvelykujjnyi kinyújtott karral.` : `Ez kinyújtott karral kb. ${nf(visDeg / 10, 1)} ököl magasság.`;
-    const sum = a.hidS, win = a.hidW;
+    const sum = a.hidS;
     box.innerHTML = `
       <span class="pill"><i style="background:${VCOL[c]}"></i>T${state.sel + 1}: ${VLABEL[c]}</span>
       <p class="main">${verdictText(h, b)}</p>
@@ -3842,10 +3831,7 @@ function renderResults() {
         <div class="fact"><span>Talajszint a turbinánál</span><b>${nf(a.zT)} m</b></div>
       </div>
       <p class="small">${visDeg > 0 ? `A turbinából függőlegesen ${nf(visDeg, 1)}° látszik. ${cmp} ` : ''}A magasságok tengerszint feletti értékek. A Föld görbülete ezen a távolságon ${nf(drop(a.D), 1)} m-rel süllyeszti a turbina talppontját.</p>
-      <div class="season">
-        <div style="${state.season === 'summer' ? 'border-color:var(--accent)' : ''}"><b>Nyáron, lombos fákkal</b>${sum <= 0 ? 'nincs takarás' : sum >= m.tip ? 'teljesen takarva' : `takarva ${nf(Math.round(sum))} m-ig`} · ${VLABEL[classify(sum)].toLowerCase()}</div>
-        <div style="${state.season === 'winter' ? 'border-color:var(--accent)' : ''}"><b>Télen, lombtalan fák mögül</b>${win <= 0 ? 'nincs szilárd takarás' : win >= m.tip ? 'teljesen takarva' : `takarva ${nf(Math.round(win))} m-ig`} · ${VLABEL[classify(win)].toLowerCase()}${win < sum - 1 ? ', a fák ágai között átsejlik' : ''}</div>
-      </div>`;
+`;
   }
   if (AN.length > 1) {
     let t = '<table><thead><tr><th>Turbina</th><th>Távolság</th><th>Takarva</th><th>Mi látszik</th></tr></thead><tbody>';
@@ -4007,7 +3993,7 @@ function forestCrown(fl, r, i, sp, winter) {
 }
 // egy mért fa a 3D-hez és a számításhoz (q: treeLocal eleme); közel fotós fa, távolabb gömbkorona
 function treeItem(q) {
-  return crownShape({ x: q.x, y: q.y, f: 1, H: Math.max(2, q.h + state.forD), R: q.r, seed: q.seed, kind: q.d < 120 ? 'photo' : 'crown', solid: state.season !== 'winter', src: 'tree' });
+  return crownShape({ x: q.x, y: q.y, f: 1, H: Math.max(2, q.h + state.forD), R: q.r, seed: q.seed, kind: q.d < 120 ? 'photo' : 'crown', solid: true, src: 'tree' });
 }
 // a korona függőleges mérete: ry (a gömbkorona vagy a fotós fa belső tömbjének fél magassága), env (a burok fél magassága)
 function crownShape(t) {
@@ -4835,8 +4821,31 @@ function localSearch(q) {
     .sort((a, b) => (fold(b[0]).startsWith(f) - fold(a[0]).startsWith(f)) || b[3] - a[3])
     .slice(0, 8).map(s => ({ lat: s[1], lon: s[2], name: s[0] }));
 }
+// cím, utca, házszám: online (Photon, tartalékként Nominatim), a régió dobozában; Jákon sok háznak nincs házszáma az OSM-ben, ilyenkor az utca egy pontja jön
+async function onlineGeocode(q) {
+  const R = REGION, bb = R ? (() => { const dLa = (R.km + 3) / 111.2, dLo = (R.km + 3) / (111.32 * Math.cos(R.lat * RAD)); return [R.lon - dLo, R.lat - dLa, R.lon + dLo, R.lat + dLa].map(v => +v.toFixed(4)); })() : null;
+  let out = [];
+  try {
+    const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=10${bb ? '&bbox=' + bb.join(',') : '&lat=47.2&lon=19.4'}`);
+    if (r.ok) out = ((await r.json()).features || []).map(f => { const p = f.properties || {}, st = p.street ? p.street + (p.housenumber ? ' ' + p.housenumber : '') : '';
+      return { lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0], exact: !!p.housenumber, name: [st || p.name, st && p.name && p.name !== p.street ? p.name : '', p.city || p.locality || p.district || ''].filter(Boolean).join(', ') }; });
+  } catch (e) { /* tartalék kereső jön */ }
+  if (!out.length) {
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=8&accept-language=hu&countrycodes=hu,at${bb ? `&viewbox=${bb[0]},${bb[3]},${bb[2]},${bb[1]}&bounded=1` : ''}&q=${encodeURIComponent(q)}`);
+    out = (await r.json()).map(x => { const parts = x.display_name.split(', '); return { lat: +x.lat, lon: +x.lon, exact: /^\d/.test(parts[0]) || /^\d/.test(parts[1] || ''), name: parts.slice(0, 4).join(', ') }; });
+  }
+  out = out.filter(x => inRegion(x.lat, x.lon));
+  const fq = fold(q), town = SETTLE.map(s => s[0]).filter(n => fq.includes(fold(n))).sort((a, b) => b.length - a.length)[0];   // a beírt település találatai előre
+  if (town) out.sort((a, b) => fold(b.name).includes(fold(town)) - fold(a.name).includes(fold(town)));
+  const seen = new Set(); return out.filter(x => !seen.has(x.name) && seen.add(x.name));
+}
 async function geocode(q) {
-  if (LOCAL) return localSearch(q);
+  if (LOCAL) {
+    const loc = localSearch(q);
+    if (loc.length && fold(loc[0].name) === fold(q)) return loc;   // pontosan egy település neve: elég a beépített lista
+    let on = []; try { on = await onlineGeocode(q); } catch (e) { if (!loc.length) throw e; }
+    return [...on, ...loc].slice(0, 8);
+  }
   try {
     const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&lat=47.2&lon=19.4`);
     if (r.ok) {
@@ -4857,9 +4866,12 @@ $('searchForm').addEventListener('submit', async e => {
   box.hidden = false; box.innerHTML = '<button type="button" disabled>Keresés…</button>';
   try {
     const res = await geocode(q);
-    if (!res.length) { box.innerHTML = `<button type="button" disabled>${LOCAL ? 'Nincs a beépített listában (főleg az 1000 fő feletti települések vannak benne). Keress egy közeli nagyobb települést, vagy írj be koordinátát, pl. 47.13, 16.58.' : 'Nincs találat. Próbáld a település nevével, vagy írj be koordinátát.'}</button>`; return; }
+    if (!res.length) { box.innerHTML = `<button type="button" disabled>${LOCAL ? 'Nincs találat a környéken. Írd be így: „Ják, Petőfi Sándor utca 10”, vagy koppints a térképen a helyre, vagy írj be koordinátát, pl. 47.13, 16.58.' : 'Nincs találat. Próbáld a település nevével, vagy írj be koordinátát.'}</button>`; return; }
     box.innerHTML = res.map((x, i) => `<button type="button" data-i="${i}">${esc(x.name)}</button>`).join('');
-    box.onclick = ev => { const b = ev.target.closest('button[data-i]'); if (!b) return; const x = res[+b.dataset.i]; map.setView([x.lat, x.lon], 14); box.hidden = true; };
+    box.onclick = ev => { const b = ev.target.closest('button[data-i]'); if (!b) return; const x = res[+b.dataset.i]; box.hidden = true;
+      if (!inRegion(x.lat, x.lon)) { map.setView([x.lat, x.lon], 14); return; }
+      state.viewer = { lat: x.lat, lon: x.lon }; buildMarkers(); clearViewshed(true); update(); map.setView([x.lat, x.lon], 16);   // a cím a nézőpont: innen számol, a kép a turbina felé néz
+      $('mapHint').textContent = `A nézőpont: ${x.name}.` + (x.exact === false ? ' Ehhez a címhez nincs házszám a térképen, ezért az utca egy pontjára került: koppints a térképen a házadra a pontosításhoz.' : ''); };
   } catch (err) { box.innerHTML = '<button type="button" disabled>A kereső most nem érhető el. Írj be koordinátát (pl. 46.46, 17.85), vagy mozgasd a térképet kézzel.</button>'; }
 });
 document.addEventListener('click', e => { if (!e.target.closest('#searchForm')) $('qres').hidden = true; });
@@ -4939,11 +4951,9 @@ sel.onchange = () => { state.model = sel.value; syncControls(); clearViewshed(tr
 $('cHub').oninput = $('cRot').oninput = () => { state.custom = { hub: clamp(+$('cHub').value || 0, 30, 260), rotor: clamp(+$('cRot').value || 0, 20, 260) }; refresh(); };
 $('floor').oninput = () => { state.floor = +$('floor').value; syncControls(); refresh(); };
 document.querySelectorAll('#floorSeg button').forEach(b => b.onclick = () => { state.floor = +b.dataset.f; syncControls(); update(); });
-$('sSummer').onclick = $('qSummer').onclick = () => { state.season = 'summer'; syncControls(); update(); };
-$('sWinter').onclick = $('qWinter').onclick = () => { state.season = 'winter'; syncControls(); update(); };
 $('ghost').onchange = () => { state.ghost = $('ghost').checked; renderPano(); saveHash(); };
 $('forest').onchange = () => { state.forest = $('forest').checked; syncForLayer(); update(); };
-const forDText = v => v ? `${v > 0 ? '+' : '−'}${Math.abs(v)} m` : 'mért';
+const forDText = v => (v ? `${v > 0 ? '+' : '−'}${Math.abs(v)} m` : 'mért') + (v === TREE_BASE ? ' (alap)' : '');
 $('forD').addEventListener('input', () => { state.forD = +$('forD').value; $('forDo').textContent = forDText(state.forD); refresh(); });
 $('forD').addEventListener('change', saveHash);
 $('bld').onchange = () => { state.bld = $('bld').checked; bldLocal.key = ''; syncBldLayer(); update(); };
@@ -5000,7 +5010,6 @@ function syncControls() {
   $('floor').value = state.floor;
   $('floorO').textContent = state.floor === 0 ? 'talajszint' : state.floor < 0 ? `${nf(-state.floor, 1)} m mély árok` : `+${nf(state.floor, state.floor % 1 ? 1 : 0)} m`;
   document.querySelectorAll('#floorSeg button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.f === state.floor));
-  for (const k of ['s', 'q']) { $(k + 'Summer').setAttribute('aria-pressed', state.season === 'summer'); $(k + 'Winter').setAttribute('aria-pressed', state.season === 'winter'); }
   $('ghost').checked = state.ghost; $('spin').checked = state.spin; $('bld').checked = state.bld;
   $('forest').checked = state.forest; $('forD').value = state.forD; $('forDo').textContent = forDText(state.forD);
 }
@@ -5114,7 +5123,7 @@ function projector(b, F, cx, cy) {
    Lustán, képkockánként adagolva számol. */
 const SKY_FAR = 20000;
 const SKY = { key: '', tabs: new Map(), want: new Set() };
-function skyKey() { return JSON.stringify([state.viewer, state.floor, state.season, state.forest, state.forD, state.bld, state.bldH, state.obstacles, forLoadedKey()]); }
+function skyKey() { return JSON.stringify([state.viewer, state.floor, state.forest, state.forD, state.bld, state.bldH, state.obstacles, forLoadedKey()]); }
 function skyReset() { const k = skyKey(); if (k !== SKY.key) { SKY.key = k; SKY.tabs.clear(); SKY.want.clear(); } }
 function skyAt(az, D = SKY_FAR) {   // radián; undefined, ha még nincs kiszámolva (és kéri)
   const Dk = Math.round(D / 10) * 10, i = ((Math.round(az / RAD * 10) % 3600) + 3600) % 3600;
@@ -5130,7 +5139,7 @@ function skyWork(budgetMs) {
     const Dk = Math.floor(w / 4000), i = w % 4000, az = i / 10 * RAD; let a = -0.2;
     for (const D of Dk === SKY_FAR ? [20000, 8000, 3000, 1000] : [Dk]) {
       const [la, lo] = ei.fr.toLL(Math.sin(az) * D, Math.cos(az) * D), r = analyze({ lat: la, lon: lo }, ei);
-      if (r.ok) { const b = state.season === 'winter' ? r.blockW : r.blockS; a = Math.max(b.a, -0.2); break; }
+      if (r.ok) { const b = r.blockS; a = Math.max(b.a, -0.2); break; }
     }
     const tab = SKY.tabs.get(Dk); if (tab) tab[i] = a;
     if (performance.now() - t0 > budgetMs) break;
@@ -5516,9 +5525,6 @@ async function openPhoto(file) {
     // hely: a fotó GPS-adata, ha a régióban van; különben a térképen megadott nézőpont
     if (ex && ex.lat != null && inRegion(ex.lat, ex.lon)) { state.viewer = { lat: ex.lat, lon: ex.lon }; notes.push('<b>Hely:</b> a fotó GPS-adatából (a térképen is oda tettem a nézőpontot).'); }
     else notes.push(ex && ex.lat != null ? '<b>Hely:</b> a fotó GPS-adata a régión kívül esik, ezért a térképen megadott nézőpontból számolok.' : '<b>Hely:</b> a fotóban nincs GPS-adat, ezért a térképen megadott nézőpontból számolok. Tedd oda, ahol a fotó készült.');
-    // évszak a fotó dátumából (november–március: lombtalan)
-    const mo = ex && ex.date ? +ex.date.slice(5, 7) : 0;
-    if (mo) { state.season = mo >= 11 || mo <= 3 ? 'winter' : 'summer'; notes.push(`<b>Évszak:</b> a fotó dátuma alapján ${state.season === 'winter' ? 'tél (lombtalan fák)' : 'nyár (lombos fák)'}.`); }
     // látószög: a 35 mm-es egyenértékű fókuszból (az átlóra vonatkozik), különben a telefonok fő kamerája (26 mm)
     // Samsung: a „35 mm-es” érték az objektívé, a nagyítás (DigitalZoomRatio) a fő kamerához képest értendő; a fő kamerás 2× így 46 mm,
     // a 3×-os teleobjektív 69 mm marad, rajta a 10× 230 mm (valódi fotón ellenőrizve: Ják, S22+). Más gyártóknál (pl. iPhone) a nagyítás már benne van.
@@ -6088,7 +6094,7 @@ function onGps(p) {
 /* ---------- Megosztható link ---------- */
 function saveHash() {
   const r5 = v => Math.round(v * 1e5) / 1e5;
-  const s = { v: [r5(state.viewer.lat), r5(state.viewer.lon)], t: state.turbines.map(t => [r5(t.lat), r5(t.lon)]), i: state.sel, m: state.model, c: [state.custom.hub, state.custom.rotor], f: state.floor, s: state.season === 'winter' ? 1 : 0, o: state.obstacles.map(o => [o.type, r5(o.lat), r5(o.lon), o.h, Math.round(o.w), Math.round(o.rot / RAD)]), a: state.fov, p: Math.round(state.pan * 10) / 10, g: state.ghost ? 1 : 0, b: state.bld ? 1 : 0, hh: Object.entries(state.bldH), fo: state.forest ? 1 : 0, fd: state.forD };
+  const s = { v: [r5(state.viewer.lat), r5(state.viewer.lon)], t: state.turbines.map(t => [r5(t.lat), r5(t.lon)]), i: state.sel, m: state.model, c: [state.custom.hub, state.custom.rotor], f: state.floor, o: state.obstacles.map(o => [o.type, r5(o.lat), r5(o.lon), o.h, Math.round(o.w), Math.round(o.rot / RAD)]), a: state.fov, p: Math.round(state.pan * 10) / 10, g: state.ghost ? 1 : 0, b: state.bld ? 1 : 0, hh: Object.entries(state.bldH), fo: state.forest ? 1 : 0, fd: state.forD };
   try { history.replaceState(null, '', '#' + btoa(JSON.stringify(s)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')); } catch (e) { /* nem kötelező */ }
 }
 function loadHash() {
@@ -6097,11 +6103,11 @@ function loadHash() {
     const s = JSON.parse(atob(h.replace(/-/g, '+').replace(/_/g, '/')));
     state.viewer = { lat: s.v[0], lon: s.v[1] }; state.turbines = s.t.map(([lat, lon]) => ({ lat, lon })); state.sel = s.i || 0;
     if (MODELS[s.m]) state.model = s.m; if (s.c) state.custom = { hub: s.c[0], rotor: s.c[1] };
-    state.floor = +s.f || 0; state.season = s.s ? 'winter' : 'summer';
+    state.floor = +s.f || 0;
     state.obstacles = (s.o || []).filter(o => OB[o[0]]).map(o => o.length === 6
       ? { id: uid++, type: o[0], lat: o[1], lon: o[2], h: o[3], w: o[4], rot: o[5] * RAD }
       : fromLOS({ id: uid++, type: o[0], dist: o[1], h: o[2], w: o[3] < 0 ? Infinity : o[3], off: o[4] || 0 }));
-    state.fov = s.a || 40; state.pan = s.p || 0; state.ghost = s.g !== 0; state.bld = s.b !== 0; state.bldH = Object.fromEntries(s.hh || []); state.forest = s.fo !== 0; state.forD = Math.max(-5, Math.min(10, s.fd || 0)); state.isExample = false;
+    state.fov = s.a || 40; state.pan = s.p || 0; state.ghost = s.g !== 0; state.bld = s.b !== 0; state.bldH = Object.fromEntries(s.hh || []); state.forest = s.fo !== 0; state.forD = Math.max(-5, Math.min(20, s.fd != null ? s.fd : TREE_BASE)); state.isExample = false;
     return true;
   } catch (e) { return false; }
 }
