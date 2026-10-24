@@ -6216,10 +6216,11 @@ if (LOCAL) { $('vsR').querySelector('option[value="20000"]').remove(); }
    csak akkor töltődnek le, amikor az eszköz a képernyő közelébe ér; addig a nyitókép gyorsan betölt.
    Megosztott nézet linkjével (#eyJ…) azonnal indul. */
 let booted = false;
+const DEFAULT_T = { lat: 47.12226, lon: 16.58798 };   // az alap turbina: a főtértől kb. 2,2 km-re dél-délkeletre (165°)
 const EXAMPLE_T = [{ lat: 47.09960, lon: 16.55731 }, { lat: 47.09960, lon: 16.56590 }, { lat: 47.09960, lon: 16.57449 }];   // 1. lehetséges terület, Jáktól kb. 4,6 km-re délre
 function boot() {
   if (booted) return; booted = true;
-  if (!loadHash() && !state.turbines.length && inRegion(EXAMPLE_T[1].lat, EXAMPLE_T[1].lon)) { state.turbines = [{ ...EXAMPLE_T[1] }]; state.sel = 0; }   // egy alap turbina (a példa középsője), hogy ne üres képpel induljon
+  if (!loadHash() && !state.turbines.length && inRegion(DEFAULT_T.lat, DEFAULT_T.lon)) { state.turbines = [{ ...DEFAULT_T }]; state.sel = 0; }   // egy alap turbina, hogy ne üres képpel induljon
   syncControls(); renderObstacles(); buildMarkers();
   layoutPip();
   fitView();
