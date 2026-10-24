@@ -1885,6 +1885,7 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
       <button class="btn" type="button" id="mSave">Kép mentése</button>
       <button class="btn" type="button" id="mUnlock" hidden>Iránytű szerint újra</button>
       <button class="btn primary" type="button" id="mShot" hidden>Pillanatkép mentése</button>
+      <button class="btn" type="button" id="mShare" hidden>Megosztás</button>
     </div>
     <details class="mont-more" id="mMore"><summary>Finomhangolás: csúszkák, kalibráció, beállítások</summary>
       <div class="mont-row"><button class="btn" type="button" id="mFreeze" hidden>Irány igazítása: kép megállítása</button></div>
@@ -5410,6 +5411,7 @@ try { AR.fov = 66; AR.bias = JSON.parse(localStorage.getItem('arBias') || 'null'
 const inRegion = (la, lo) => !REGION || Math.hypot((la - REGION.lat) * 111.2, (lo - REGION.lon) * 111.32 * Math.cos(REGION.lat * RAD)) <= REGION.km + 3;
 function montStatus(html) { $('montSt').innerHTML = html; }
 function openMont(mode) {
+  $('mShare').hidden = true; MONT.lastFile = null;
   if (!MONT.mode) try { history.pushState({ hlMont: 1 }, ''); MONT.hist = true; } catch (e) {}
   MONT.mode = mode; $('mont').hidden = false; $('mont').classList.toggle('is-ar', mode === 'ar'); document.body.style.overflow = 'hidden';
   $('montTitle').textContent = mode === 'ar' ? 'Élő kamera: a turbina a helyén' : 'A turbina a saját fotódon';
@@ -5583,9 +5585,12 @@ async function saveMontage(fromVideo) {
     const dl = await window.claude.use('downloads').catch(() => null);
     if (dl) { try { await dl.save({ filename: name, data: blob }); MONT.msg = ' A kép elmentve.'; return; } catch (e) { if (e && e.code === 'declined') return; } }
   }
-  if (navigator.canShare && navigator.canShare({ files: [file] }) && matchMedia('(pointer: coarse)').matches) { try { await navigator.share({ files: [file], title: 'Szélerőmű a valós tájban' }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+  // iPhone-on a megosztás menüben van „Kép mentése”; Androidon nincs, ott közvetlenül letöltjük (Letöltések / Galéria), a megosztás külön gomb
+  MONT.lastFile = file; $('mShare').hidden = !(navigator.canShare && navigator.canShare({ files: [file] }) && TOUCH && !IOS);
+  if (IOS && navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: 'Szélerőmű a valós tájban' }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); hlCount('images'); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-  MONT.msg = ' A kép letöltődött.';
+  const sm = TOUCH ? ' A kép elmentve a telefonra (Letöltések mappa, a Galériában is látszik).' + ($('mShare').hidden ? '' : ' Küldeni a „Megosztás” gombbal tudod.') : ' A kép letöltődött.';
+  MONT.msg = sm; setTimeout(() => { if (MONT.msg === sm) MONT.msg = ''; }, 7000);
 }
 
 /* ---------- Élő kamera (AR) ----------
@@ -6114,6 +6119,7 @@ $('mRl').oninput = () => { MONT.rl = +$('mRl').value; syncMontCtl(); };
 $('mFov').oninput = () => { const v = +$('mFov').value; if (MONT.mode === 'ar') { AR.fov = v; AR.fovManual = true; camSave(); } else MONT.fov = v; syncMontCtl(); };
 $('mSave').onclick = () => saveMontage(false);
 $('mShot').onclick = () => saveMontage(true);
+$('mShare').onclick = async () => { const f = MONT.lastFile; if (!f) return; try { await navigator.share({ files: [f], title: 'Szélerőmű a valós tájban' }); } catch (e) {} };
 try { $('mMeta').checked = localStorage.getItem('shotMeta') === '1'; } catch (e) {}
 $('mMeta').onchange = () => { try { localStorage.setItem('shotMeta', $('mMeta').checked ? '1' : '0'); } catch (e) {} };
 $('mFreeze').onclick = freezeAR;
