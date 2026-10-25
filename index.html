@@ -1874,7 +1874,7 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
   <div class="mont-stage" id="montStage"><video id="arVideo" playsinline muted autoplay hidden></video><canvas id="montCv" role="img" aria-label="A kép a turbinával"></canvas><div class="mont-hint" id="montHint" aria-live="polite"></div>
     <div class="ar-coach" id="arCoach" hidden role="status" aria-live="polite"><div class="ac-head"><b id="acN"></b><strong id="acH"></strong><button type="button" id="acVid">Videó</button><button type="button" id="acX" aria-label="Az útmutató elrejtése">✕</button></div><p id="acT"></p><div class="ac-prog" id="acP" hidden><i></i></div><div class="ac-btns" id="acB"></div></div></div>
   <div class="mont-ctl" id="montCtl">
-    <div class="mont-handle"><button type="button" class="btn" id="mMenu" aria-expanded="true" aria-controls="montCtl">▾ Menü bezárása</button><span class="mh-r"><button class="btn" type="button" id="mShare" hidden>Megosztás</button><button type="button" class="btn primary" id="mShotQ" hidden>Pillanatkép</button></span></div>
+    <div class="mont-handle"><button type="button" class="btn" id="mMenu" aria-expanded="true" aria-controls="montCtl">▾ Menü bezárása</button><span class="mh-r"><button class="btn" type="button" id="mAlign" hidden>Igazítás</button><button class="btn" type="button" id="mShare" hidden>Megosztás</button><button type="button" class="btn primary" id="mShotQ" hidden>Pillanatkép</button></span></div>
     <p class="small" id="montSt"></p>
     <div class="mont-row mont-act">
       <button class="btn" type="button" id="mSave">Kép mentése</button>
@@ -5668,7 +5668,6 @@ function arBasis(o = AR) {
 function freezeAR() {
   if (AR.frozen) { AR.frozen = null; MONT.msg = ''; }
   else {
-    $('mMore').open = true; montPanel(true);   // a „Kész, vissza az élő képre” gomb a Finomhangolás alatt van
     const vd = $('arVideo'); if (!vd.videoWidth || !arReady()) return;
     const cv = document.createElement('canvas'); cv.width = vd.videoWidth; cv.height = vd.videoHeight; cv.getContext('2d').drawImage(vd, 0, 0);
     AR.lock = true; AR.frozen = { cv, f: AR.f.slice(), u: AR.u.slice(), rel: AR.rel, yaw: AR.yaw, t: Date.now() };
@@ -5678,12 +5677,14 @@ function freezeAR() {
 }
 function syncAR() {
   $('mFreeze').textContent = AR.frozen ? 'Kész, vissza az élő képre' : 'Irány igazítása: kép megállítása';
+  const al = $('mAlign'); al.hidden = MONT.mode !== 'ar'; al.textContent = AR.frozen ? 'Kész' : 'Igazítás'; al.classList.toggle('primary', !!AR.frozen);   // a megállított képen az iránytű nem mozgatja a keretet
   $('mUnlock').hidden = MONT.mode !== 'ar' || !AR.lock || !!AR.frozen;
   $('arVideo').style.visibility = AR.frozen ? 'hidden' : '';
 }
 function arNote() {
   if (MONT.mode !== 'ar') return '';
   if (SCAL.step || CAL.busy) return CAL.msg + ' ';
+  if (AR.frozen && !COACH.on) return 'Megállított kép: egy ujjal húzd a szaggatott templomot a valódira, két ujjal méretezd. Ha stimmel: Kész. ';
   return '';   // a kamerakép tiszta: utasítás nincs rajta (az Útmutató gomb és a bemutató videó mondja el)
 }
 /* ---------- Telefon-kalibráció ----------
@@ -6175,6 +6176,7 @@ function montPanel(open) {
 }
 $('mMenu').onclick = () => montPanel($('montCtl').classList.contains('closed'));
 $('mShotQ').onclick = () => saveMontage(true);
+$('mAlign').onclick = freezeAR;
 $('mShare').onclick = async () => { const f = MONT.lastFile; if (!f) return; try { await navigator.share({ files: [f], title: 'Szélerőmű a valós tájban' }); } catch (e) {} };
 try { $('mMeta').checked = localStorage.getItem('shotMeta') === '1'; } catch (e) {}
 $('mMeta').onchange = () => { try { localStorage.setItem('shotMeta', $('mMeta').checked ? '1' : '0'); } catch (e) {} };
