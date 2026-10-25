@@ -836,10 +836,22 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .arint-txt h2{font-size:1.3rem}
 .arint-steps{margin:0;padding-left:1.25em;display:grid;gap:6px;font-size:.92rem;max-width:68ch}
 .arint-btns{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.arint.full{padding:0;background:#000;place-items:stretch}
+.arint.full .arint-box{width:100%;height:100%;max-height:none;border:0;border-radius:0;background:#000;grid-template-rows:minmax(0,1fr) auto;overflow:hidden}
+.arint.full .arint-vid{border-radius:0;background:#000;min-height:0;padding-top:env(safe-area-inset-top,0px)}
+.arint.full .arint-vid video,.arint.full.port .arint-vid video{width:100%;height:100%;max-width:none;max-height:none;aspect-ratio:auto;object-fit:contain;background:#000}
+.arint.full .arint-txt{padding:10px max(14px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(14px,env(safe-area-inset-left,0px));background:#000;color:#fff}
+.arint.full .arint-txt>:not(.arint-btns){display:none}
+.arint.full .arint-btns{justify-content:center}
 @media (prefers-reduced-motion:no-preference){#arIntroGo.pulse{animation:goPulse 1.2s ease-in-out infinite}@keyframes goPulse{50%{box-shadow:0 0 0 8px rgba(236,101,29,.35)}}}
 .mont-hint{position:absolute;left:8px;bottom:8px;right:8px;font:600 .8rem/1.3 var(--body);color:#fff;text-shadow:0 1px 3px #000;pointer-events:none}
 .mont-ctl{background:var(--card);color:var(--ink);padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));max-height:42vh;overflow:auto;display:grid;gap:8px}
 .mont-ctl p{margin:0}
+.mont-handle{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.mont-handle .mh-r{display:flex;gap:8px}
+.mont-ctl.closed{max-height:none;padding-top:8px}
+.mont-ctl.closed>:not(.mont-handle){display:none}
+.mont:not(.is-ar) .mont-handle{display:none}
 .mont-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px 16px}
 .mont-grid label{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;font-size:.85rem}
 .mont-row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
@@ -1861,13 +1873,13 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
   <div class="mont-bar"><button class="btn mont-back" type="button" id="montBack" aria-label="Vissza az oldalra">← Vissza</button><b id="montTitle">A turbina a saját fotódon</b><span class="mont-brand" aria-label="HorizonLens, az Innomotion terméke"><span class="mb-hl">HorizonLens <i>·</i> </span>Innomotion</span><span class="ac-btns"><button class="btn" type="button" id="mCam" hidden aria-label="Kamera váltása">Kamera</button><button class="btn" type="button" id="mHelp" hidden>Útmutató</button><button class="btn" type="button" id="montClose">Bezárás</button></span></div>
   <div class="mont-stage" id="montStage"><video id="arVideo" playsinline muted autoplay hidden></video><canvas id="montCv" role="img" aria-label="A kép a turbinával"></canvas><div class="mont-hint" id="montHint" aria-live="polite"></div>
     <div class="ar-coach" id="arCoach" hidden role="status" aria-live="polite"><div class="ac-head"><b id="acN"></b><strong id="acH"></strong><button type="button" id="acVid">Videó</button><button type="button" id="acX" aria-label="Az útmutató elrejtése">✕</button></div><p id="acT"></p><div class="ac-prog" id="acP" hidden><i></i></div><div class="ac-btns" id="acB"></div></div></div>
-  <div class="mont-ctl">
+  <div class="mont-ctl" id="montCtl">
+    <div class="mont-handle"><button type="button" class="btn" id="mMenu" aria-expanded="true" aria-controls="montCtl">▾ Menü bezárása</button><span class="mh-r"><button class="btn" type="button" id="mShare" hidden>Megosztás</button><button type="button" class="btn primary" id="mShotQ" hidden>Pillanatkép</button></span></div>
     <p class="small" id="montSt"></p>
     <div class="mont-row mont-act">
       <button class="btn" type="button" id="mSave">Kép mentése</button>
       <button class="btn" type="button" id="mUnlock" hidden>Iránytű szerint újra</button>
       <button class="btn primary" type="button" id="mShot" hidden>Pillanatkép mentése</button>
-      <button class="btn" type="button" id="mShare" hidden>Megosztás</button>
     </div>
     <details class="mont-more" id="mMore"><summary>Finomhangolás: csúszkák, kalibráció, beállítások</summary>
       <div class="mont-row"><button class="btn" type="button" id="mFreeze" hidden>Irány igazítása: kép megállítása</button></div>
@@ -5419,7 +5431,7 @@ function openMont(mode) {
   window.hlMontBusy = true; if (typeof RV !== 'undefined' && RV && RV.animate) RV.animate(false);   // a háttérben a 3D-kép áll
   $('mShare').hidden = true; MONT.lastFile = null;
   if (!MONT.mode) try { history.pushState({ hlMont: 1 }, ''); MONT.hist = true; } catch (e) {}
-  MONT.mode = mode; $('mont').hidden = false; $('mont').classList.toggle('is-ar', mode === 'ar'); document.body.style.overflow = 'hidden';
+  MONT.mode = mode; $('mont').hidden = false; montPanel(mode !== 'ar'); $('mont').classList.toggle('is-ar', mode === 'ar'); document.body.style.overflow = 'hidden';
   $('montTitle').textContent = mode === 'ar' ? 'Élő kamerakép: a turbina a helyén' : 'A turbina a saját fotódon';
   $('arVideo').hidden = mode !== 'ar';
   for (const id of ['mRlW', 'mSave']) $(id).hidden = mode === 'ar';
@@ -5656,7 +5668,7 @@ function arBasis(o = AR) {
 function freezeAR() {
   if (AR.frozen) { AR.frozen = null; MONT.msg = ''; }
   else {
-    $('mMore').open = true;   // a „Kész, vissza az élő képre” gomb a Finomhangolás alatt van
+    $('mMore').open = true; montPanel(true);   // a „Kész, vissza az élő képre” gomb a Finomhangolás alatt van
     const vd = $('arVideo'); if (!vd.videoWidth || !arReady()) return;
     const cv = document.createElement('canvas'); cv.width = vd.videoWidth; cv.height = vd.videoHeight; cv.getContext('2d').drawImage(vd, 0, 0);
     AR.lock = true; AR.frozen = { cv, f: AR.f.slice(), u: AR.u.slice(), rel: AR.rel, yaw: AR.yaw, t: Date.now() };
@@ -5894,7 +5906,7 @@ function horizonLive() {
 const AV = 'assets/', INTRO = { mode: null };
 function openIntro(mode) {
   INTRO.mode = mode; const box = $('arIntro'), v = $('arIntroV'), port = innerHeight > innerWidth || innerWidth < 700;
-  box.classList.toggle('port', port);
+  box.classList.toggle('port', port); box.classList.toggle('full', TOUCH && mode !== 'info');   // telefonon a videó teljes képernyőn, csak a gombokkal
   const nm = 'ar_guide' + (port ? '' : '_wide');
   v.loop = mode !== 'start';   // indításkor egyszer megy végig, a végén jön a kamerakép
   v.onended = mode === 'start' ? () => { if (INTRO.mode !== 'start' || $('arIntro').hidden) return; if (IOS) { $('arIntroGo').classList.add('pulse'); $('arIntroGo').focus(); } else $('arIntroGo').click(); } : null;   // iPhone-on az iránytű-engedélyhez koppintás kell
@@ -6157,6 +6169,12 @@ $('mRl').oninput = () => { MONT.rl = +$('mRl').value; syncMontCtl(); };
 $('mFov').oninput = () => { const v = +$('mFov').value; if (MONT.mode === 'ar') { AR.fov = v; AR.fovManual = true; camSave(); } else MONT.fov = v; syncMontCtl(); };
 $('mSave').onclick = () => saveMontage(false);
 $('mShot').onclick = () => saveMontage(true);
+function montPanel(open) {
+  $('montCtl').classList.toggle('closed', !open); $('mMenu').setAttribute('aria-expanded', open);
+  $('mMenu').textContent = open ? '▾ Menü bezárása' : '▴ Menü'; $('mShotQ').hidden = open || MONT.mode !== 'ar';
+}
+$('mMenu').onclick = () => montPanel($('montCtl').classList.contains('closed'));
+$('mShotQ').onclick = () => saveMontage(true);
 $('mShare').onclick = async () => { const f = MONT.lastFile; if (!f) return; try { await navigator.share({ files: [f], title: 'Szélerőmű a valós tájban' }); } catch (e) {} };
 try { $('mMeta').checked = localStorage.getItem('shotMeta') === '1'; } catch (e) {}
 $('mMeta').onchange = () => { try { localStorage.setItem('shotMeta', $('mMeta').checked ? '1' : '0'); } catch (e) {} };
