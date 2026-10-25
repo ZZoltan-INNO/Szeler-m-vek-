@@ -5514,7 +5514,7 @@ function montDrag(e) {
   else { MONT.hd -= dx; MONT.pt = Math.max(-25, Math.min(25, MONT.pt + dy)); if (Math.abs(MONT.hd - MONT.hd0) > 40) MONT.hd0 = MONT.hd; }
   if (P1.length >= 2 && d0 > 30 && d1 > 0) {
     const f0 = ar ? AR.fov : MONT.fov, f1 = Math.max(15, Math.min(110, 2 * Math.atan(Math.tan(f0 * RAD / 2) * d0 / d1) / RAD));
-    if (ar) { AR.fov = f1; AR.fovManual = true; camSave(); } else MONT.fov = f1;
+    if (ar) { AR.fov = f1; AR.fovManual = true; AR.fovCal = false; AR.fovAuto = false; camSave(); } else MONT.fov = f1;
   }
   syncMontCtl();
 }
@@ -5762,7 +5762,7 @@ function scalTap() {
   const gm = scalGeom(), dx = SCAL.k * gm.W / gm.s, F = dx / Math.tan(ax), fov = 2 * Math.atan(Math.max(gm.vw, gm.vh) / 2 / F) / RAD;
   SCAL.step = 0;
   if (!(ax > 3 * RAD) || !(fov > 20 && fov < 120)) { CAL.msg = 'Ez nem sikerült (túl kicsi vagy furcsa fordulás). Próbáld újra.'; calStatus(); return; }
-  AR.fov = fov; AR.fovCal = true; AR.fovAuto = true;
+  AR.fov = fov; AR.fovCal = true; AR.fovAuto = true; AR.fovManual = false;
   camSave();
   CAL.msg = `Lépték kalibrálva: a kamera látószöge ${fov.toFixed(1)}° (a hosszabb oldalon).` + (fov > 95 ? ' Ez nagylátószögű kamerának tűnik: ha lehet, a fő (1×) kamerával használd.' : '') + (AR.rel ? '' : ' (Giroszkóp nélkül pontatlanabb.)');
   syncMontCtl(); calStatus();
@@ -5772,7 +5772,7 @@ function calStatus() {
   if (CAL.msg) parts.push(CAL.msg);
   else {
     parts.push(AR.bias ? `Vízszint: kalibrálva (${(AR.bias.z / G0 / RAD).toFixed(2)}°).` : 'Vízszint: még nincs kalibrálva.');
-    parts.push(AR.fovCal ? `Lépték: kalibrálva (${AR.fov.toFixed(1)}°).` : AR.fovAuto ? `Lépték: mozgásból mérve (${AR.fov.toFixed(1)}°).` : 'Lépték: még nincs mérve.');
+    parts.push(AR.fovCal ? `Lépték: kalibrálva (${AR.fov.toFixed(1)}°).` : AR.fovManual ? `Lépték: kézzel beállítva (${AR.fov.toFixed(1)}°).` : AR.fovAuto ? `Lépték: mozgásból mérve (${AR.fov.toFixed(1)}°).` : 'Lépték: még nincs mérve.');
   }
   $('mCalSt').textContent = parts.join(' ');
 }
@@ -6166,7 +6166,7 @@ for (const ev of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']) $
 $('mHd').oninput = () => { const v = +$('mHd').value; if (MONT.mode === 'ar') { AR.hdOff = v; AR.lock = true; syncAR(); } else MONT.hd = MONT.hd0 + v; syncMontCtl(); };
 $('mPt').oninput = () => { const v = +$('mPt').value; if (MONT.mode === 'ar') { AR.ptOff = v; AR.ptManual = true; savePt(); } else MONT.pt = v; syncMontCtl(); };
 $('mRl').oninput = () => { MONT.rl = +$('mRl').value; syncMontCtl(); };
-$('mFov').oninput = () => { const v = +$('mFov').value; if (MONT.mode === 'ar') { AR.fov = v; AR.fovManual = true; camSave(); } else MONT.fov = v; syncMontCtl(); };
+$('mFov').oninput = () => { const v = +$('mFov').value; if (MONT.mode === 'ar') { AR.fov = v; AR.fovManual = true; AR.fovCal = false; AR.fovAuto = false; camSave(); } else MONT.fov = v; syncMontCtl(); };   // a kézi érték felülírja a kalibráltat
 $('mSave').onclick = () => saveMontage(false);
 $('mShot').onclick = () => saveMontage(true);
 function montPanel(open) {
