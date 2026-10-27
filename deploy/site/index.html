@@ -5579,7 +5579,7 @@ const SHOT = { ori: null, t: 0, guide: null };
 function shotOri(e) {
   if (document.hidden || e.beta == null || e.gamma == null) return;
   const a = typeof e.webkitCompassHeading === 'number' ? 360 - e.webkitCompassHeading : (e.type === 'deviceorientationabsolute' || e.absolute) && e.alpha != null ? e.alpha : null; if (a == null) return;
-  const M = oriMatrix(a, e.beta, e.gamma); SHOT.ori = { f: M.Z.map(x => -x), u: M.Y }; SHOT.t = performance.now();
+  const M = biasFix(oriMatrix(a, e.beta, e.gamma)); SHOT.ori = { f: M.Z.map(x => -x), u: M.Y }; SHOT.t = performance.now();
 }
 function shotArm() { SHOT.ori = null; addEventListener('deviceorientationabsolute', shotOri); addEventListener('deviceorientation', shotOri); }
 const shotHeading = () => new Promise(res => {
@@ -5652,11 +5652,12 @@ async function openPhoto(file, fresh) {
     const T = state.turbines[state.sel];
     MONT.dirSet = false;
     if (ex && typeof ex.dir === 'number') { MONT.hd = ex.dir + (ex.dirRef === 'M' ? DECL : 0); MONT.dirSet = true; notes.push('<b>Irány:</b> a fotó iránytű-adatából; ez pár fokot tévedhet.'); }
-    else if (SHOT.guide && Date.now() - SHOT.guide.t < 10 * 6e4) { MONT.hd = SHOT.guide.hd; MONT.dirSet = true; notes.push('<b>Irány:</b> a telefon iránytűjéből, a „Fotózás” gomb megnyomásakor (5–15°-ot tévedhet). Pontosan: „Irány” gomb, egy pont a fotón és ugyanaz a térképen, vagy húzd a képet a templomra, falunevekre.'); }
+    else if (SHOT.guide && Date.now() - SHOT.guide.t < 10 * 6e4) { MONT.hd = SHOT.guide.hd; MONT.gpr = [SHOT.guide.pt, SHOT.guide.rl]; MONT.dirSet = true; notes.push('<b>Irány:</b> a telefon iránytűjéből, a „Fotózás” gomb megnyomásakor (5–15°-ot tévedhet). Pontosan: „Irány” gomb, egy pont a fotón és ugyanaz a térképen, vagy húzd a képet a templomra, falunevekre.'); }
     else if (hdC != null) { MONT.hd = hdC; notes.push('<b>Irány:</b> a telefon iránytűjéből, közvetlenül a fotózás után; ez 10–20°-ot is tévedhet, ezért adj meg egy pontot a fotón és ugyanazt a térképen.'); }
     else if (T) { const [x, y] = frame(state.viewer.lat, state.viewer.lon).fromLL(T.lat, T.lon); MONT.hd = Math.atan2(x, y) / RAD; notes.push('<b>Irány:</b> nincs a fotóban, ezért a kijelölt turbina felé állítottam; adj meg egy pontot a fotón és ugyanazt a térképen.'); }
     SHOT.guide = null;
-    MONT.hd0 = MONT.hd; MONT.pt = 0; MONT.rl = 0; MONT.moved = false; DIR.ip = null; if (DIR.mk) { DIR.mk.remove(); DIR.mk = null; }
+    // dőlés és billenés: a vezetett fotózás érzékelőiből (a billenés csak álló képnél, mert a kijelző teteje ott a kép teteje)
+    MONT.hd0 = MONT.hd; MONT.pt = MONT.gpr ? Math.max(-15, Math.min(15, MONT.gpr[0])) : 0; MONT.rl = MONT.gpr && ih > iw ? Math.max(-8, Math.min(8, MONT.gpr[1])) : 0; MONT.gpr = null; MONT.moved = false; DIR.ip = null; if (DIR.mk) { DIR.mk.remove(); DIR.mk = null; }
     MONT_SUN.t = exifTime(ex);
     if (MONT_SUN.t) { const sp = sunPos(MONT_SUN.t, state.viewer.lat, state.viewer.lon); if (sp.el > 0) notes.push('<b>Nap:</b> a fotó időpontjából tudom, hol volt a Nap (sárga kör); ha látszik a fotón, arra a legpontosabb igazítani.'); }
     if (!state.turbines.length) notes.push('Még nincs turbina a térképen: tegyél le egyet, és itt is megjelenik.');
@@ -6410,7 +6411,12 @@ $('photoBtn').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.pre
 $('photoCam').addEventListener('click', shotArm);
 $('photoCamBtn').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sgOpen(); } };
 $('photoCamBtn').addEventListener('click', e => { e.preventDefault(); sgOpen(); });   // a címke ne nyissa rögtön a kamerát: előbb a turbina felé fordítunk
-$('sgShot').onclick = () => { const hd = sgHeading(); SHOT.guide = hd == null ? null : { hd, t: Date.now() }; sgClose(); $('photoCam').click(); };
+$('sgShot').onclick = () => {
+  const hd = sgHeading(), o = SHOT.ori;
+  let pt = 0, rl = 0;   // dőlés (fel +) és billenés (óramutató szerint +) álló telefonnál: a kamera tengelyéből és a kijelző tetejének irányából
+  if (hd != null && o) { pt = Math.asin(Math.max(-1, Math.min(1, o.f[2]))) / RAD; const h = hd * RAD, r0 = [Math.cos(h), -Math.sin(h), 0], u0 = v3.cross(r0, dirOf(h, pt * RAD)); rl = Math.atan2(v3.dot(o.u, r0), v3.dot(o.u, u0)) / RAD; }
+  SHOT.guide = hd == null ? null : { hd, pt, rl, t: Date.now() }; sgClose(); $('photoCam').click();
+};
 $('sgCancel').onclick = () => sgClose();
 $('sgMap').onclick = () => { sgClose(); $('map').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
 for (const id of ['photoIn', 'photoCam']) $(id).onchange = () => { const f = $(id).files[0]; $(id).value = ''; if (f) { boot(); realMsg('A fotó betöltése…', false); openPhoto(f, id === 'photoCam'); } };
