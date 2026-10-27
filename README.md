@@ -106,10 +106,12 @@ A https://jak-szeleromu.pages.dev a repó `deploy/` mappájából épül, minden
   (GPS), a látószög (35 mm-es egyenértékű fókusz) és az irány (iránytű) jön; ha a frissen készült fotóban nincs GPS-adat
   (a kamera-alkalmazás gyakran nem írja, a böngésző ki is szűrheti), a telefon helymeghatározása adja a helyet. Ami még
   hiányzik, azt a térképi nézőpont és a telefonok szokásos fő kamerája (26 mm) pótolja.
-  Irány: a fotóban ritkán van. Friss fotónál a program a fényképezőből visszatérve kiolvassa a telefon iránytűjét (a
-  telefon ekkor még nagyjából a táj felé néz; 10–20°-ot tévedhet), különben a kijelölt turbina felé áll. Pontosítás: a fotó
-  sarkában kis légifotó-térkép mutatja a nézőpontot és a fotó látómezejét (ék); arra koppintva, amerre a fotó készült
-  (ház, út, fasor), az irány oda áll, utána a kép húzásával finomítható a templomra, falunevekre.
+  Irány: a fotóban ritkán van. Ilyenkor a fotó az irány megadásával nyílik, két koppintással (mint a fotómontázsoknál):
+  1/2 egy jól felismerhető pont a fotón (templomtorony, házsarok, oszlop), 2/2 ugyanaz a pont a kinagyított, húzható
+  légifotó-térképen (a fotó ilyenkor felülre / fekve balra húzódik, a kijelölt pont látszik). A térképi pont iránya a
+  nézőpontból ismert, a fotón mért helye a látószögből szöggé alakul; ebből a kép közepének iránya iránytű nélkül, egy-két
+  fokon belül adódik. Az „Irány” gombbal újra megadható. Előtte becslésként: friss fotónál a fényképezőből visszatérve
+  kiolvasott iránytű, különben a kijelölt turbina iránya. Utána a kép húzásával finomítható a templomra, falunevekre.
   Takarás javítása: a takarást a modell adja (domborzat, házak, fák, templom); amit a modell nem ismer (a kerti fa, egy
   fészer) vagy ami azóta eltűnt, az a fotón ujjal befesthető. „Takar”: ott a turbina nem látszik; „Nem takar”: ott a
   turbina akkor is látszik, ha a modell szerint takarásban van. A festés a fotó képpontjaihoz kötött (igazításkor nem

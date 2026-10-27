@@ -862,6 +862,10 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .mont.brushing .mont-stage{cursor:crosshair}
 .mont-mini{position:absolute;z-index:3;top:8px;right:8px;width:40%;max-width:240px;touch-action:none}
 .mont-mini #mMini{width:100%;aspect-ratio:1;border-radius:10px;overflow:hidden;border:2px solid rgba(255,255,255,.9);box-shadow:0 4px 14px rgba(0,0,0,.55);cursor:crosshair;background:#2b3a2f}
+.mont-mini.big{top:auto;bottom:52px;left:50%;right:auto;transform:translateX(-50%);width:min(94%,560px);max-width:none;z-index:5}
+.mont-mini.big #mMini{aspect-ratio:auto;height:min(46vh,440px)}
+@media (orientation:landscape){.mont-mini.big{top:8px;bottom:52px;left:auto;right:8px;transform:none;width:48%;display:flex;flex-direction:column}.mont-mini.big #mMini{height:auto;flex:1}}
+.mont-mini.big span{display:none}
 .mont-mini span{display:block;margin-top:4px;font:600 .72rem/1.2 var(--body);color:#fff;text-shadow:0 1px 3px #000;text-align:center}
 .mont-hint{position:absolute;left:8px;bottom:8px;right:8px;font:600 .8rem/1.3 var(--body);color:#fff;text-shadow:0 1px 3px #000;pointer-events:none}
 .mont-ctl{background:var(--card);color:var(--ink);padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));max-height:42vh;overflow:auto;display:grid;gap:8px}
@@ -1891,10 +1895,10 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
   <div class="mont-bar"><button class="btn mont-back" type="button" id="montBack" aria-label="Vissza az oldalra">← Vissza</button><b id="montTitle">A turbina a saját fotódon</b><span class="mont-brand" aria-label="HorizonLens, az Innomotion terméke"><span class="mb-hl">HorizonLens <i>·</i> </span>Innomotion</span><span class="ac-btns"><button class="btn" type="button" id="mCam" hidden aria-label="Kamera váltása">Kamera</button><button class="btn" type="button" id="mHelp" hidden>Útmutató</button><button class="btn" type="button" id="montClose">Bezárás</button></span></div>
   <div class="mont-stage" id="montStage"><video id="arVideo" playsinline muted autoplay hidden></video><canvas id="montCv" role="img" aria-label="A kép a turbinával"></canvas><div class="mont-hint" id="montHint" aria-live="polite"></div>
     <div class="mont-brush" id="mBrushBar" hidden role="toolbar" aria-label="Takarás javítása"><span class="seg"><button type="button" id="mbHide" aria-pressed="true">Takar</button><button type="button" id="mbShow" aria-pressed="false">Nem takar</button></span><button type="button" id="mbUndo" aria-label="Visszavonás">↶</button><button type="button" id="mbClear">Törlés</button><button type="button" class="mb-ok" id="mbDone">Kész</button></div>
-    <div class="mont-mini" id="mMiniW" hidden><div id="mMini" role="application" aria-label="Kis térkép: koppints arra, amerre a fotó készült"></div><span>Koppints arra, amerre fotóztál</span></div>
+    <div class="mont-mini" id="mMiniW" hidden><div id="mMini" role="application" aria-label="Kis térkép a nézőponttal és a fotó látómezejével"></div><span id="mMiniT">Koppints arra, amerre fotóztál</span></div>
     <div class="ar-coach" id="arCoach" hidden role="status" aria-live="polite"><div class="ac-head"><b id="acN"></b><strong id="acH"></strong><button type="button" id="acVid">Videó</button><button type="button" id="acX" aria-label="Az útmutató elrejtése">✕</button></div><p id="acT"></p><div class="ac-prog" id="acP" hidden><i></i></div><div class="ac-btns" id="acB"></div></div></div>
   <div class="mont-ctl" id="montCtl">
-    <div class="mont-handle"><button type="button" class="btn" id="mMenu" aria-expanded="true" aria-controls="montCtl">▾ Menü bezárása</button><span class="mh-r"><button class="btn" type="button" id="mBrush" hidden>Takarás javítása</button><button class="btn" type="button" id="mAlign" hidden>Igazítás</button><button class="btn" type="button" id="mShare" hidden>Megosztás</button><button type="button" class="btn primary" id="mShotQ" hidden>Pillanatkép</button></span></div>
+    <div class="mont-handle"><button type="button" class="btn" id="mMenu" aria-expanded="true" aria-controls="montCtl">▾ Menü bezárása</button><span class="mh-r"><button class="btn" type="button" id="mDir" hidden>Irány</button><button class="btn" type="button" id="mBrush" hidden>Takarás javítása</button><button class="btn" type="button" id="mAlign" hidden>Igazítás</button><button class="btn" type="button" id="mShare" hidden>Megosztás</button><button type="button" class="btn primary" id="mShotQ" hidden>Pillanatkép</button></span></div>
     <p class="small" id="montSt"></p>
     <div class="mont-row mont-act">
       <button class="btn" type="button" id="mSave">Kép mentése</button>
@@ -5455,8 +5459,9 @@ function openMont(mode) {
   $('mShot').hidden = mode !== 'ar'; $('mFreeze').hidden = mode !== 'ar'; $('mHzW').hidden = $('mCalRow').hidden = mode !== 'ar'; syncAR(); calStatus();
   $('mHdL').textContent = mode === 'ar' ? 'Iránytű-javítás' : 'Irány'; $('mSkyL').textContent = mode === 'ar' ? 'Falunevek, templom, fokbeosztás és Nap' : 'Modell-horizont, falunevek és templom'; $('mFovL').textContent = mode === 'ar' ? 'A kamera látószöge' : 'Látószög';
   $('mGhost').checked = false;   // alapból csak az látszik, ami a valóságban is látszani fog
-  brushSet(false); $('mBrush').hidden = mode !== 'photo';
+  brushSet(false); $('mBrush').hidden = $('mDir').hidden = mode !== 'photo';
   $('mMiniW').hidden = mode !== 'photo'; if (mode === 'photo') { miniInit(); MINI.key = ''; MINI.map.invalidateSize(); }
+  dirMode(mode === 'photo' && !MONT.dirSet ? 1 : 0);   // irányadat nélküli fotónál rögtön az irány megadásával indul
   syncMontCtl(); cancelAnimationFrame(MONT.raf); MONT.raf = requestAnimationFrame(montFrame);
   $('montBack').focus();
 }
@@ -5484,9 +5489,11 @@ function montCam(W, H) {
     const vd = AR.frozen ? AR.frozen.cv : $('arVideo'), vw = vd.videoWidth || vd.width || W, vh = vd.videoHeight || vd.height || H, s = Math.max(W / vw, H / vh);
     return { b: arBasis(AR.frozen || AR), F: Math.max(vw, vh) / 2 / Math.tan(AR.fov * RAD / 2) * s, cx: W / 2, cy: H / 2, W, H, rect: [0, 0, W, H] };
   }
-  const iw = MONT.img.naturalWidth, ih = MONT.img.naturalHeight, s = Math.min(W / iw, H / ih), pw = iw * s, ph = ih * s;
+  const iw = MONT.img.naturalWidth, ih = MONT.img.naturalHeight, land = W > H, big = DIR.step === 2, s = Math.min((big && land ? W * 0.5 : W) / iw, (big && !land ? H * 0.45 : H) / ih), pw = iw * s, ph = ih * s;
   const hf = MONT.fov * RAD, F = pw / 2 / Math.tan(hf / 2);
-  return { b: camFromAngles(MONT.hd, MONT.pt, MONT.rl), F, cx: W / 2, cy: H / 2, W: pw, H: ph, rect: [(W - pw) / 2, (H - ph) / 2, pw, ph] };
+  // az irány 2. lépésében a fotó félre húzódik (felülre, fekve balra), hogy a nagy térkép ne takarja a kijelölt pontot
+  const ox = big && land ? 8 : (W - pw) / 2, oy = big && !land ? 8 : (H - ph) / 2;
+  return { b: camFromAngles(MONT.hd, MONT.pt, MONT.rl), F, cx: ox + pw / 2, cy: oy + ph / 2, W: pw, H: ph, rect: [ox, oy, pw, ph] };
 }
 function montFrame() {
   if (!MONT.mode) return;
@@ -5501,6 +5508,12 @@ function montFrame() {
     const tl = MASK.used ? maskLayers(W, H) : null;
     busy = drawReal(g, cam, { sky: $('mSky').checked, ghost: $('mGhost').checked, labels: $('mSky').checked, rot: rotorAngle(), sun: $('mSky').checked && MONT_SUN.t, arrows: 'photo', tl });
     if (tl) maskComposite(g, cam.rect);
+    if (DIR.ip && (DIR.step === 2 || !MONT.moved)) {   // a fotón kijelölt pont
+      const [rx, ry, rw, rh] = cam.rect, px = rx + DIR.ip[0] / MONT.img.naturalWidth * rw, py = ry + DIR.ip[1] / MONT.img.naturalHeight * rh, r = 9 * Math.min(2, window.devicePixelRatio || 1);
+      g.save(); g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.6)'; g.beginPath(); g.arc(px, py, r, 0, 2 * Math.PI); g.stroke();
+      g.lineWidth = 2; g.strokeStyle = '#ff4d4d'; g.stroke(); g.beginPath(); g.moveTo(px - r * 1.8, py); g.lineTo(px - r * 0.5, py); g.moveTo(px + r * 0.5, py); g.lineTo(px + r * 1.8, py);
+      g.moveTo(px, py - r * 1.8); g.lineTo(px, py - r * 0.5); g.moveTo(px, py + r * 0.5); g.lineTo(px, py + r * 1.8); g.stroke(); g.restore();
+    }
     if (BRUSH.on && MASK.used) { g.globalAlpha = 0.4; g.drawImage(MASK.hide, ...cam.rect); g.drawImage(MASK.show, ...cam.rect); g.globalAlpha = 1; }
     g.restore();
   } else if (MONT.mode === 'ar' && AR.frozen) {
@@ -5522,6 +5535,7 @@ const PTR = new Map();
 function montDrag(e) {
   const st = $('montStage');
   if (MONT.mode === 'photo' && BRUSH.on) return brushPtr(e);
+  if (MONT.mode === 'photo' && DIR.step === 1) return dirTap(e);
   if (MONT.mode === 'ar' && SCAL.step) { if (e.type === 'pointerup') scalTap(); return; }
   if (e.type === 'pointerdown') { PTR.set(e.pointerId, { x: e.clientX, y: e.clientY }); try { st.setPointerCapture(e.pointerId); } catch (er) {} return; }
   if (e.type !== 'pointermove') { PTR.delete(e.pointerId); return; }
@@ -5586,9 +5600,9 @@ async function openPhoto(file, fresh) {
     const T = state.turbines[state.sel];
     MONT.dirSet = false;
     if (ex && typeof ex.dir === 'number') { MONT.hd = ex.dir + (ex.dirRef === 'M' ? DECL : 0); MONT.dirSet = true; notes.push('<b>Irány:</b> a fotó iránytű-adatából; ez pár fokot tévedhet.'); }
-    else if (hdC != null) { MONT.hd = hdC; notes.push('<b>Irány:</b> a telefon iránytűjéből, közvetlenül a fotózás után; ez 10–20°-ot is tévedhet, ezért koppints a kis térképen arra, amerre fotóztál.'); }
-    else if (T) { const [x, y] = frame(state.viewer.lat, state.viewer.lon).fromLL(T.lat, T.lon); MONT.hd = Math.atan2(x, y) / RAD; notes.push('<b>Irány:</b> nincs a fotóban, ezért a kijelölt turbina felé állítottam; koppints a kis térképen arra, amerre fotóztál.'); }
-    MONT.hd0 = MONT.hd; MONT.pt = 0; MONT.rl = 0; MONT.moved = false;
+    else if (hdC != null) { MONT.hd = hdC; notes.push('<b>Irány:</b> a telefon iránytűjéből, közvetlenül a fotózás után; ez 10–20°-ot is tévedhet, ezért adj meg egy pontot a fotón és ugyanazt a térképen.'); }
+    else if (T) { const [x, y] = frame(state.viewer.lat, state.viewer.lon).fromLL(T.lat, T.lon); MONT.hd = Math.atan2(x, y) / RAD; notes.push('<b>Irány:</b> nincs a fotóban, ezért a kijelölt turbina felé állítottam; adj meg egy pontot a fotón és ugyanazt a térképen.'); }
+    MONT.hd0 = MONT.hd; MONT.pt = 0; MONT.rl = 0; MONT.moved = false; DIR.ip = null; if (DIR.mk) { DIR.mk.remove(); DIR.mk = null; }
     MONT_SUN.t = exifTime(ex);
     if (MONT_SUN.t) { const sp = sunPos(MONT_SUN.t, state.viewer.lat, state.viewer.lon); if (sp.el > 0) notes.push('<b>Nap:</b> a fotó időpontjából tudom, hol volt a Nap (sárga kör); ha látszik a fotón, arra a legpontosabb igazítani.'); }
     if (!state.turbines.length) notes.push('Még nincs turbina a térképen: tegyél le egyet, és itt is megjelenik.');
@@ -5730,8 +5744,10 @@ function syncAR() {
 }
 function photoNote() {   // a fotón: amíg nem igazított, egy sor arról, mit kell tenni
   if (MONT.mode === 'photo' && BRUSH.on) return BRUSH.mode === 'hide' ? 'Takar: fesd be ujjal, ami a turbina előtt van, de a modell nem tudja (pl. a kerti fád). Ott a turbina nem látszik. ' : 'Nem takar: fesd be, ahol a modell szerint takarás van, de valójában szabad a kilátás. Ott a turbina látszik. ';
+  if (MONT.mode === 'photo' && DIR.step === 1) return 'Irány 1/2: koppints a fotón egy jól felismerhető pontra, ami a térképen is látszik (templomtorony, házsarok, oszlop, magányos fa). ';
+  if (MONT.mode === 'photo' && DIR.step === 2) return 'Irány 2/2: koppints ugyanerre a pontra a térképen. ';
   if (MONT.mode !== 'photo' || MONT.moved) return '';
-  if (!MONT.dirSet) return 'Irány: koppints a kis térképen arra, amerre fotóztál (egy házra, útra, fasorra). Utána húzással finomíthatsz. ';
+  if (!MONT.dirSet) return 'Irány: az „Irány” gombbal adj meg egy pontot a fotón és ugyanazt a térképen, vagy koppints a kis térképen arra, amerre fotóztál. ';
   return `Finomítás: húzd a képet, amíg a falunevek és a szaggatott templom a valódira kerülnek${TOUCH ? ' (két ujjal méretezhetsz)' : ''}. Ha stimmel: Mentés. `;
 }
 /* Takarás javítása a fotón: amit a modell nem ismer (a kerti fa, a szomszéd fészere) vagy ami azóta eltűnt, azt a fotón
@@ -5775,6 +5791,7 @@ function brushSet(on, mode) {
   $('mBrushBar').hidden = !on; $('mont').classList.toggle('brushing', on); $('mMiniW').hidden = on || MONT.mode !== 'photo';
   $('mbHide').setAttribute('aria-pressed', BRUSH.mode === 'hide'); $('mbShow').setAttribute('aria-pressed', BRUSH.mode === 'show');
   $('mBrush').classList.toggle('primary', on);
+  if (on && DIR.step) dirMode(0);
 }
 // a turbinák két rétege (takarással / takarás nélkül) a maszkkal: (takarással − Takar) + (takarás nélkül ∩ Nem takar − Takar)
 function maskLayers(W, H) {
@@ -5786,6 +5803,44 @@ function maskComposite(g, rect) {
   f.globalCompositeOperation = 'destination-in'; f.drawImage(MASK.show, rx, ry, rw, rh);
   for (const c of [v, f]) { c.globalCompositeOperation = 'destination-out'; c.drawImage(MASK.hide, rx, ry, rw, rh); c.globalCompositeOperation = 'source-over'; }
   g.drawImage(MASK.lv, 0, 0); g.drawImage(MASK.lf, 0, 0);
+}
+/* Irány két ponttal (mint a fotómontázsoknál): ugyanaz a jól felismerhető pont (templomtorony, házsarok, oszlop) a fotón
+   és a térképen. A térképi pont iránya a nézőpontból ismert, a fotón mért helye a látószögből szöggé alakítható: a kettő
+   különbsége a kép közepének iránya. Iránytű nem kell hozzá, és egy-két fokon belül pontos. */
+const DIR = { step: 0, ip: null, down: null, mk: null };
+function dirMode(step) {
+  DIR.step = step; if (step && BRUSH.on) brushSet(false);
+  const big = step === 2, W = $('mMiniW');
+  W.classList.toggle('big', big); W.hidden = MONT.mode !== 'photo' || BRUSH.on;
+  $('mMiniT').textContent = big ? 'Koppints ugyanerre a pontra a térképen (nagyíthatod, húzhatod)' : 'Koppints arra, amerre fotóztál';
+  $('mDir').textContent = step ? 'Mégse' : 'Irány'; $('mDir').classList.toggle('primary', !!step);
+  if (MINI.map) {
+    MINI.map.invalidateSize(); big ? MINI.map.dragging.enable() : MINI.map.dragging.disable();
+    if (big) MINI.map.setView([state.viewer.lat, state.viewer.lon], Math.max(17, MINI.map.getZoom()), { animate: false });
+    else { MINI.map.setView([state.viewer.lat, state.viewer.lon], 16, { animate: false }); MINI.key = ''; }
+  }
+  if (step === 1) { DIR.ip = null; if (DIR.mk) { DIR.mk.remove(); DIR.mk = null; } }
+}
+function dirTap(e) {   // 1. lépés: a pont a fotón (koppintás, nem húzás)
+  if (e.type === 'pointerdown') { DIR.down = [e.clientX, e.clientY]; return; }
+  if (e.type !== 'pointerup' || !DIR.down) return;
+  const moved = Math.hypot(e.clientX - DIR.down[0], e.clientY - DIR.down[1]); DIR.down = null; if (moved > 12) return;
+  const st = $('montStage'), r = st.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1), cam = montCam(st.clientWidth * dpr, st.clientHeight * dpr), [rx, ry, rw, rh] = cam.rect;
+  const ix = ((e.clientX - r.left) * dpr - rx) / rw * MONT.img.naturalWidth, iy = ((e.clientY - r.top) * dpr - ry) / rh * MONT.img.naturalHeight;
+  if (ix < 0 || iy < 0 || ix > MONT.img.naturalWidth || iy > MONT.img.naturalHeight) return;
+  DIR.ip = [ix, iy]; dirMode(2);
+}
+// 2. lépés: a térképi pont → a kép közepének iránya (a fotón mért vízszintes helyhez igazítva, a dőlést is figyelembe véve)
+function dirSolve(ll) {
+  const ei = eyeInfo(), fr = frame(state.viewer.lat, state.viewer.lon), [x, y] = fr.fromLL(ll.lat, ll.lng), D = Math.hypot(x, y); if (D < 3) return false;
+  const z = fr.elev(x, y), P = [x, y, (z === z ? z - drop(D) : 0) - (z === z ? ei.eyeZ : 0)], iw = MONT.img.naturalWidth, ih = MONT.img.naturalHeight, F = iw / 2 / Math.tan(MONT.fov * RAD / 2);
+  MONT.hd = Math.atan2(x, y) / RAD - Math.atan((DIR.ip[0] - iw / 2) / F) / RAD;
+  for (let i = 0; i < 4; i++) { const q = projector(camFromAngles(MONT.hd, MONT.pt, MONT.rl), F, iw / 2, ih / 2)(P); if (!q) break; MONT.hd += Math.atan((q[0] - DIR.ip[0]) / F) / RAD; }
+  MONT.hd0 = MONT.hd; MONT.dirSet = true;
+  if (DIR.mk) DIR.mk.remove();
+  DIR.mk = L.layerGroup([L.polyline([[state.viewer.lat, state.viewer.lon], [ll.lat, ll.lng]], { color: '#fff', weight: 1.5, dashArray: '4 4', interactive: false }),
+    L.circleMarker([ll.lat, ll.lng], { radius: 6, color: '#fff', weight: 2, fillColor: '#e03131', fillOpacity: 1, interactive: false })]).addTo(MINI.map);
+  dirMode(0); syncMontCtl(); return true;
 }
 /* Kis térkép a fotó sarkában: a nézőpont és a fotó látómezeje (ék). A fotóban ritkán van irány, ezért aki fotózott,
    egy koppintással megmutatja, merre nézett: a koppintás iránya lesz a kép közepe, utána a húzás finomít. */
@@ -5799,6 +5854,8 @@ function miniInit() {
   MINI.me = L.circleMarker([0, 0], { radius: 5, color: '#fff', weight: 2, fillColor: '#ec651d', fillOpacity: 1, interactive: false }).addTo(MINI.map);
   MINI.map.setView([state.viewer.lat, state.viewer.lon], 16);
   MINI.map.on('click', e => {
+    if (DIR.step === 2) return dirSolve(e.latlng);
+    if (DIR.step === 1) return;
     const [x, y] = frame(state.viewer.lat, state.viewer.lon).fromLL(e.latlng.lat, e.latlng.lng); if (Math.hypot(x, y) < 3) return;
     MONT.hd = MONT.hd0 = Math.atan2(x, y) / RAD; MONT.dirSet = true; syncMontCtl();
   });
@@ -6314,6 +6371,7 @@ $('mMenu').onclick = () => montPanel($('montCtl').classList.contains('closed'));
 $('mShotQ').onclick = () => saveMontage(MONT.mode === 'ar');
 $('mAlign').onclick = freezeAR;
 $('mBrush').onclick = () => brushSet(!BRUSH.on);
+$('mDir').onclick = () => dirMode(DIR.step ? 0 : 1);
 $('mbHide').onclick = () => brushSet(true, 'hide'); $('mbShow').onclick = () => brushSet(true, 'show');
 $('mbUndo').onclick = maskUndo; $('mbClear').onclick = () => { if (!MASK.used) return; maskSnap(); [MASK.hide, MASK.show].forEach(c => c.getContext('2d').clearRect(0, 0, c.width, c.height)); MASK.used = false; };
 $('mbDone').onclick = () => brushSet(false);
