@@ -22,7 +22,7 @@ alakú régió adatait tartalmazza, jelenleg Ják 30 km-es környékét (kb. 63 
   minden más fát (kertek, fasorok, facsoportok, magányos fák) egyenként, a helyével, magasságával és koronasugarával
   (a lombkorona helyi csúcsai, vízválasztó szegmentálással). A 3D kép és a számítás ugyanazokat a koronákat használja,
   így a takarási vonaluk építésből egyezik. Télen csak az erdő belseje tömör, a magányos fák, fasorok és erdőszélek
-  lombtalanul átlátszók. A famagasság egy csúszkával korrigálható (a felvételek óta a fák nőhettek),
+  lombtalanul átlátszók. A famagasság egy csúszkával korrigálható (alapból a mért érték; a felvételek óta a fák nőhettek),
 - **utak:** OpenStreetMap (Overture transportation, ODbL). A kocsiutak mentén az úttest szélétől 3 m-ig nincs fa és
   épület (ahol az épület-alaprajz belelógna, ott a ház azt az oldalát visszavágja), a földutakon, járdákon és
   bejárókon magán az úton nincs fa. Így az útra tett nézőpont nem fában vagy házban áll,

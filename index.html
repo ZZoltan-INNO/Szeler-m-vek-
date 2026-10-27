@@ -1623,7 +1623,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="field" id="forField">
         <label class="check"><input type="checkbox" id="forest" checked> <b>Fák és erdők</b></label>
         <label class="flabel" for="forD">Famagasság-korrekció</label>
-        <div class="rng"><input type="range" id="forD" min="-5" max="20" step="1" value="8"><output id="forDo"></output></div>
+        <div class="rng"><input type="range" id="forD" min="-5" max="20" step="1" value="0"><output id="forDo"></output></div>
         <p class="small">Forrás: a Meta és a World Resources Institute lombkorona-magasság térképe (2024, CC BY 4.0), amely 2016–2019-es légifotókról gépi tanulással becsüli a fák magasságát, kb. 1 m-es rácson. Ebből minden fa a saját helyén, magasságával és koronaméretével kerül a 3D képbe és a számításba (kertek, fasorok, magányos fák; 8 km-en belül), az összefüggő erdők pedig 6,5 m-es rácson, a mért átlagos famagassággal. A térképen 15-ös nagyítástól a fák koronája is látszik. A felvételek óta a fák nőhettek, vagy kivághatták őket: a csúszkával az összes fa magasságán lehet állítani. Az utakat az OpenStreetMap adja: a kocsiutak mentén az úttest szélétől 3 m-ig, a földutakon, járdákon és bejárókon magán az úton nincs fa, így az útra tett nézőpont szabadon áll. A saját kerted fáit kézzel adhatod hozzá.</p>
       </div>
       <div class="field">
@@ -3029,7 +3029,7 @@ const LINEAR = t => t !== 'house' && t !== 'block';   // vonalas takarás (sor, 
 
 /* ---------- Állapot ---------- */
 // a lombkorona-térkép a terepi összevetés (Ják, 2026. okt.) szerint alacsonyabb a valóságnál: alapból +8 m minden fához és erdőhöz
-const TREE_BASE = 8;
+const TREE_BASE = 0;   // a mért famagasság (a győrújbaráti helyszíni fotón a +8 m túl magas fákat adott)
 const DEFAULT = {
   // Ják főtere (más régiónál a build --place pontja); turbina és kézi takarás nincs (a házak és a fák a beépített adatból jönnek)
   viewer: window.LOCAL_DATA && window.LOCAL_DATA.home ? { lat: window.LOCAL_DATA.home.lat, lon: window.LOCAL_DATA.home.lon } : { lat: 47.14105, lon: 16.58072 },
@@ -6387,7 +6387,7 @@ function loadHash() {
     state.obstacles = (s.o || []).filter(o => OB[o[0]]).map(o => o.length === 6
       ? { id: uid++, type: o[0], lat: o[1], lon: o[2], h: o[3], w: o[4], rot: o[5] * RAD }
       : fromLOS({ id: uid++, type: o[0], dist: o[1], h: o[2], w: o[3] < 0 ? Infinity : o[3], off: o[4] || 0 }));
-    state.fov = s.a || 40; state.pan = s.p || 0; state.ghost = s.g !== 0; state.bld = s.b !== 0; state.bldH = Object.fromEntries(s.hh || []); state.forest = s.fo !== 0; state.forD = Math.max(-5, Math.min(20, s.fd != null ? s.fd : TREE_BASE)); state.isExample = false;
+    state.fov = s.a || 40; state.pan = s.p || 0; state.ghost = s.g !== 0; state.bld = s.b !== 0; state.bldH = Object.fromEntries(s.hh || []); state.forest = s.fo !== 0; state.forD = Math.max(-5, Math.min(20, s.fd != null && s.fd !== 8 ? s.fd : TREE_BASE));   // a régi linkek +8 m-e a korábbi alapérték volt: az is mért state.isExample = false;
     return true;
   } catch (e) { return false; }
 }
