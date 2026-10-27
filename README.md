@@ -110,6 +110,11 @@ A https://jak-szeleromu.pages.dev a repó `deploy/` mappájából épül, minden
   telefon ekkor még nagyjából a táj felé néz; 10–20°-ot tévedhet), különben a kijelölt turbina felé áll. Pontosítás: a fotó
   sarkában kis légifotó-térkép mutatja a nézőpontot és a fotó látómezejét (ék); arra koppintva, amerre a fotó készült
   (ház, út, fasor), az irány oda áll, utána a kép húzásával finomítható a templomra, falunevekre.
+  Takarás javítása: a takarást a modell adja (domborzat, házak, fák, templom); amit a modell nem ismer (a kerti fa, egy
+  fészer) vagy ami azóta eltűnt, az a fotón ujjal befesthető. „Takar”: ott a turbina nem látszik; „Nem takar”: ott a
+  turbina akkor is látszik, ha a modell szerint takarásban van. A festés a fotó képpontjaihoz kötött (igazításkor nem
+  csúszik), visszavonható, és a mentett képen is érvényes; ilyenkor a forrássorban „kézi javítással” áll, a mérési
+  adatokban pedig maskEdit: true.
   Telefonon a menü csukva indul: a kép alján egy sor mondja el az igazítást (húzás, két ujjal méretezés), a sávban
   „Mentés” gomb van; ha a turbina a képen kívül esik, nyíl mutatja, merre. A program a turbinát
   valós méretben rárajzolja, és a modell szerinti takarás vonala fölé vágja (a takart rész kérésre pirosan áttűnik).
