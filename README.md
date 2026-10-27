@@ -110,7 +110,10 @@ A https://jak-szeleromu.pages.dev a repó `deploy/` mappájából épül, minden
   1/2 egy jól felismerhető pont a fotón (templomtorony, házsarok, oszlop), 2/2 ugyanaz a pont a kinagyított, húzható
   légifotó-térképen (a fotó ilyenkor felülre / fekve balra húzódik, a kijelölt pont látszik). A térképi pont iránya a
   nézőpontból ismert, a fotón mért helye a látószögből szöggé alakul; ebből a kép közepének iránya iránytű nélkül, egy-két
-  fokon belül adódik. Az „Irány” gombbal újra megadható. Előtte becslésként: friss fotónál a fényképezőből visszatérve
+  fokon belül adódik. Utána (nem kötelező) egy második pontpár a léptékhez: a két térképi pont közti szög és a fotón
+  mért távolságuk adja a fókusztávolságot képpontban, vagyis a látószöget, a fotó adataitól (EXIF, nagyítás)
+  függetlenül; a program kiírja, mennyire tér el a fotó adataiból számolttól (a mérési adatokban fovSrc / fovExif).
+  Az „Irány” gombbal újra megadható. Előtte becslésként: friss fotónál a fényképezőből visszatérve
   kiolvasott iránytű, különben a kijelölt turbina iránya. Utána a kép húzásával finomítható a templomra, falunevekre.
   Takarás javítása: a takarást a modell adja (domborzat, házak, fák, templom); amit a modell nem ismer (a kerti fa, egy
   fészer) vagy ami azóta eltűnt, az a fotón ujjal befesthető. „Takar”: ott a turbina nem látszik; „Nem takar”: ott a
