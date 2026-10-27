@@ -100,13 +100,18 @@ A https://jak-szeleromu.pages.dev a repó `deploy/` mappájából épül, minden
 
 ### A turbina a valódi képen
 
-- **Saját fotó (fotómontázs):** a 3D kép alatti gombbal egy helyszíni fotó tölthető be. A fotó adataiból (EXIF) a hely
-  (GPS), a látószög (35 mm-es egyenértékű fókusz), az irány (iránytű) és az évszak (dátum) jön; ami hiányzik, azt a
-  térképi nézőpont, a telefonok szokásos fő kamerája (26 mm) és a kijelölt turbina iránya pótolja. A program a turbinát
+- **Saját fotó (fotómontázs) – telefonon ez a fő út:** a „Fotózd le a tájat” gomb (a nyitóképen és a 3D kép alatt) a
+  telefon saját kameráját nyitja meg; a kész képre a program rárajzolja a turbinát. Galériából is választható fotó, asztali
+  gépen fájl tölthető fel. A fotó adataiból (EXIF) a hely
+  (GPS), a látószög (35 mm-es egyenértékű fókusz) és az irány (iránytű) jön; ha a frissen készült fotóban nincs GPS-adat
+  (a kamera-alkalmazás gyakran nem írja, a böngésző ki is szűrheti), a telefon helymeghatározása adja a helyet. Ami még
+  hiányzik, azt a térképi nézőpont, a telefonok szokásos fő kamerája (26 mm) és a kijelölt turbina iránya pótolja.
+  Telefonon a menü csukva indul: a kép alján egy sor mondja el az igazítást (húzás, két ujjal méretezés), a sávban
+  „Mentés” gomb van; ha a turbina a képen kívül esik, nyíl mutatja, merre. A program a turbinát
   valós méretben rárajzolja, és a modell szerinti takarás vonala fölé vágja (a takart rész kérésre pirosan áttűnik).
   Igazításhoz a modell horizontja (sárga vonal), a falunevek és a fokbeosztás látszik; a kép húzható, és csúszkák is
   vannak. A kész kép menthető, a sarkában a forrás feltüntetésével.
-- **Élő kamerakép (telefonon, a nyilvános weboldalon):** a hátsó kamera képére rajzolja a turbinát a GPS, az iránytű és
+- **Élő kamerakép (telefonon, kísérleti, másodlagos gomb):** a hátsó kamera képére rajzolja a turbinát a GPS, az iránytű és
   a giroszkóp alapján. A kép a giroszkópot követi (sima, nem ugrál), az égtájat az iránytűből csak lassan átlagolva veszi
   át, így az iránytű remegése nem látszik. Igazítás: az „Igazítás: kép megállítása” gombbal a kép megáll, és nyugodtan
   ráhúzható a falunevek vonala vagy (ha süt) a sárga Nap-jel a valódi helyére (az élő képen nincs modell-horizont vonal); két ujjal
