@@ -105,7 +105,11 @@ A https://jak-szeleromu.pages.dev a repó `deploy/` mappájából épül, minden
   gépen fájl tölthető fel. A fotó adataiból (EXIF) a hely
   (GPS), a látószög (35 mm-es egyenértékű fókusz) és az irány (iránytű) jön; ha a frissen készült fotóban nincs GPS-adat
   (a kamera-alkalmazás gyakran nem írja, a böngésző ki is szűrheti), a telefon helymeghatározása adja a helyet. Ami még
-  hiányzik, azt a térképi nézőpont, a telefonok szokásos fő kamerája (26 mm) és a kijelölt turbina iránya pótolja.
+  hiányzik, azt a térképi nézőpont és a telefonok szokásos fő kamerája (26 mm) pótolja.
+  Irány: a fotóban ritkán van. Friss fotónál a program a fényképezőből visszatérve kiolvassa a telefon iránytűjét (a
+  telefon ekkor még nagyjából a táj felé néz; 10–20°-ot tévedhet), különben a kijelölt turbina felé áll. Pontosítás: a fotó
+  sarkában kis légifotó-térkép mutatja a nézőpontot és a fotó látómezejét (ék); arra koppintva, amerre a fotó készült
+  (ház, út, fasor), az irány oda áll, utána a kép húzásával finomítható a templomra, falunevekre.
   Telefonon a menü csukva indul: a kép alján egy sor mondja el az igazítást (húzás, két ujjal méretezés), a sávban
   „Mentés” gomb van; ha a turbina a képen kívül esik, nyíl mutatja, merre. A program a turbinát
   valós méretben rárajzolja, és a modell szerinti takarás vonala fölé vágja (a takart rész kérésre pirosan áttűnik).

@@ -854,6 +854,9 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .arint.full .arint-txt>:not(.arint-btns){display:none}
 .arint.full .arint-btns{justify-content:center}
 @media (prefers-reduced-motion:no-preference){#arIntroGo.pulse{animation:goPulse 1.2s ease-in-out infinite}@keyframes goPulse{50%{box-shadow:0 0 0 8px rgba(236,101,29,.35)}}}
+.mont-mini{position:absolute;z-index:3;top:8px;right:8px;width:40%;max-width:240px;touch-action:none}
+.mont-mini #mMini{width:100%;aspect-ratio:1;border-radius:10px;overflow:hidden;border:2px solid rgba(255,255,255,.9);box-shadow:0 4px 14px rgba(0,0,0,.55);cursor:crosshair;background:#2b3a2f}
+.mont-mini span{display:block;margin-top:4px;font:600 .72rem/1.2 var(--body);color:#fff;text-shadow:0 1px 3px #000;text-align:center}
 .mont-hint{position:absolute;left:8px;bottom:8px;right:8px;font:600 .8rem/1.3 var(--body);color:#fff;text-shadow:0 1px 3px #000;pointer-events:none}
 .mont-ctl{background:var(--card);color:var(--ink);padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));max-height:42vh;overflow:auto;display:grid;gap:8px}
 .mont-ctl p{margin:0}
@@ -1881,6 +1884,7 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
 <div class="mont" id="mont" hidden role="dialog" aria-modal="true" aria-labelledby="montTitle">
   <div class="mont-bar"><button class="btn mont-back" type="button" id="montBack" aria-label="Vissza az oldalra">← Vissza</button><b id="montTitle">A turbina a saját fotódon</b><span class="mont-brand" aria-label="HorizonLens, az Innomotion terméke"><span class="mb-hl">HorizonLens <i>·</i> </span>Innomotion</span><span class="ac-btns"><button class="btn" type="button" id="mCam" hidden aria-label="Kamera váltása">Kamera</button><button class="btn" type="button" id="mHelp" hidden>Útmutató</button><button class="btn" type="button" id="montClose">Bezárás</button></span></div>
   <div class="mont-stage" id="montStage"><video id="arVideo" playsinline muted autoplay hidden></video><canvas id="montCv" role="img" aria-label="A kép a turbinával"></canvas><div class="mont-hint" id="montHint" aria-live="polite"></div>
+    <div class="mont-mini" id="mMiniW" hidden><div id="mMini" role="application" aria-label="Kis térkép: koppints arra, amerre a fotó készült"></div><span>Koppints arra, amerre fotóztál</span></div>
     <div class="ar-coach" id="arCoach" hidden role="status" aria-live="polite"><div class="ac-head"><b id="acN"></b><strong id="acH"></strong><button type="button" id="acVid">Videó</button><button type="button" id="acX" aria-label="Az útmutató elrejtése">✕</button></div><p id="acT"></p><div class="ac-prog" id="acP" hidden><i></i></div><div class="ac-btns" id="acB"></div></div></div>
   <div class="mont-ctl" id="montCtl">
     <div class="mont-handle"><button type="button" class="btn" id="mMenu" aria-expanded="true" aria-controls="montCtl">▾ Menü bezárása</button><span class="mh-r"><button class="btn" type="button" id="mAlign" hidden>Igazítás</button><button class="btn" type="button" id="mShare" hidden>Megosztás</button><button type="button" class="btn primary" id="mShotQ" hidden>Pillanatkép</button></span></div>
@@ -5442,6 +5446,7 @@ function openMont(mode) {
   $('mShot').hidden = mode !== 'ar'; $('mFreeze').hidden = mode !== 'ar'; $('mHzW').hidden = $('mCalRow').hidden = mode !== 'ar'; syncAR(); calStatus();
   $('mHdL').textContent = mode === 'ar' ? 'Iránytű-javítás' : 'Irány'; $('mSkyL').textContent = mode === 'ar' ? 'Falunevek, templom, fokbeosztás és Nap' : 'Modell-horizont, falunevek és templom'; $('mFovL').textContent = mode === 'ar' ? 'A kamera látószöge' : 'Látószög';
   $('mGhost').checked = false;   // alapból csak az látszik, ami a valóságban is látszani fog
+  $('mMiniW').hidden = mode !== 'photo'; if (mode === 'photo') { miniInit(); MINI.key = ''; MINI.map.invalidateSize(); }
   syncMontCtl(); cancelAnimationFrame(MONT.raf); MONT.raf = requestAnimationFrame(montFrame);
   $('montBack').focus();
 }
@@ -5496,6 +5501,7 @@ function montFrame() {
   if (MONT.mode === 'ar' && SCAL.step) drawScal(g, W, H);
   const left = skyWork(MONT.mode === 'ar' ? 7 : 12);
   $('montHint').textContent = ((busy || left) && MONT.mode !== 'ar' ? 'A takarás vonalának számítása… ' : '') + arNote() + photoNote() + MONT.msg;
+  if (MONT.mode === 'photo') miniSync();
   MONT.raf = requestAnimationFrame(montFrame);
 }
 // húzás a képen: a ráfedés az ujjal együtt mozog (irány és dőlés); két ujjal csippentve a látószög (a modell mérete)
@@ -5523,13 +5529,28 @@ function montDrag(e) {
 }
 
 /* ---------- Saját fotó ---------- */
+// az irány becslése: a fényképezőt nyitó koppintástól figyeljük az iránytűt; a visszatérés utáni első adat a fotózás iránya
+// (a telefon ilyenkor még nagyjából a táj felé néz). iOS-en csak akkor van adat, ha az iránytű már engedélyezve volt.
+const SHOT = { ori: null, t: 0 };
+function shotOri(e) {
+  if (document.hidden || e.beta == null || e.gamma == null) return;
+  const a = typeof e.webkitCompassHeading === 'number' ? 360 - e.webkitCompassHeading : (e.type === 'deviceorientationabsolute' || e.absolute) && e.alpha != null ? e.alpha : null; if (a == null) return;
+  const M = oriMatrix(a, e.beta, e.gamma); SHOT.ori = { f: M.Z.map(x => -x), u: M.Y }; SHOT.t = performance.now();
+}
+function shotArm() { SHOT.ori = null; addEventListener('deviceorientationabsolute', shotOri); addEventListener('deviceorientation', shotOri); }
+const shotHeading = () => new Promise(res => {
+  const t0 = performance.now(), done = v => { removeEventListener('deviceorientationabsolute', shotOri); removeEventListener('deviceorientation', shotOri); res(v); };
+  const tick = () => SHOT.ori && SHOT.t > t0 ? done(((yawOf(SHOT.ori) / RAD + DECL) % 360 + 360) % 360) : performance.now() - t0 > 1500 ? done(null) : setTimeout(tick, 100); tick();
+});
 // a most készült fotó helye: a kamera-alkalmazás gyakran nem ír GPS-adatot (vagy a böngésző kiszűri), de aki most fotózott, ott áll
 const photoHere = () => !navigator.geolocation ? Promise.resolve(null) : new Promise(res => navigator.geolocation.getCurrentPosition(p => res(p.coords), () => res(null), { enableHighAccuracy: true, timeout: 12000, maximumAge: 120000 }));
 async function openPhoto(file, fresh) {
   let ex = null; try { ex = readExif(await file.arrayBuffer()); } catch (e) {}
   const exGps = ex && ex.lat != null && inRegion(ex.lat, ex.lon), tPh = exifTime(ex);
-  let here = null;
+  let here = null, hdC = null;
+  const hdP = fresh && !(ex && typeof ex.dir === 'number') ? shotHeading() : null;
   if (!exGps && (fresh || (tPh && Math.abs(Date.now() - tPh) < 30 * 6e4))) { realMsg('A hely meghatározása (ahol a fotó készült)…', false); here = await photoHere(); if (here && !inRegion(here.latitude, here.longitude)) here = null; }
+  if (hdP) hdC = await hdP;
   const img = new Image(), url = URL.createObjectURL(file);
   img.onerror = () => { URL.revokeObjectURL(url); realMsg('Ezt a képet a böngésző nem tudja megnyitni (például HEIC formátum). Mentsd el vagy küldd el magadnak JPEG-ként, és próbáld újra.'); };
   img.onload = async () => {
@@ -5549,8 +5570,10 @@ async function openPhoto(file, fresh) {
     // irány: a fotó iránytű-adatából, különben a kijelölt turbina felé
     await update();
     const T = state.turbines[state.sel];
-    if (ex && typeof ex.dir === 'number') { MONT.hd = ex.dir + (ex.dirRef === 'M' ? DECL : 0); notes.push('<b>Irány:</b> a fotó iránytű-adatából; ez pár fokot tévedhet.'); }
-    else if (T) { const [x, y] = frame(state.viewer.lat, state.viewer.lon).fromLL(T.lat, T.lon); MONT.hd = Math.atan2(x, y) / RAD; notes.push('<b>Irány:</b> nincs a fotóban, ezért a kijelölt turbina felé állítottam.'); }
+    MONT.dirSet = false;
+    if (ex && typeof ex.dir === 'number') { MONT.hd = ex.dir + (ex.dirRef === 'M' ? DECL : 0); MONT.dirSet = true; notes.push('<b>Irány:</b> a fotó iránytű-adatából; ez pár fokot tévedhet.'); }
+    else if (hdC != null) { MONT.hd = hdC; notes.push('<b>Irány:</b> a telefon iránytűjéből, közvetlenül a fotózás után; ez 10–20°-ot is tévedhet, ezért koppints a kis térképen arra, amerre fotóztál.'); }
+    else if (T) { const [x, y] = frame(state.viewer.lat, state.viewer.lon).fromLL(T.lat, T.lon); MONT.hd = Math.atan2(x, y) / RAD; notes.push('<b>Irány:</b> nincs a fotóban, ezért a kijelölt turbina felé állítottam; koppints a kis térképen arra, amerre fotóztál.'); }
     MONT.hd0 = MONT.hd; MONT.pt = 0; MONT.rl = 0; MONT.moved = false;
     MONT_SUN.t = exifTime(ex);
     if (MONT_SUN.t) { const sp = sunPos(MONT_SUN.t, state.viewer.lat, state.viewer.lon); if (sp.el > 0) notes.push('<b>Nap:</b> a fotó időpontjából tudom, hol volt a Nap (sárga kör); ha látszik a fotón, arra a legpontosabb igazítani.'); }
@@ -5692,7 +5715,34 @@ function syncAR() {
 }
 function photoNote() {   // a fotón: amíg nem igazított, egy sor arról, mit kell tenni
   if (MONT.mode !== 'photo' || MONT.moved) return '';
-  return `Igazítás: húzd a képet, amíg a falunevek és a szaggatott templom a valódira kerülnek${TOUCH ? ' (két ujjal méretezhetsz)' : ''}. Ha stimmel: Mentés. `;
+  if (!MONT.dirSet) return 'Irány: koppints a kis térképen arra, amerre fotóztál (egy házra, útra, fasorra). Utána húzással finomíthatsz. ';
+  return `Finomítás: húzd a képet, amíg a falunevek és a szaggatott templom a valódira kerülnek${TOUCH ? ' (két ujjal méretezhetsz)' : ''}. Ha stimmel: Mentés. `;
+}
+/* Kis térkép a fotó sarkában: a nézőpont és a fotó látómezeje (ék). A fotóban ritkán van irány, ezért aki fotózott,
+   egy koppintással megmutatja, merre nézett: a koppintás iránya lesz a kép közepe, utána a húzás finomít. */
+const MINI = { map: null, key: '' };
+function miniInit() {
+  if (MINI.map) return;
+  MINI.map = L.map('mMini', { attributionControl: false, zoomControl: false, dragging: false, doubleClickZoom: false, boxZoom: false, keyboard: false, scrollWheelZoom: 'center', touchZoom: 'center', minZoom: 12, maxZoom: MAXZ });
+  (ESRI_ON ? esriLayer() : new SatLayer({ maxZoom: MAXZ })).addTo(MINI.map);
+  MINI.wedge = L.polygon([[0, 0]], { color: '#ffd23f', weight: 2, fillColor: '#ffd23f', fillOpacity: 0.2, interactive: false }).addTo(MINI.map);
+  MINI.tb = L.layerGroup().addTo(MINI.map);
+  MINI.me = L.circleMarker([0, 0], { radius: 5, color: '#fff', weight: 2, fillColor: '#ec651d', fillOpacity: 1, interactive: false }).addTo(MINI.map);
+  MINI.map.setView([state.viewer.lat, state.viewer.lon], 16);
+  MINI.map.on('click', e => {
+    const [x, y] = frame(state.viewer.lat, state.viewer.lon).fromLL(e.latlng.lat, e.latlng.lng); if (Math.hypot(x, y) < 3) return;
+    MONT.hd = MONT.hd0 = Math.atan2(x, y) / RAD; MONT.dirSet = true; syncMontCtl();
+  });
+  for (const ev of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']) $('mMiniW').addEventListener(ev, e => e.stopPropagation());
+}
+function miniSync() {
+  if (!MINI.map) return;
+  const v = state.viewer, key = [v.lat, v.lon, MONT.hd.toFixed(1), MONT.fov.toFixed(1), state.turbines.length].join('|'); if (key === MINI.key) return; MINI.key = key;
+  const fr = frame(v.lat, v.lon), a0 = MONT.hd * RAD, h = MONT.fov / 2 * RAD, R = 4000, pts = [[v.lat, v.lon]];
+  for (let i = 0; i <= 12; i++) { const a = a0 - h + i * h / 6; pts.push(fr.toLL(Math.sin(a) * R, Math.cos(a) * R)); }
+  MINI.wedge.setLatLngs(pts); MINI.me.setLatLng([v.lat, v.lon]);
+  if (MINI.map.getCenter().distanceTo([v.lat, v.lon]) > 2) MINI.map.setView([v.lat, v.lon], MINI.map.getZoom(), { animate: false });
+  MINI.tb.clearLayers(); state.turbines.forEach(t => L.circleMarker([t.lat, t.lon], { radius: 4, color: '#fff', weight: 1.5, fillColor: '#2a6fdb', fillOpacity: 1, interactive: false }).addTo(MINI.tb));
 }
 function arNote() {
   if (MONT.mode !== 'ar') return '';
@@ -6145,6 +6195,7 @@ async function shareLink(msg) {
 $('copyLink').onclick = () => shareLink($('copyMsg'));
 $('shareBtn').onclick = () => shareLink($('shareMsg'));
 $('photoBtn').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('photoIn').click(); } };
+$('photoCam').addEventListener('click', shotArm);
 $('photoCamBtn').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('photoCam').click(); } };
 for (const id of ['photoIn', 'photoCam']) $(id).onchange = () => { const f = $(id).files[0]; $(id).value = ''; if (f) { boot(); realMsg('A fotó betöltése…', false); openPhoto(f, id === 'photoCam'); } };
 // telefonon a fő út a fotó (a telefon saját kamerájával: a kép adataiból pontos a lépték, és álló képen könnyű igazítani);
