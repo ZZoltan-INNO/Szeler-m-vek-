@@ -852,6 +852,14 @@ input[type=text],input[type=number],select{font:inherit;font-size:.92rem;color:v
 .mont.brushing .mont-stage{cursor:crosshair}
 .mont-mini{position:absolute;z-index:3;top:8px;right:8px;width:40%;max-width:240px;touch-action:none}
 .mont-mini #mMini{width:100%;aspect-ratio:1;border-radius:10px;overflow:hidden;border:2px solid rgba(255,255,255,.9);box-shadow:0 4px 14px rgba(0,0,0,.55);cursor:crosshair;background:#2b3a2f}
+.sguide{position:fixed;inset:0;z-index:6000;background:rgba(10,14,12,.95);color:#fff;display:flex;align-items:center;justify-content:center;padding:20px;padding-bottom:max(20px,env(safe-area-inset-bottom))}
+.sguide[hidden]{display:none}
+.sg-box{max-width:420px;width:100%;display:grid;gap:12px;text-align:center;justify-items:center}
+.sg-t{font:700 1.3rem var(--body)}.sg-info{margin:0;color:#cfd6d2;font-size:.95rem}.sg-msg{margin:0;font:600 1.15rem var(--body);min-height:2.6em}
+.sg-arrow svg{width:min(52vw,200px);height:min(52vw,200px);fill:#ec651d;transition:transform .12s linear}
+.sg-arrow.ok svg{fill:#2fb36d}.sg-arrow.off svg{fill:#5c6560}
+.sg-btns{display:flex;gap:10px}.sg-btns #sgShot{font-size:1.1rem;padding:14px 28px}
+.sg-map{color:#ffd23f}
 .mont-mini.big{top:auto;bottom:52px;left:50%;right:auto;transform:translateX(-50%);width:min(94%,560px);max-width:none;z-index:5}
 .mont-mini.big #mMini{aspect-ratio:auto;height:min(46vh,440px)}
 @media (orientation:landscape){.mont-mini.big{top:8px;bottom:52px;left:auto;right:8px;transform:none;width:48%;display:flex;flex-direction:column}.mont-mini.big #mMini{height:auto;flex:1}}
@@ -1881,6 +1889,13 @@ document.addEventListener('DOMContentLoaded', function () {   // a jogi szöveg 
 </script>
 </div></footer>
 
+<div class="sguide" id="sGuide" hidden role="dialog" aria-modal="true" aria-labelledby="sgT"><div class="sg-box">
+  <b class="sg-t" id="sgT">Fordulj a turbina felé</b><p class="sg-info" id="sgInfo"></p>
+  <div class="sg-arrow" id="sgArrow" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M50 6 80 60 57 52 57 94 43 94 43 52 20 60Z"/></svg></div>
+  <p class="sg-msg" id="sgMsg" role="status" aria-live="polite"></p>
+  <div class="sg-btns"><button type="button" class="btn primary" id="sgShot">Fotózás</button><button type="button" class="btn" id="sgCancel">Mégse</button></div>
+  <button type="button" class="linkbtn sg-map" id="sgMap" hidden>A térképhez: turbina lerakása</button>
+</div></div>
 <div class="mont" id="mont" hidden role="dialog" aria-modal="true" aria-labelledby="montTitle">
   <div class="mont-bar"><button class="btn mont-back" type="button" id="montBack" aria-label="Vissza az oldalra">← Vissza</button><b id="montTitle">A turbina a saját fotódon</b><span class="mont-brand" aria-label="HorizonLens, az Innomotion terméke"><span class="mb-hl">HorizonLens <i>·</i> </span>Innomotion</span><span class="ac-btns"><button class="btn" type="button" id="mCam" hidden aria-label="Kamera váltása">Kamera</button><button class="btn" type="button" id="mHelp" hidden>Útmutató</button><button class="btn" type="button" id="montClose">Bezárás</button></span></div>
   <div class="mont-stage" id="montStage"><video id="arVideo" playsinline muted autoplay hidden></video><canvas id="montCv" role="img" aria-label="A kép a turbinával"></canvas><div class="mont-hint" id="montHint" aria-live="polite"></div>
@@ -5555,7 +5570,7 @@ function montDrag(e) {
 /* ---------- Saját fotó ---------- */
 // az irány becslése: a fényképezőt nyitó koppintástól figyeljük az iránytűt; a visszatérés utáni első adat a fotózás iránya
 // (a telefon ilyenkor még nagyjából a táj felé néz). iOS-en csak akkor van adat, ha az iránytű már engedélyezve volt.
-const SHOT = { ori: null, t: 0 };
+const SHOT = { ori: null, t: 0, guide: null };
 function shotOri(e) {
   if (document.hidden || e.beta == null || e.gamma == null) return;
   const a = typeof e.webkitCompassHeading === 'number' ? 360 - e.webkitCompassHeading : (e.type === 'deviceorientationabsolute' || e.absolute) && e.alpha != null ? e.alpha : null; if (a == null) return;
@@ -5566,6 +5581,42 @@ const shotHeading = () => new Promise(res => {
   const t0 = performance.now(), done = v => { removeEventListener('deviceorientationabsolute', shotOri); removeEventListener('deviceorientation', shotOri); res(v); };
   const tick = () => SHOT.ori && SHOT.t > t0 ? done(((yawOf(SHOT.ori) / RAD + DECL) % 360 + 360) % 360) : performance.now() - t0 > 1500 ? done(null) : setTimeout(tick, 100); tick();
 });
+/* Vezetett fotózás (telefonon): a kijelölt turbina felé fordít egy nyíllal (iránytű + GPS), és a „Fotózás” gombnál
+   rögzíti a telefon irányát. Ez lesz a fotó induló iránya (az iránytű pontosságával, 5–15°); pontosítani az „Irány”
+   gombbal (egy pont a fotón, ugyanaz a térképen) vagy húzással lehet. */
+const SG = { watch: null, raf: 0, hd: null, pos: null };
+const wrap180 = d => ((d % 360) + 540) % 360 - 180;
+function sgHeading() { return SHOT.ori && performance.now() - SHOT.t < 3000 ? ((yawOf(SHOT.ori) / RAD + DECL) % 360 + 360) % 360 : null; }
+function sgOpen() {
+  boot(); const T = state.turbines[state.sel];
+  $('sGuide').hidden = false; $('sgMap').hidden = !!T; $('sgShot').hidden = !T; $('sgArrow').hidden = !T;
+  if (!T) { $('sgT').textContent = 'Előbb tegyél le egy turbinát'; $('sgInfo').textContent = 'Koppints a térképre oda, ahová a turbinát tervezik, utána indítsd újra a fotózást.'; $('sgMsg').textContent = ''; return; }
+  $('sgT').textContent = 'Fordulj a turbina felé';
+  if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') DeviceOrientationEvent.requestPermission().catch(() => {});   // iOS: a koppintásra kérhető
+  SHOT.ori = null; addEventListener('deviceorientationabsolute', shotOri); addEventListener('deviceorientation', shotOri);
+  if (navigator.geolocation && SG.watch == null) SG.watch = navigator.geolocation.watchPosition(p => {
+    const c = p.coords; if (!inRegion(c.latitude, c.longitude) || c.accuracy > 150) return;
+    SG.pos = c; state.viewer = { lat: c.latitude, lon: c.longitude };
+  }, () => {}, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
+  cancelAnimationFrame(SG.raf); SG.raf = requestAnimationFrame(sgTick);
+}
+function sgClose(keepOri) {
+  $('sGuide').hidden = true; cancelAnimationFrame(SG.raf);
+  if (SG.watch != null) { navigator.geolocation.clearWatch(SG.watch); SG.watch = null; }
+  if (!keepOri) { removeEventListener('deviceorientationabsolute', shotOri); removeEventListener('deviceorientation', shotOri); }
+}
+function sgTick() {
+  if ($('sGuide').hidden) return;
+  const T = state.turbines[state.sel], v = state.viewer, [x, y] = frame(v.lat, v.lon).fromLL(T.lat, T.lon), brg = ((Math.atan2(x, y) / RAD) + 360) % 360, D = Math.hypot(x, y), hd = sgHeading();
+  $('sgInfo').textContent = `T${state.sel + 1} turbina: ${km(D)}, ${COMPASS[Math.round(brg / 45) % 8]} felé (${Math.round(brg)}°)` + (SG.pos ? ` · a helyed GPS-ből ±${Math.round(SG.pos.accuracy)} m` : ' · a hely meghatározása…');
+  const A = $('sgArrow');
+  if (hd == null) { A.className = 'sg-arrow off'; A.firstElementChild.style.transform = `rotate(${brg}deg)`; $('sgMsg').textContent = 'Nincs iránytű-adat: a nyíl az égtájat mutatja (fent az észak). Fordulj arra, és fotózz.'; }
+  else {
+    const d = wrap180(brg - hd), ok = Math.abs(d) < 8; A.className = 'sg-arrow' + (ok ? ' ok' : ''); A.firstElementChild.style.transform = `rotate(${d}deg)`;
+    $('sgMsg').textContent = ok ? 'Jó irány! Tartsd így, és fotózz.' : `Fordulj ${d > 0 ? 'jobbra' : 'balra'} ${Math.round(Math.abs(d))}°-ot`;
+  }
+  SG.raf = requestAnimationFrame(sgTick);
+}
 // a most készült fotó helye: a kamera-alkalmazás gyakran nem ír GPS-adatot (vagy a böngésző kiszűri), de aki most fotózott, ott áll
 const photoHere = () => !navigator.geolocation ? Promise.resolve(null) : new Promise(res => navigator.geolocation.getCurrentPosition(p => res(p.coords), () => res(null), { enableHighAccuracy: true, timeout: 12000, maximumAge: 120000 }));
 async function openPhoto(file, fresh) {
@@ -5596,8 +5647,10 @@ async function openPhoto(file, fresh) {
     const T = state.turbines[state.sel];
     MONT.dirSet = false;
     if (ex && typeof ex.dir === 'number') { MONT.hd = ex.dir + (ex.dirRef === 'M' ? DECL : 0); MONT.dirSet = true; notes.push('<b>Irány:</b> a fotó iránytű-adatából; ez pár fokot tévedhet.'); }
+    else if (SHOT.guide && Date.now() - SHOT.guide.t < 10 * 6e4) { MONT.hd = SHOT.guide.hd; MONT.dirSet = true; notes.push('<b>Irány:</b> a telefon iránytűjéből, a „Fotózás” gomb megnyomásakor (5–15°-ot tévedhet). Pontosan: „Irány” gomb, egy pont a fotón és ugyanaz a térképen, vagy húzd a képet a templomra, falunevekre.'); }
     else if (hdC != null) { MONT.hd = hdC; notes.push('<b>Irány:</b> a telefon iránytűjéből, közvetlenül a fotózás után; ez 10–20°-ot is tévedhet, ezért adj meg egy pontot a fotón és ugyanazt a térképen.'); }
     else if (T) { const [x, y] = frame(state.viewer.lat, state.viewer.lon).fromLL(T.lat, T.lon); MONT.hd = Math.atan2(x, y) / RAD; notes.push('<b>Irány:</b> nincs a fotóban, ezért a kijelölt turbina felé állítottam; adj meg egy pontot a fotón és ugyanazt a térképen.'); }
+    SHOT.guide = null;
     MONT.hd0 = MONT.hd; MONT.pt = 0; MONT.rl = 0; MONT.moved = false; DIR.ip = null; if (DIR.mk) { DIR.mk.remove(); DIR.mk = null; }
     MONT_SUN.t = exifTime(ex);
     if (MONT_SUN.t) { const sp = sunPos(MONT_SUN.t, state.viewer.lat, state.viewer.lon); if (sp.el > 0) notes.push('<b>Nap:</b> a fotó időpontjából tudom, hol volt a Nap (sárga kör); ha látszik a fotón, arra a legpontosabb igazítani.'); }
@@ -6318,18 +6371,22 @@ $('copyLink').onclick = () => shareLink($('copyMsg'));
 $('shareBtn').onclick = () => shareLink($('shareMsg'));
 $('photoBtn').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('photoIn').click(); } };
 $('photoCam').addEventListener('click', shotArm);
-$('photoCamBtn').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('photoCam').click(); } };
+$('photoCamBtn').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sgOpen(); } };
+$('photoCamBtn').addEventListener('click', e => { e.preventDefault(); sgOpen(); });   // a címke ne nyissa rögtön a kamerát: előbb a turbina felé fordítunk
+$('sgShot').onclick = () => { const hd = sgHeading(); SHOT.guide = hd == null ? null : { hd, t: Date.now() }; sgClose(); $('photoCam').click(); };
+$('sgCancel').onclick = () => sgClose();
+$('sgMap').onclick = () => { sgClose(); $('map').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
 for (const id of ['photoIn', 'photoCam']) $(id).onchange = () => { const f = $(id).files[0]; $(id).value = ''; if (f) { boot(); realMsg('A fotó betöltése…', false); openPhoto(f, id === 'photoCam'); } };
 // telefonon a fő út a fotó (a telefon saját kamerájával: a kép adataiból pontos a lépték, és álló képen könnyű igazítani);
 // a galériás fotó és az élő kamerakép másodlagos
 if (TOUCH) { $('photoCamBtn').hidden = false; $('photoBtn').textContent = 'Fotó a galériából'; $('arBtn').hidden = false; $('arHow').hidden = true; }
 // gomb a nyitóképen és lebegő gomb, amíg az eszköz fotó-gombja nem látszik
 if (TOUCH) {
-  const go = () => $('photoCam').click();
+  const go = () => sgOpen();
   $('heroAr').hidden = false; $('heroAr').onclick = go; $('arFab').onclick = go;
-  const seen = new Set(), fab = () => { const h = seen.size > 0 || scrollY < innerHeight * 0.6 || !$('mont').hidden || !$('arIntro').hidden || !$('legalBar').hidden; if ($('arFab').hidden !== h) $('arFab').hidden = h; };
+  const seen = new Set(), fab = () => { const h = seen.size > 0 || scrollY < innerHeight * 0.6 || !$('mont').hidden || !$('arIntro').hidden || !$('sGuide').hidden || !$('legalBar').hidden; if ($('arFab').hidden !== h) $('arFab').hidden = h; };
   if (window.IntersectionObserver) { const io = new IntersectionObserver(es => { es.forEach(e => e.isIntersecting ? seen.add(e.target) : seen.delete(e.target)); fab(); }); ['heroAr', 'photoCamBtn'].forEach(id => io.observe($(id))); }
-  addEventListener('scroll', fab, { passive: true }); const mo = new MutationObserver(fab); ['mont', 'arIntro', 'legalBar'].forEach(id => mo.observe($(id), { attributes: true, attributeFilter: ['hidden'] })); fab();
+  addEventListener('scroll', fab, { passive: true }); const mo = new MutationObserver(fab); ['mont', 'arIntro', 'sGuide', 'legalBar'].forEach(id => mo.observe($(id), { attributes: true, attributeFilter: ['hidden'] })); fab();
 }
 try { $('mMore').open = localStorage.getItem('montMore') === '1'; } catch (e) {}
 $('mMore').addEventListener('toggle', () => { try { localStorage.setItem('montMore', $('mMore').open ? '1' : '0'); } catch (e) {} });
@@ -6351,7 +6408,7 @@ $('acVid').onclick = () => openIntro('help');
 for (const ev of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']) $('arCoach').addEventListener(ev, e => e.stopPropagation());
 $('montClose').onclick = closeMont; $('montBack').onclick = closeMont;
 addEventListener('popstate', () => { if (MONT.mode) closeMont(true); else if (MONT.hist) MONT.hist = false; });
-document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (!$('arIntro').hidden) closeIntro(); else if (MONT.mode) closeMont(); });
+document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (!$('sGuide').hidden) sgClose(); else if (!$('arIntro').hidden) closeIntro(); else if (MONT.mode) closeMont(); });
 for (const ev of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']) $('montStage').addEventListener(ev, montDrag);
 $('mHd').oninput = () => { const v = +$('mHd').value; if (MONT.mode === 'ar') { AR.hdOff = v; AR.lock = true; syncAR(); } else { MONT.moved = true; MONT.hd = MONT.hd0 + v; } syncMontCtl(); };
 $('mPt').oninput = () => { const v = +$('mPt').value; if (MONT.mode === 'ar') { AR.ptOff = v; AR.ptManual = true; savePt(); } else { MONT.moved = true; MONT.pt = v; } syncMontCtl(); };
