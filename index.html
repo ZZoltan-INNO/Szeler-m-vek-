@@ -4068,7 +4068,7 @@ function bldLocal(fr) {
     const [x, y] = fr.fromLL(b.lat, b.lon); if (x * x + y * y > R2) continue;
     const ex = Math.sin(b.a), ey = Math.cos(b.a), al = x * ex + y * ey, ac = x * ey - y * ex;
     const hEdit = state.bldH[b.id];
-    out.push({ ...b, ...bldShape(b, hEdit != null ? hEdit : b.h0), edited: hEdit != null, x, y, g: undefined, own: Math.abs(al) <= b.L / 2 + 1.5 && Math.abs(ac) <= b.W / 2 + 1.5 });   // g: csak ha kell
+    out.push({ ...b, ...bldShape(b, hEdit != null ? hEdit : b.h0, hEdit == null && bldEst(b)), edited: hEdit != null, x, y, g: undefined, own: Math.abs(al) <= b.L / 2 + 1.5 && Math.abs(ac) <= b.W / 2 + 1.5 });   // g: csak ha kell
   }
   bldLocal.key = key; bldLocal.val = out;
   const st = $('bldStat'); if (st) st.textContent = out.length ? `A környéken ${nf(out.length)} épület van betöltve.` : '';
@@ -4076,12 +4076,22 @@ function bldLocal(fr) {
 }
 bldLocal.key = ''; bldLocal.val = [];
 let bldVer = 0;   // nő, ha valaki kézzel átírja egy ház magasságát
-// a ház formája a gerincmagasságból: családi háznál kb. 40°-os tető, 2,2–3,2 m-es eresz; közel négyzetes,
-// kis alaprajzon sátortető, különben nyeregtető; csűr, csarnok, többszintes ház (adatból): lapos tető
+// a ház formája: közel négyzetes, kis alaprajzon sátortető, különben nyeregtető; csűr, csarnok, többszintes ház
+// (adatból): lapos tető. Ahol az adatban csak az alapterületből becsült gerinc van (3 / 4,5 / 7 / 8,5 / 10 m, minden
+// családi ház 7 m), ott a gerinc a szokásos falmagasságból és tetőhajlásból adódik: falusi lakóház kb. 3,1 m-es eresz,
+// 32°-os sátortető, 36°-os (keskeny, régi háznál 42°-os) nyeregtető; melléképület 2,5 m és 30°. Így a fal és a tető
+// aránya a valóságos (a fix 7 m-ből a széles házakon 2,2 m-es fal és 5 m-es tető lett). Mért vagy kézzel megadott
+// gerincnél az eresz a 35°-os tetőből adódik.
 const CHIM_W = 0.55, CHIM_UP = 0.7;   // kémény: szélesség és a gerinc fölötti magasság (m)
-function bldShape(b, h) {
+const bldEst = b => b.h0 === 3 || b.h0 === 4.5 || b.h0 === 7 || b.h0 === 10 || (b.h0 === 8.5 && b.L * b.W >= 400);   // 8,5 m kis alaprajzon: kétszintes ház (szintszámból)
+function bldShape(b, h, est) {
   if (!b.pitched) return { h, eave: h, roof: 'flat', chim: null };
-  const eave = Math.max(Math.min(2.2, h * 0.6), Math.min(3.2, h - 0.84 * b.W / 2)), roof = b.L / b.W <= 1.35 && b.L * b.W < 260 ? 'hip' : 'gable';
+  const A = b.L * b.W, roof = b.L / b.W <= 1.35 && A < 260 ? 'hip' : 'gable', tg = d => Math.tan(d * RAD);
+  let eave;
+  if (est) {
+    const [E, P] = A < 25 ? [2.2, 25] : A < 60 ? [2.5, 30] : A < 380 ? [3.1, roof === 'hip' ? 32 : b.W < 8 ? 42 : 36] : [4.2, 25];
+    eave = E; h = Math.round(Math.min(E + tg(P) * b.W / 2, E + 6) * 4) / 4;
+  } else eave = Math.max(Math.min(2.4, h * 0.6), Math.min(h - 0.6, Math.max(2.4, h - tg(35) * b.W / 2)));
   // lakóház méretű épületen egy kémény a gerincen, a ház egyik felében (a 3D kép és a számítás is ezzel számol)
   const house = b.L * b.W < 300 && h <= 12 && b.W >= 5;
   const chim = house ? (b.seed % 2 ? 1 : -1) * (roof === 'hip' ? Math.min(b.L * 0.22, Math.max(0, (b.L - b.W) / 2)) : b.L * 0.22) : null;
@@ -5085,7 +5095,7 @@ function renderBldEdit() {
   if (!b) { box.hidden = !n; if (!n) return; $('beInfo').textContent = `${n} ház magasságát adtad meg kézzel. Kattints egy házra a képen a módosításhoz.`; $('beH').disabled = $('beReset').disabled = true; $('beHo').textContent = ''; return; }
   box.hidden = false; $('beH').disabled = $('beReset').disabled = false;
   const roof = b.roof === 'hip' ? 'sátortetős' : b.roof === 'gable' ? 'nyeregtetős' : 'lapos tetős';
-  $('beInfo').textContent = `${nf(b.L, 1)} × ${nf(b.W, 1)} m alapterületű, ${roof} épület, ${km(Math.hypot(b.x, b.y))}-re. Becsült magasság az adatokból: ${nf(b.h0, b.h0 % 1 ? 1 : 0)} m.` + (b.edited ? ' Most a te értékeddel számol.' : '');
+  $('beInfo').textContent = `${nf(b.L, 1)} × ${nf(b.W, 1)} m alapterületű, ${roof} épület, ${km(Math.hypot(b.x, b.y))}-re. ${bldEst(b) ? 'Becsült gerincmagasság (szokásos falmagasságból és tetőhajlásból)' : 'Gerincmagasság az adatokból'}: ${(e => nf(e, e % 1 ? 1 : 0))(bldShape(b, b.h0, bldEst(b)).h)} m.` + (b.edited ? ' Most a te értékeddel számol.' : '');
   $('beH').value = b.h; $('beHo').textContent = `${nf(b.h, b.h % 1 ? 1 : 0)} m`;
 }
 function setBldHeight(h) {

@@ -14,7 +14,9 @@ alakú régió adatait tartalmazza, jelenleg Ják 30 km-es környékét (kb. 63 
 - **domborzat:** AWS Terrain Tiles z12 (kb. 26 m/px; Ausztriában 10 m-es forrásból),
 - **műholdkép:** Copernicus Sentinel-2, 2023–2024 nyara, a 10 m-es eredetiből z14 (kb. 6,5 m/px) és z12,
 - **valós épületek:** Overture Maps (OpenStreetMap + Microsoft ML Buildings, ODbL), kb. 200 ezer épület a
-  magyar és az osztrák oldalon: elforgatott téglalap alaprajz, becsült gerincmagasság, nyeregtető. A 3D
+  magyar és az osztrák oldalon: elforgatott téglalap alaprajz, becsült gerincmagasság, nyeregtető. Ahol az adatban csak
+  az alapterületből becsült magasság van, a ház alakja a szokásos arányokból adódik (lakóház: kb. 3,1 m-es fal,
+  32°-os sátortető vagy 36–42°-os nyeregtető, a gerinc a ház szélességéből; melléképület 2,5 m-es fal, 30°). A 3D
   nézetben megjelennek, és a takarás számításában is szerepelnek (a nézőpontot tartalmazó saját ház kivételével),
 - **fák és erdők:** a Meta és a World Resources Institute lombkorona-magasság térképe (2024, CC BY 4.0;
   2016–2019-es Maxar-légifotókból gépi tanulással, kb. 1 m-es rács, a fák magassága méterben). Ebből
