@@ -1,0 +1,803 @@
+<title>Magánbölcsőde projekt</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Elrendezés: ragadós fülsor felül, alatta egy olvasható hasáb; telefonon minden egy oszlopba törik. */
+:root{
+  --bg:#f4f7f6; --surface:#ffffff; --sunk:#e9efed; --ink:#18262a; --muted:#56696b; --line:#d3dedb;
+  --accent:#0d6b5e; --accent-ink:#ffffff; --mark:#f2c94c; --mark-ink:#3b2f00;
+  --good:#1f7a4a; --warn:#9a6200; --bad:#b23a2b; --good-bg:#e1f2e8; --warn-bg:#fbf0d4; --bad-bg:#f9e2de;
+  --display:"Bricolage Grotesque","Inter",system-ui,sans-serif; --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#111817; --surface:#19221f; --sunk:#222d2a; --ink:#e7efec; --muted:#9db0ac; --line:#30403c;
+  --accent:#58c9b3; --accent-ink:#06211c; --mark:#f2c94c; --mark-ink:#3b2f00;
+  --good:#6fd39b; --warn:#f0bd55; --bad:#f08b7c; --good-bg:#17332a; --warn-bg:#3a2f12; --bad-bg:#3d1f1b; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#111817; --surface:#19221f; --sunk:#222d2a; --ink:#e7efec; --muted:#9db0ac; --line:#30403c;
+  --accent:#58c9b3; --accent-ink:#06211c; --mark:#f2c94c; --mark-ink:#3b2f00;
+  --good:#6fd39b; --warn:#f0bd55; --bad:#f08b7c; --good-bg:#17332a; --warn-bg:#3a2f12; --bad-bg:#3d1f1b; color-scheme:dark }
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--mark);outline-offset:2px}
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--surface);border-bottom:1px solid var(--line)}
+.top-in{max-width:920px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px 0;display:flex;flex-direction:column;gap:8px}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.brand b{font-family:var(--display);font-weight:700;font-size:1.15rem;letter-spacing:-.01em}
+.brand span{color:var(--muted);font-size:.82rem}
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin:0 -4px}
+.tabs::-webkit-scrollbar{display:none}
+.tabs a{flex:none;padding:8px 12px;text-decoration:none;color:var(--muted);font-weight:500;font-size:.92rem;border-bottom:3px solid transparent;white-space:nowrap}
+.tabs a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--accent)}
+
+main{max-width:920px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px}
+section.view{display:flex;flex-direction:column;gap:22px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;letter-spacing:-.015em;line-height:1.15;margin:0}
+h1{font-size:clamp(1.7rem,5vw,2.3rem);font-weight:700}
+h2{font-size:1.3rem;font-weight:700;margin-top:10px}
+h3{font-size:1.02rem;font-weight:700;letter-spacing:0}
+p{margin:0;max-width:68ch}
+ul,ol{margin:0;padding-left:1.2em;max-width:68ch;display:flex;flex-direction:column;gap:6px}
+.lede{font-size:1.05rem;color:var(--muted)}
+.stack{display:flex;flex-direction:column;gap:12px}
+.note{font-size:.86rem;color:var(--muted)}
+.tag{display:inline-block;font-size:.72rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:4px;background:var(--sunk);color:var(--muted);vertical-align:middle}
+.tag.est{background:var(--warn-bg);color:var(--warn)}
+.tag.law{background:var(--good-bg);color:var(--good)}
+
+.finding{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;padding:14px 0;border-top:1px solid var(--line)}
+.finding:last-child{border-bottom:1px solid var(--line)}
+.finding .n{font-family:var(--display);font-weight:700;font-size:1.5rem;color:var(--accent);line-height:1;min-width:1.2em}
+.finding h3{align-self:center}
+.finding p{grid-column:2}
+
+.callout{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.callout.warn{background:var(--warn-bg);border-color:transparent}
+.callout.bad{background:var(--bad-bg);border-color:transparent}
+.callout.good{background:var(--good-bg);border-color:transparent}
+
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.9rem;font-variant-numeric:tabular-nums}
+th,td{padding:9px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:0}
+th{font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;background:var(--sunk);white-space:nowrap}
+td.num,th.num{text-align:right;white-space:nowrap}
+.pos{color:var(--good);font-weight:600}.neg{color:var(--bad);font-weight:600}
+
+/* Modell */
+.presets{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;cursor:pointer}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 12px;border-radius:999px;font-size:.88rem;font-weight:500}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi small{font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+.kpi b{font-family:var(--display);font-size:1.45rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2}
+.kpi span{font-size:.8rem;color:var(--muted)}
+.model{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:22px;align-items:start}
+@media (max-width:760px){.model{grid-template-columns:minmax(0,1fr)}}
+fieldset{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:12px 14px;margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+legend{font-family:var(--display);font-weight:700;padding:0 6px;font-size:.98rem}
+.f{display:grid;grid-template-columns:minmax(0,1fr) 128px;gap:4px 10px;align-items:center}
+.f label{font-size:.88rem}
+.f .hint{grid-column:1/-1;font-size:.76rem;color:var(--muted)}
+.f input[type=number],.f select{width:100%;padding:7px 8px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink);font:inherit;font-variant-numeric:tabular-nums;text-align:right}
+.f select{text-align:left}
+.f input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--accent)}
+.f.check{grid-template-columns:auto minmax(0,1fr);justify-content:start}
+.f.check input{width:18px;height:18px;accent-color:var(--accent)}
+.warns{display:flex;flex-direction:column;gap:8px}
+.warns div{font-size:.86rem;padding:9px 12px;border-radius:8px;background:var(--warn-bg);color:var(--ink)}
+.warns div.bad{background:var(--bad-bg)}
+.chart{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px}
+.chart svg{display:block;width:100%;height:auto}
+.chart text{fill:var(--muted);font-family:var(--body);font-size:11px}
+
+/* Teendők */
+.progress{height:8px;border-radius:99px;background:var(--sunk);overflow:hidden}
+.progress i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
+@media (prefers-reduced-motion:reduce){.progress i{transition:none}}
+.phase{display:flex;flex-direction:column;gap:8px}
+.phase-h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.phase-h span{font-size:.82rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.todo{list-style:none;padding:0;max-width:none;gap:0;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.todo li{border-bottom:1px solid var(--line)}
+.todo li:last-child{border-bottom:0}
+.todo label{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;padding:11px 14px;cursor:pointer}
+.todo input{width:20px;height:20px;margin-top:2px;accent-color:var(--accent)}
+.todo .t{font-weight:500}
+.todo .d{grid-column:2;font-size:.84rem;color:var(--muted)}
+.todo input:checked ~ .t{text-decoration:line-through;color:var(--muted)}
+.sync{font-size:.82rem;color:var(--muted)}
+.src{font-size:.9rem;gap:8px}
+.src li{overflow-wrap:anywhere}
+</style>
+
+<div class="top"><div class="top-in">
+  <div class="brand"><b>Magánbölcsőde projekt</b><span>Családi bölcsőde hálózat Győrben · állapot: 2026. november 28.</span></div>
+  <nav class="tabs" aria-label="Fejezetek">
+    <a href="#attekintes">Áttekintés</a>
+    <a href="#piac">Piac</a>
+    <a href="#terv">Üzleti terv</a>
+    <a href="#modell">Pénzügyi modell</a>
+    <a href="#teendok">Engedélyezés</a>
+    <a href="#forrasok">Források</a>
+  </nav>
+</div></div>
+
+<main>
+
+<!-- ============ ÁTTEKINTÉS ============ -->
+<section class="view" id="v-attekintes">
+  <div class="stack">
+    <h1>Megéri-e családi bölcsődét nyitni Győrben, négy nevelővel, egy családi házban?</h1>
+    <p class="lede">A terv jogilag megvalósítható, de három ponton módosítani kell, és a jövedelmezősége egyetlen kérdésen múlik: kap-e a bölcsőde állami támogatást.</p>
+  </div>
+
+  <div>
+    <div class="finding"><div class="n">1</div><h3>Nevelőnként legfeljebb 5 gyerek, hatodiktól segítő kell</h3>
+      <p>Egy családi bölcsődei egységben segítő nélkül 5, segítővel 8 gyerek lehet. Jogszerű a 4 × 5 = 20 gyerek négy nevelővel, vagy 3 × 8 = 24 gyerek három nevelővel és három segítővel. <span class="tag law">15/1998. NM r. 51/F. §</span></p></div>
+    <div class="finding"><div class="n">2</div><h3>Négy egység egy házban: hálózat, és a negyediknek saját konyha és fürdő</h3>
+      <p>Darabszám-korlát nincs, de minden egységet külön jegyeznek be, három egységtől kötelező a hálózat (koordinátor, SZMSZ, igazolt helyettes). Közös konyhát és fürdőszobát legfeljebb három egység használhat. A katasztrófavédelem ajánlása is legfeljebb három egység egy rendeltetési egységben.</p></div>
+    <div class="finding"><div class="n">3</div><h3>Állami támogatás nélkül a piaci díjon veszteséges</h3>
+      <p>Alkalmazott nevelőkkel, bérelt házban a fedezeti díj a győri piaci ár (kb. 100 000 Ft/hó + étkezés) közel kétszerese. Támogatással ugyanez a felállás nyereséges. A számokat lásd lent és a <a href="#modell">pénzügyi modellben</a>.</p></div>
+    <div class="finding"><div class="n">4</div><h3>Új férőhelyre 2026-ban nem adtak befogadást</h3>
+      <p>Támogatás csak a finanszírozási rendszerbe befogadott férőhelyre jár, és a 2026-os miniszteri közlemény szerint bölcsődei ellátásra nincs befogadható kapacitás. Három út marad: ellátási szerződés Győr önkormányzatával, pályázatból létrehozott férőhely, vagy egyedi miniszteri döntés. <span class="tag law">Gyvt. 145. §</span></p></div>
+    <div class="finding"><div class="n">5</div><h3>A fenntartó formája dönti el az áfát és a támogatás mértékét</h3>
+      <p>Nonprofit kft., alapítvány vagy egyesület a támogatás 100%-át kapja, és a díja áfamentes. Forprofit kft. és egyéni vállalkozó a támogatás 30%-át kapja, a díja pedig 20 millió Ft éves bevétel felett 27% áfát tartalmaz. Az áfa-kérdést adótanácsadóval kell megerősíteni.</p></div>
+    <div class="finding"><div class="n">6</div><h3>Győrben fogynak a gyerekek, a rés szűk</h3>
+      <p>2020 óta 28%-kal kevesebb gyerek születik a városban, az ingyenes önkormányzati bölcsődékben ősszel bőven van hely, és 2025-ben egyetlen új magánbölcsőde sem nyílt. Rés az év közbeni felvételben, a két év alattiaknál és a Győrbe ingázó falusi családoknál van; a legígéretesebb helyszín a város déli pereme és Győrszentiván. Részletek a <a href="#piac">Piac</a> fülön.</p></div>
+  </div>
+
+  <h2>Négy változat egy pillantásra</h2>
+  <p class="note">A pénzügyi modell alapértékeivel számolva, teljes felfutás után, havonta. A bérek, a bérleti díj és a kisebb költségek becslések; a modellben mind átírható.</p>
+  <div class="tbl"><table id="presetTable">
+    <thead><tr><th>Változat</th><th class="num">Gyerek</th><th class="num">Havi bevétel</th><th class="num">Havi költség</th><th class="num">Havi eredmény</th><th class="num">Fedezeti díj</th></tr></thead>
+    <tbody></tbody>
+  </table></div>
+
+  <h2>Mit érdemes most megtenni</h2>
+  <ol>
+    <li><b>Megkeresni Győr önkormányzatát</b> ellátási szerződés ügyében. Ez az egyetlen út a támogatáshoz, amely nem függ az országos kapacitástól.</li>
+    <li><b>Adótanácsadóval eldönteni a fenntartói formát.</b> A nonprofit forma az áfa és a támogatás miatt előnyös, de támogatással díjplafont hoz (85 500 Ft/hó).</li>
+    <li><b>Előzetes állásfoglalást kérni a kormányhivataltól</b> és egyeztetni a katasztrófavédelemmel, mielőtt házat választasz. A három egység plusz egy elrendezés a ház alaprajzát alapvetően meghatározza.</li>
+    <li><b>Házat a déli peremen (Ménfőcsanak, Gyirmót) vagy Győrszentivánon keresni,</b> és kisebb léptékben indulni: egy-két egységgel, a többit igazolt kereslet esetén megnyitni.</li>
+    <li><b>Felhívni a győri versenytársakat</b> a valódi díjakért és szabad helyekért, és 2027 januárjában megnézni, meghosszabbították-e a Szülők Háza bejegyzését, és van-e befogadható kapacitás.</li>
+    <li><b>Kiszámolni a saját számokkal a modellt:</b> a valódi bérekkel, a ház tényleges költségével és azzal, hogy a tulajdonos maga is nevelőként dolgozik-e.</li>
+  </ol>
+  <p>A lépések részletesen, kipipálható formában az <a href="#teendok">Engedélyezés</a> fülön vannak.</p>
+</section>
+
+<!-- ============ PIAC ============ -->
+<section class="view" id="v-piac" hidden>
+  <div class="stack">
+    <h1>Piackutatás: Győr és agglomerációja</h1>
+    <p class="lede">Győrben nincs általános bölcsődei férőhelyhiány, és a születésszám gyorsan fogy. Rés van, de szűk: év közbeni felvétel, két év alatti gyerekek, és a Győrbe ingázó falusi családok.</p>
+  </div>
+
+  <h2>Születések: Győrben −28% öt év alatt</h2>
+  <p>Győrben 2020-ban 1 255, 2025-ben 903 gyerek született (anya lakóhelye szerint), ez 2010 óta a legalacsonyabb érték. 2025-ben gyorsult az esés: egy év alatt −16%. A járás 34 községében jóval enyhébb a csökkenés, mert a fiatal családok kiköltöznek a városból: 2020 és 2025 között Győr belföldi vándorlási egyenlege −1 504, a községeké +7 947. 2025 végén a községekben már több 0–2 éves élt (2 530), mint Győrben (2 482).</p>
+  <div class="chart"><h3>Élveszületések, 2019–2025</h3><div id="birthChart"></div>
+    <p class="note">Forrás: KSH Tájékoztatási adatbázis (T-STAR). 2026-ban a vármegyében az első kilenc hónapban 13,4%-kal kevesebb gyerek született, mint egy évvel korábban.</p></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Terület</th><th class="num">2020</th><th class="num">2021</th><th class="num">2022</th><th class="num">2023</th><th class="num">2024</th><th class="num">2025</th><th class="num">Változás</th><th class="num">0–2 évesek 2025 végén</th></tr></thead>
+    <tbody>
+      <tr><td><b>Győr</b></td><td class="num">1 255</td><td class="num">1 365</td><td class="num">1 257</td><td class="num">1 151</td><td class="num">1 078</td><td class="num">903</td><td class="num neg">−28,0%</td><td class="num">2 482</td></tr>
+      <tr><td>Győri járás 34 községe</td><td class="num">809</td><td class="num">811</td><td class="num">833</td><td class="num">824</td><td class="num">731</td><td class="num">715</td><td class="num neg">−11,6%</td><td class="num">2 530</td></tr>
+      <tr><td>Agglomeráció Győr nélkül (67 település)</td><td class="num">1 222</td><td class="num">1 247</td><td class="num">1 244</td><td class="num">1 254</td><td class="num">1 129</td><td class="num">1 063</td><td class="num neg">−13,0%</td><td class="num">3 849</td></tr>
+      <tr><td>Győr-Moson-Sopron vármegye</td><td class="num">4 493</td><td class="num">4 640</td><td class="num">4 512</td><td class="num">4 304</td><td class="num">3 890</td><td class="num">3 583</td><td class="num neg">−20,3%</td><td class="num">11 909</td></tr>
+      <tr><td>Ország</td><td class="num">92 338</td><td class="num">93 039</td><td class="num">88 491</td><td class="num">85 225</td><td class="num">77 511</td><td class="num">72 017</td><td class="num neg">−22,0%</td><td class="num">239 745</td></tr>
+    </tbody></table></div>
+  <h3>A nagyobb környező települések</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Település</th><th class="num">2020</th><th class="num">2021</th><th class="num">2022</th><th class="num">2023</th><th class="num">2024</th><th class="num">2025</th><th class="num">0–2 évesek</th></tr></thead>
+    <tbody>
+      <tr><td>Győrújbarát</td><td class="num">76</td><td class="num">85</td><td class="num">93</td><td class="num">84</td><td class="num">91</td><td class="num">68</td><td class="num">257</td></tr>
+      <tr><td>Győrszemere</td><td class="num">31</td><td class="num">37</td><td class="num">52</td><td class="num">44</td><td class="num">51</td><td class="num">40</td><td class="num">151</td></tr>
+      <tr><td>Győrzámoly</td><td class="num">52</td><td class="num">60</td><td class="num">62</td><td class="num">42</td><td class="num">46</td><td class="num">37</td><td class="num">143</td></tr>
+      <tr><td>Nyúl</td><td class="num">34</td><td class="num">44</td><td class="num">48</td><td class="num">50</td><td class="num">30</td><td class="num">39</td><td class="num">131</td></tr>
+      <tr><td>Rábapatona</td><td class="num">23</td><td class="num">25</td><td class="num">37</td><td class="num">40</td><td class="num">39</td><td class="num">31</td><td class="num">126</td></tr>
+      <tr><td>Vámosszabadi</td><td class="num">34</td><td class="num">28</td><td class="num">52</td><td class="num">38</td><td class="num">34</td><td class="num">34</td><td class="num">123</td></tr>
+      <tr><td>Tét</td><td class="num">48</td><td class="num">56</td><td class="num">54</td><td class="num">38</td><td class="num">49</td><td class="num">34</td><td class="num">121</td></tr>
+      <tr><td>Mosonszentmiklós</td><td class="num">34</td><td class="num">25</td><td class="num">27</td><td class="num">36</td><td class="num">27</td><td class="num">35</td><td class="num">118</td></tr>
+      <tr><td>Pér</td><td class="num">28</td><td class="num">42</td><td class="num">30</td><td class="num">29</td><td class="num">31</td><td class="num">45</td><td class="num">115</td></tr>
+      <tr><td>Gönyű</td><td class="num">49</td><td class="num">37</td><td class="num">37</td><td class="num">30</td><td class="num">37</td><td class="num">36</td><td class="num">107</td></tr>
+      <tr><td>Nagyszentjános</td><td class="num">20</td><td class="num">28</td><td class="num">36</td><td class="num">32</td><td class="num">27</td><td class="num">31</td><td class="num">99</td></tr>
+      <tr><td>Bőny</td><td class="num">23</td><td class="num">22</td><td class="num">26</td><td class="num">38</td><td class="num">25</td><td class="num">30</td><td class="num">89</td></tr>
+      <tr><td>Töltéstava</td><td class="num">36</td><td class="num">22</td><td class="num">15</td><td class="num">34</td><td class="num">26</td><td class="num">22</td><td class="num">86</td></tr>
+      <tr><td>Abda</td><td class="num">38</td><td class="num">24</td><td class="num">29</td><td class="num">29</td><td class="num">19</td><td class="num">22</td><td class="num">76</td></tr>
+    </tbody></table></div>
+  <p class="note">A teljes, 42 településes tábla a részletes jelentésben van. A legnagyobb szuburbiák (Győrújbarát, Győrzámoly, Vámosszabadi) 2023 óta stagnálnak; születésszám már csak a keleti–délkeleti kisebb falvakban nő (Pér, Nagyszentjános, Bőny).</p>
+
+  <h2>Kínálat: 187 magánhely Győrben, a falvakban szinte semmi</h2>
+  <p>A hatósági szolgáltatói nyilvántartás (2026. november 28.) szerint Győrben 8 nem önkormányzati fenntartó 24 bölcsődei egysége működik, 187 férőhellyel; mellettük az önkormányzat 13 tagbölcsődéje 746 hellyel, gondozási díj nélkül. A piac koncentrált: három egyesületi hálózat adja a családi bölcsődei helyek kétharmadát, és a 24 egység mindössze kb. 10 címen működik, mert a bevett forma több, 5–8 fős egység egy épületben.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Terület</th><th>Típus</th><th class="num">Egység</th><th class="num">Férőhely</th></tr></thead>
+    <tbody>
+      <tr><td>Győr</td><td>Családi bölcsőde</td><td class="num">22</td><td class="num">155</td></tr>
+      <tr><td>Győr</td><td>Munkahelyi bölcsőde (Szülők Háza)</td><td class="num">1</td><td class="num">8</td></tr>
+      <tr><td>Győr</td><td>Egyházi bölcsőde (Kiscsillag Református)</td><td class="num">1</td><td class="num">24</td></tr>
+      <tr><td><b>Győr, nem önkormányzati összesen</b></td><td></td><td class="num"><b>24</b></td><td class="num"><b>187</b></td></tr>
+      <tr><td>Győr</td><td>Önkormányzati (Egyesített Bölcsődei Intézményhálózat)</td><td class="num">13</td><td class="num">746</td></tr>
+      <tr><td>Agglomeráció (45 település)</td><td>Egyházi (baptista, református)</td><td class="num">5</td><td class="num">59</td></tr>
+      <tr><td>Agglomeráció</td><td>Magán családi bölcsőde (Tét)</td><td class="num">1</td><td class="num">8</td></tr>
+      <tr><td>Agglomeráció</td><td>Önkormányzati, társulási</td><td class="num">35</td><td class="num">704</td></tr>
+    </tbody></table></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Győri fenntartó</th><th>Cím</th><th class="num">Egység</th><th class="num">Hely</th></tr></thead>
+    <tbody>
+      <tr><td>Kölyökvár (egyesület)</td><td>Szabadhegy: Kakashegy u. 20/A, Szent Imre út 83/B</td><td class="num">6</td><td class="num">42</td></tr>
+      <tr><td>Égig Érő Fa, kétnyelvű Montessori (egyesület)</td><td>Székely u. 7., Veres Péter u. 87.</td><td class="num">6</td><td class="num">37</td></tr>
+      <tr><td>Kölyökcentrum: Tappancs, Nook, Ladybird (egyesület)</td><td>Belváros, Jókai út 1–3.</td><td class="num">3</td><td class="num">24</td></tr>
+      <tr><td>Szülők Háza (alapítvány)</td><td>Belváros, Gárdonyi G. u. 3.</td><td class="num">3</td><td class="num">24</td></tr>
+      <tr><td>Kiscsillag Református Bölcsőde</td><td>Újváros, Bálint M. u. 2.</td><td class="num">1</td><td class="num">24</td></tr>
+      <tr><td>Tündérmese, Tündérvilág (nonprofit kft.)</td><td>Révfalu, Mayer L. u. 5.</td><td class="num">2</td><td class="num">16</td></tr>
+      <tr><td>Mesélő Jelek, Lila Pillangó (nonprofit kft.)</td><td>Dr. Petz L. u. 7.</td><td class="num">2</td><td class="num">13</td></tr>
+      <tr><td>Labdarózsa (nonprofit kft.)</td><td>Ménfőcsanak, Veres Péter u. 19.</td><td class="num">1</td><td class="num">7</td></tr>
+    </tbody></table></div>
+  <p class="note">Forprofit fenntartó nincs köztük. Árat csak kettő közöl: a Kölyökvár 84 000 Ft/hó (2025), a református bölcsőde 1 500 Ft/nap gondozás és 1 400 Ft/nap étkezés. Nem önkormányzati bölcsőde nincs Adyvárosban, Marcalvárosban, Győrszentivánon, Gyirmóton, Szigetben, Pinnyéden, Bácsán, Likócson és Gyárvárosban. A nagy szuburbiákban (Győrújbarát, Győrzámoly, Győrújfalu, Vámosszabadi, Abda, Nyúl, Pér, Écs, Győrladamér, Dunaszeg) egyetlen magán családi bölcsőde sincs.</p>
+
+  <h2>Nyitások 2022 óta: lassuló belépés</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Év</th><th>Győr</th><th>Agglomeráció</th></tr></thead>
+    <tbody>
+      <tr><td>2022</td><td>Tündérmese, Révfalu (8); Szívünk Melege munkahelyi (8)</td><td>Rábapatona, két baptista családi bölcsőde (7, 8); Mezőörs, református mini bölcsőde (8)</td></tr>
+      <tr><td>2023</td><td>Kiscsillag Református (24); Tündérvilág (8)</td><td>Koroncó, baptista bölcsőde (28); Mackó Kuckó, Tét (8)</td></tr>
+      <tr><td>2024</td><td>Égig Érő Fa Nefelejcs (6); Lila Pillangó (5); Kacagó Lurkók gyermekfelügyelet (7, támogatás nélkül)</td><td>–</td></tr>
+      <tr><td>2025</td><td><b>egy sem</b></td><td>Csemete-kert gyermekfelügyelet, Győrújbarát (7, támogatás nélkül)</td></tr>
+      <tr><td>2026</td><td>Kölyökvár Törpike (5, <b>állami támogatás nélkül</b>)</td><td>Rábapatona, baptista családi bölcsőde (8)</td></tr>
+    </tbody></table></div>
+  <p>Győrben 2022 óta 7 új egység nyílt 64 hellyel, de az ütem gyorsan lassul: 2023-ban +32 hely, 2024-ben +11, 2025-ben 0, 2026-ban +5. Az ok a finanszírozás: 2026-ban (és már 2022–2023-ban is) nem volt befogadható állami kapacitás. Ezért indult a legutóbbi győri csoport támogatás nélkül, és ezért jegyeztette be magát a két legutóbbi térségi piaci belépő nem családi bölcsődeként, hanem napközbeni gyermekfelügyeletként.</p>
+
+  <h2>Új önkormányzati bölcsődék</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Időpont</th><th>Győri önkormányzati kapacitás</th><th class="num">Hely</th></tr></thead>
+    <tbody>
+      <tr><td>2020. augusztus</td><td>Zöld utcai felújítás után</td><td class="num">690</td></tr>
+      <tr><td>2022. december</td><td>Csoportlétszám-emelés négy helyen</td><td class="num">699</td></tr>
+      <tr><td>2024. január</td><td>Új Szalay utcai bölcsőde (+84), bezár a Kígyó utcai (−44)</td><td class="num">739</td></tr>
+      <tr><td>2025. szeptember</td><td>Csoportlétszám-emelés</td><td class="num">746</td></tr>
+      <tr><td>2026 nyara – 2028. szeptember</td><td>Az Örkény utcai (66 hely) felújítás miatt zárva</td><td class="num">kb. 680 működik</td></tr>
+    </tbody></table></div>
+  <p>Győrben 2020 óta egyetlen új önkormányzati bölcsőde épült (Szalay utca, Újváros), a nettó bővülés 40 hely; 2023-ban nyílt a 24 helyes református bölcsőde is. Újabb építésről nincs döntés. Az önkormányzati hálózat kihasználtsága szezonális: januártól júniusig 96–99%, ősszel 68–79%. 2025 decemberében 746 helyen 564 gyerek volt, a felvettek száma egy év alatt 582-ről 483-ra esett.</p>
+  <p>Az agglomerációban sokkal nagyobb volt a bővülés: 2020 óta 13 településen nyílt új önkormányzati vagy egyházi működtetésű bölcsőde, összesen 281 hellyel, főleg uniós (TOP) forrásból. 2022 óta például Mosonszentmiklós, Kisbajcs, Győrladamér, Pér, Koroncó, Pannonhalma, Töltéstava, Nagyszentjános és Ravazd. Vámosszabadiban egy második bölcsőde 2022 óta csúszik, Téten egy 14 helyes épül.</p>
+
+  <h2>Bezárások: igazolt bezárás nincs</h2>
+  <p>Sem Győrben, sem az agglomerációban nem sikerült igazolni engedélyes magánbölcsőde bezárását 2022 és 2026 között. Ez a nyilvántartás korlátja miatt nem jelenti, hogy biztosan nem is volt: a teljesen törölt bejegyzések nyilvánosan nem látszanak. A Kölyökvár 2023-ban megszüntette a fejlesztő játszóházát, de a bölcsődéje működik; Koroncón két kis családi bölcsőde beolvadt az új, 28 helyes bölcsődébe.</p>
+  <div class="callout warn"><b>Figyelendő: a Szülők Háza 24 helye</b>
+    <p>A Szülők Háza mindhárom győri egysége (Gárdonyi G. u. 3.) határozott idejű bejegyzéssel, 2026. december 31-ig szerepel. Ha nem hosszabbítják meg, 2027 elején a győri magánkapacitás kb. 13%-a esik ki a belvárosban. Érdemes januárban újra lekérdezni.</p></div>
+  <p>Országosan is fordulóponton van a piac: a családi bölcsődék száma 2019 és 2025 között 918-ról 1 235-re nőtt, de az éves gyarapodás 92-ről 17-re lassult, a kihasználtság 99%-ról 95%-ra csökkent. A vármegyében a bölcsődei férőhelyek 2019 óta 46%-kal nőttek, a születések 2021 óta 23%-kal estek.</p>
+
+  <h2>Hol van rés?</h2>
+  <p>Győrben 100 bölcsődés korú gyerekre kb. 38 hely jut, és ez 2026 végére 41–44-re nőhet. A rés nem a mennyiségben van, hanem három szegmensben:</p>
+  <ul>
+    <li><b>Év közbeni felvétel:</b> januártól júniusig az önkormányzati bölcsődék szinte tele vannak, a tavasszal visszatérő szülőknek nehéz helyet találni.</li>
+    <li><b>Két év alattiak:</b> az önkormányzati hálózat 2025-ben 483 felvett gyerekből csak 12 egy év alattit és 48 13–18 hónapost fogadott.</li>
+    <li><b>Győrbe ingázó falusi családok:</b> 2024-ben 128, 2025-ben 109 nem győri gyerek járt győri önkormányzati bölcsődébe, a legtöbben Töltéstaváról, Győrújbarátról és Győrszemeréről.</li>
+  </ul>
+  <div class="tbl"><table>
+    <thead><tr><th>Település</th><th class="num">0–2 évesek</th><th class="num">Helyi bölcsődei hely</th><th class="num">Hely 100 gyerekre</th><th>Piaci szereplő</th></tr></thead>
+    <tbody>
+      <tr><td>Töltéstava</td><td class="num">86</td><td class="num">7</td><td class="num">8</td><td>nincs</td></tr>
+      <tr><td>Bőny</td><td class="num">89</td><td class="num">8</td><td class="num">9</td><td>nincs</td></tr>
+      <tr><td>Abda, Börcs, Ikrény</td><td class="num">164</td><td class="num">26</td><td class="num">16</td><td>nincs</td></tr>
+      <tr><td>Rábapatona</td><td class="num">126</td><td class="num">23</td><td class="num">18</td><td>nincs</td></tr>
+      <tr><td>Győrszemere</td><td class="num">151</td><td class="num">28</td><td class="num">19</td><td>nincs</td></tr>
+      <tr><td>Vámosszabadi</td><td class="num">123</td><td class="num">24</td><td class="num">20</td><td>nincs</td></tr>
+      <tr><td>Győrújbarát</td><td class="num">257</td><td class="num">56</td><td class="num">22</td><td>7 fős gyermekfelügyelet</td></tr>
+      <tr><td>Nyúl</td><td class="num">131</td><td class="num">36</td><td class="num">27</td><td>nincs</td></tr>
+      <tr><td>Győrzámoly</td><td class="num">143</td><td class="num">40</td><td class="num">28</td><td>nincs</td></tr>
+      <tr><td><b>Győr</b></td><td class="num">2 482</td><td class="num">933</td><td class="num">38</td><td>23 egység, 163 hely</td></tr>
+    </tbody></table></div>
+  <p class="note">Saját számítás a KSH és a szolgáltatói nyilvántartás adataiból; a közös ellátási területek miatt csak tájékoztató jellegű.</p>
+  <div class="callout good"><b>Legígéretesebb helyszín</b>
+    <p><b>A város déli–délnyugati pereme (Ménfőcsanak, Gyirmót):</b> a legtöbb gyereket küldő községek (Töltéstava, Győrújbarát, Győrszemere) ebből az irányból jönnek, Gyirmóton nincs magánbölcsőde. <b>Győrszentiván:</b> nincs magánbölcsőde, a helyi önkormányzati bölcsőde 2025 decemberében is tele volt (47/48). Kevésbé ajánlott Szabadhegy (72 magánhely) és Marcalváros, Belváros, Újváros, ahol az önkormányzati bölcsődék alulkihasználtak. Győrön kívül Töltéstaván, Börcs–Ikrény–Abda térségében és Bőnyben a legnagyobb a lefedetlen kereslet, de kisebb a fizetőképes merítési bázis.</p></div>
+  <div class="callout"><b>Versenyhelyzet</b>
+    <p>Árban nem lehet versenyezni: az önkormányzati bölcsőde egy fizető családnak kb. 20 ezer Ft havonta (csak étkezés), a támogatott magánhálózatok díja 84–85 ezer Ft körül van, és ők gyerekenként havi kb. 150–166 ezer Ft állami támogatást is kapnak. Egy új belépő ezt 2026-ban valószínűleg nem kapja meg. Differenciálni rugalmas, év közbeni felvétellel, két év alattiak fogadásával, hosszabb nyitvatartással, kis csoporttal és pedagógiai tartalommal lehet. A kutatás javaslata: kisebb, bővíthető léptékben indulni (egy-két egység), a harmadikat csak igazolt kereslet esetén megnyitni.</p></div>
+  <p class="note">A részletes jelentés (minden adat forrásával, a teljes települési táblával és a pótlandó adatok listájával) a projekt GitHub-tárolójában van: <code>reports/Győri bölcsődepiac kutatás.md</code>.</p>
+</section>
+
+<!-- ============ ÜZLETI TERV ============ -->
+<section class="view" id="v-terv" hidden>
+  <div class="stack">
+    <h1>Üzleti terv</h1>
+    <p class="lede">Családi bölcsőde hálózat egy győri családi házban, 20–24 férőhellyel. A terv a jogszabályi kereteket, a működési modellt, a bevételeket és a kockázatokat foglalja össze.</p>
+  </div>
+
+  <h2>1. A szolgáltatás</h2>
+  <p>A családi bölcsőde 20 hetes kortól a harmadik életév betöltését követő augusztus 31-ig lát el gyerekeket, kis létszámú, otthonos környezetben. A terv négy külön bejegyzett egységet működtet egy házban, hálózatként.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Forma</th><th>Létszám</th><th>Minimális személyzet</th><th>Épület</th></tr></thead>
+    <tbody>
+      <tr><td><b>Családi bölcsőde, 4 × 5</b></td><td>20 gyerek</td><td>4 nevelő, helyettes, koordinátor (lehet közülük)</td><td>Lakóház megfelel; építésügyi feltételt a bejegyzésnél nem vizsgálnak</td></tr>
+      <tr><td><b>Családi bölcsőde, 3 × 8</b></td><td>24 gyerek</td><td>3 nevelő és 3 segítő, helyettes</td><td>Ugyanaz; három egység használhat közös konyhát és fürdőt</td></tr>
+      <tr><td>Mini bölcsőde, 3 csoport</td><td>21–24 gyerek</td><td>3 szakképzett kisgyermeknevelő és 3 bölcsődei dajka</td><td>Bölcsődei funkcióra átalakított épület, építésügyi és közegészségügyi vizsgálat</td></tr>
+      <tr><td>Bölcsőde, 2 csoport</td><td>24–28 gyerek</td><td>4 kisgyermeknevelő, 1 dajka, intézményvezető</td><td>Szabvány szerinti teljes helyiséglista; családi házban aránytalanul nehéz</td></tr>
+    </tbody>
+  </table></div>
+  <p>A családi ház és a négy nevelő adottságaihoz a családi bölcsőde hálózat illik. A 3 × 8 fős változat egy egységgel kevesebb, ezért a közös konyha és fürdő megengedett, és a tűzvédelmi ajánlásnak is megfelel.</p>
+
+  <h2>2. Személyzet</h2>
+  <ul>
+    <li><b>Szolgáltatást nyújtó személy (nevelő):</b> nagykorú, büntetlen előéletű, 100 órás tanfolyamot végzett (75 óra elmélet, 25 óra gyakorlat). Kisgyermeknevelő szakképesítéssel a tanfolyam nem kell.</li>
+    <li><b>Segítő:</b> képesítési előírás nincs, részmunkaidős is lehet. Hat vagy több gyerekhez kötelező.</li>
+    <li><b>Helyettes:</b> a fenntartónak igazolnia kell, hogy a nevelőknek van azonos képesítésű helyettese. Négy egységnél legalább egy tartalék ember szükséges.</li>
+    <li><b>Koordinátor:</b> hálózatnál kötelező; öt egység alatt az egyik nevelő is elláthatja.</li>
+    <li><b>Foglalkoztatás:</b> a nevelők a fenntartó munkavállalói. Beszámlázó egyéni vállalkozóként foglalkoztatni őket szabálytalan. Egyéni vállalkozó fenntartó maga is lehet nevelő.</li>
+  </ul>
+  <p>A pszichológiai alkalmassági vizsgálat és a kifogástalan életvitel ellenőrzése a bölcsődei ellátásra nem vonatkozik. Hatósági erkölcsi bizonyítvány és Egészségügyi Nyilatkozat mindenkitől kell.</p>
+
+  <h2>3. Ingatlan</h2>
+  <ul>
+    <li>Egységenként külön csoportszoba, gyerekenként 3 m² bútor nélkül: 5 gyerekre 15 m², 8 gyerekre 24 m².</li>
+    <li>Játszókert gyerekenként 10 m², azaz 200–240 m², vagy elfogadható közeli játszótér.</li>
+    <li>Csoportszoba lehetőleg a földszinten. Emeleten legfeljebb 5 gyerek lehet, két felnőttel.</li>
+    <li>Külön gyermekfürdő, gyermeköltöző és akadálymentes mosdó nem kötelező; felnőtt WC és gyerekenként egy fektető vagy rácsos ágy kell.</li>
+    <li>Négy egységnél nem jár az egyszerűsített közegészségügyi vizsgálat és a tűzvédelmi mentesség, teljes vizsgálatra kell készülni.</li>
+    <li>Ha a házban senki sem lakik, a hatóság nevelési rendeltetésnek tekintheti; ez településképi bejelentést, parkoló- és övezeti előírásokat hozhat. Győri gyakorlatról nincs ellenőrzött adat, ezért kell előzetes egyeztetés.</li>
+  </ul>
+
+  <h2>4. Bevételek és árazás</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Tétel</th><th class="num">Érték</th><th>Megjegyzés</th></tr></thead>
+    <tbody>
+      <tr><td>Győri családi bölcsőde díja (Szülők Háza)</td><td class="num">102 000 Ft/hó</td><td>Heti 5 nap, egész napos, áfával; étkezés külön 2 200 Ft/nap</td></tr>
+      <tr><td>Vidéki magánbölcsődék átlaga</td><td class="num">kb. 92 000 Ft/hó</td><td>Pénzcentrum-felmérés, 2026. szeptember</td></tr>
+      <tr><td>Budapesti átlag</td><td class="num">kb. 150 000 Ft/hó</td><td>105–220 ezer Ft között</td></tr>
+      <tr><td>Átlagos éves díjemelés</td><td class="num">8,4%</td><td>Ugyanaz a felmérés</td></tr>
+      <tr><td>Szülői térítésidíj-támogatás</td><td class="num">50 000 Ft/hó</td><td>Munkába visszatérő szülőnek; 65 000 Ft egyedülállónak. A szülő igényli a Kincstárnál, névre szóló számla alapján</td></tr>
+    </tbody>
+  </table></div>
+  <p>A szülői támogatás a szülő tényleges terhét kb. a felére csökkenti, ami magasabb díjat is elviselhetővé tesz. A program a keret kimerüléséig tart; a folytatását a nyitás előtt ellenőrizni kell.</p>
+
+  <h2>5. Állami támogatás</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Fenntartó</th><th class="num">Támogatás 2026</th><th>Feltétel és kötöttség</th></tr></thead>
+    <tbody>
+      <tr><td>Nonprofit kft., alapítvány, egyesület</td><td class="num">1 992 000 Ft/fő/év</td><td>Befogadás kell. Díjplafon 85 500 Ft/hó, közalkalmazotti bértábla, munkaviszony, napi jelentés</td></tr>
+      <tr><td>Forprofit kft., egyéni vállalkozó</td><td class="num">597 600 Ft/fő/év</td><td>Befogadás kell; a támogatás 30%-a jár. Díjplafon nincs</td></tr>
+      <tr><td>Bármely forma, befogadás nélkül</td><td class="num">0 Ft</td><td>Szabad árazás, nincs napi jelentési kötelezettség</td></tr>
+    </tbody>
+  </table></div>
+  <p>A támogatás a beíratott gyerekek után jár, ha a hónap nyitvatartási napjainak legalább felén jelen voltak. A következő évi támogatást november 30-ig kell igényelni, ha az egység november 15-én már véglegesen bejegyzett.</p>
+  <div class="callout warn"><b>A befogadás a terv legnagyobb bizonytalansága.</b>
+    <p>2026-ban és 2023-ban a miniszteri közlemény nulla befogadható bölcsődei kapacitást hirdetett. A 2027-es közlemény január 15-ig várható. Kapacitástól független út az ellátási szerződés Győr önkormányzatával, az uniós vagy költségvetési pályázatból létrehozott férőhely és az egyedi miniszteri döntés.</p></div>
+
+  <h2>6. Fenntartói forma és adózás</h2>
+  <ul>
+    <li><b>Áfa:</b> a bölcsődei ellátás akkor mentes, ha közszolgáltató nyújtja. A törvény felsorolásában egyesület, alapítvány és nonprofit gazdasági társaság szerepel; forprofit kft. és egyéni vállalkozó nem. Náluk az alanyi adómentesség határa (2026: 20 millió Ft, 2027: 22 millió Ft) felett a díj 27% áfát tartalmaz. 20–24 gyerekkel a bevétel ezt a határt átlépi. Ez törvényértelmezés, NAV-állásfoglalás nem áll rendelkezésre. <span class="tag est">megerősítendő</span></li>
+    <li><b>Nonprofit formában a nyereség nem vehető ki osztalékként.</b> A többlet a működésre, bérekre (a tulajdonos munkabérére is, ha ott dolgozik) és fejlesztésre fordítható.</li>
+    <li><b>A külön térített étkezés</b> minden formában adóköteles.</li>
+    <li><b>Helyi iparűzési adó Győrben:</b> 1,6%; 25 millió Ft bevételig egyszerűsített sávos adóalappal évente legfeljebb kb. 136 000 Ft.</li>
+    <li><b>Munkáltató által fizetett bölcsődei díj</b> adómentes juttatás lehet, ami céges szerződéseknél érv. <span class="tag est">2026-ra megerősítendő</span></li>
+  </ul>
+
+  <h2>7. Költségek</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Tétel</th><th class="num">Alapérték</th><th>Forrás</th></tr></thead>
+    <tbody>
+      <tr><td>Garantált bérminimum 2026 / 2027</td><td class="num">373 200 / 396 000 Ft</td><td>426/2025. Korm. r.; a 2027-es megállapodás szerint</td></tr>
+      <tr><td>Minimálbér 2026 / 2027</td><td class="num">322 800 / 347 000 Ft</td><td>Ugyanaz</td></tr>
+      <tr><td>Szociális hozzájárulási adó</td><td class="num">13%</td><td>2018. évi LII. tv.</td></tr>
+      <tr><td>Nevelő bruttó bére</td><td class="num">480 000 Ft/hó</td><td><span class="tag est">becslés</span> 431–550 ezer Ft</td></tr>
+      <tr><td>Segítő bruttó bére</td><td class="num">380 000 Ft/hó</td><td><span class="tag est">becslés</span> 373–420 ezer Ft</td></tr>
+      <tr><td>Étkezés beszállítva</td><td class="num">1 800 Ft/nap</td><td><span class="tag est">becslés</span> önkormányzati díjak 997–1 585 Ft/nap</td></tr>
+      <tr><td>Induló beruházás, 4 egység</td><td class="num">12 M Ft</td><td><span class="tag est">becslés</span> 6–25 M Ft; ajánlatkéréssel pontosítandó</td></tr>
+    </tbody>
+  </table></div>
+  <p>A felelősségbiztosítás, a játékpótlás, a tisztítószer, a könyvelés és a szoftver költségére nincs ellenőrzött forrás; a modellben becslésként szerepelnek.</p>
+
+  <h2>8. Kockázatok</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Kockázat</th><th>Hatás</th><th>Kezelés</th></tr></thead>
+    <tbody>
+      <tr><td>Nincs befogadás</td><td>A piaci díjon tartós veszteség</td><td>Ellátási szerződés az önkormányzattal; a nyitás előtt döntés, hogy támogatás nélkül is elindul-e</td></tr>
+      <tr><td>A tűzvédelmi hatóság négy egységet nem fogad el</td><td>Elakad a bejegyzés</td><td>Előzetes egyeztetés; 3 × 8 fős elrendezés tartalékként</td></tr>
+      <tr><td>Nevelő kiesése</td><td>Az egység nem működhet helyettes nélkül</td><td>Egy tartalék, tanfolyamot végzett ember</td></tr>
+      <tr><td>Áfa-kötelezettség forprofit formában</td><td>A díj 21%-a áfa</td><td>Nonprofit forma, vagy áfával kalkulált díj</td></tr>
+      <tr><td>Szomszédpanasz, övezeti korlát</td><td>Hatósági eljárás, korlátozás</td><td>Egyeztetés a főépítésszel, megfelelő parkolás</td></tr>
+      <tr><td>Lassú feltöltődés</td><td>Hosszabb veszteséges időszak</td><td>Szeptemberi nyitás, előjelentkezés, egységek fokozatos indítása</td></tr>
+      <tr><td>A szülői támogatás megszűnik</td><td>Csökken a fizetőképes kereslet</td><td>A díjat nem erre építeni</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>9. Ütemterv</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Időszak</th><th>Teendő</th></tr></thead>
+    <tbody>
+      <tr><td>1. hónap</td><td>Egyeztetések: önkormányzat, kormányhivatal, katasztrófavédelem, főépítész, adótanácsadó</td></tr>
+      <tr><td>1–2. hónap</td><td>Döntés a formáról és a létszám-változatról; fenntartó megalapítása</td></tr>
+      <tr><td>2–5. hónap</td><td>Ház kiválasztása és átalakítása; közben a nevelők 100 órás tanfolyama</td></tr>
+      <tr><td>4–5. hónap</td><td>Szakmai program, SZMSZ, házirend, megállapodás, felelősségbiztosítás</td></tr>
+      <tr><td>5–7. hónap</td><td>Bejegyzési kérelem egységenként; ügyintézés 60 nap</td></tr>
+      <tr><td>7. hónaptól</td><td>Nyitás, beszoktatás. Szeptemberi nyitáshoz a kérelmet júniusig be kell adni</td></tr>
+      <tr><td>November</td><td>Támogatás igénylése a következő évre (bejegyzés november 15-ig, igénylés november 30-ig)</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ MODELL ============ -->
+<section class="view" id="v-modell" hidden>
+  <div class="stack">
+    <h1>Pénzügyi modell</h1>
+    <p class="lede">Állítsd be a saját számaidat. Az eredmény azonnal frissül, a beállításaid ezen az eszközön megmaradnak.</p>
+  </div>
+  <div class="presets" id="presets" role="group" aria-label="Kiinduló változatok"></div>
+  <div class="kpis" id="kpis"></div>
+  <div class="warns" id="warns"></div>
+  <div class="model">
+    <form id="inputs" class="stack" onsubmit="return false"></form>
+    <div class="stack">
+      <div class="chart"><h3>Göngyölített pénzáram, 36 hónap</h3><div id="chart"></div>
+        <p class="note">A beruházással indul, a kihasználtság a felfutási idő alatt egyenletesen nő. A személyzet az első hónaptól teljes létszámú.</p></div>
+      <div class="tbl"><table id="breakdown"><thead><tr><th>Havi tétel, teljes felfutás után</th><th class="num">Ft</th></tr></thead><tbody></tbody></table></div>
+      <p class="note">Egyszerűsítések: adózás előtti eredmény; a levonható előzetes áfával, a nyári zárással és a díjemeléssel nem számol. A tartalék a költségek 5%-a.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TEENDŐK ============ -->
+<section class="view" id="v-teendok" hidden>
+  <div class="stack">
+    <h1>Engedélyezési teendőlista</h1>
+    <p class="lede">A családi bölcsőde hálózat bejegyzésének lépései, sorrendben. Amit kipipálsz, minden eszközödön megmarad.</p>
+    <div class="progress" aria-hidden="true"><i id="totalBar"></i></div>
+    <p class="sync" id="sync" role="status">Mentés ezen az eszközön.</p>
+  </div>
+  <div id="todos" class="stack" style="gap:24px"></div>
+  <div class="callout"><b>Még tisztázandó a hatóságoknál</b>
+    <ul>
+      <li>Kell-e élelmiszerlánc-hatósági regisztráció, ha több egységnek közösen főznek vagy beszállítanak.</li>
+      <li>A győri helyi építési szabályzat pontos előírásai: parkolóhelyek száma, a nem lakás célú alapterület aránya lakóövezetben.</li>
+      <li>A Győr-Moson-Sopron Vármegyei Kormányhivatal illetékes főosztálya és a 100 órás tanfolyam jelenlegi szervezői.</li>
+    </ul></div>
+</section>
+
+<!-- ============ FORRÁSOK ============ -->
+<section class="view" id="v-forrasok" hidden>
+  <div class="stack"><h1>Források</h1>
+    <p class="lede">A jogszabályok a 2026. novemberi hatályos szöveg szerint. A becslésként jelölt értékek nem forrásból származnak.</p></div>
+  <h2>Jogszabályok és hatósági anyagok</h2>
+  <ul class="src">
+    <li><a href="https://net.jogtar.hu/jogszabaly?docid=99700031.tv">1997. évi XXXI. törvény (Gyvt.)</a>: 42/A. §, 44/A. §, 145. §, 147–148. §</li>
+    <li><a href="https://net.jogtar.hu/jogszabaly?docid=99800015.nm">15/1998. (IV. 30.) NM rendelet</a>: 39. §, 51/F–51/J. §, 11. melléklet</li>
+    <li><a href="https://net.jogtar.hu/jogszabaly?docid=a1300369.kor">369/2013. (X. 24.) Korm. rendelet</a> a szolgáltatói nyilvántartásról</li>
+    <li><a href="https://net.jogtar.hu/jogszabaly?docid=a1500415.kor">415/2015. Korm. rendelet</a> a jelentési kötelezettségekről</li>
+    <li><a href="https://net.jogtar.hu/jogszabaly?docid=a1700020.emm">20/2017. EMMI rendelet</a> a 100 órás tanfolyamról</li>
+    <li><a href="https://njt.jog.gov.hu/jogszabaly/2025-69-00-00">2025. évi LXIX. törvény</a>, a 2026. évi költségvetés (támogatási összegek)</li>
+    <li><a href="https://net.jogtar.hu/jogszabaly?docid=a0700127.tv">2007. évi CXXVII. törvény (Áfa tv.)</a>: 85. §</li>
+    <li><a href="https://szocialisportal.hu/wp-content/uploads/2026/01/V_71_1_2026_GYEIF.pdf">Miniszteri közlemény a 2026. évi befogadható kapacitásról</a></li>
+    <li><a href="https://katasztrofavedelem.hu/application/uploads/documents/2026-04/87320.pdf">BM OKF tűzvédelmi tájékoztató családi bölcsődékhez</a></li>
+    <li><a href="https://csalad.hu/api/files/12591-csaladi-bolcsodeben-nyujtott-bolcsodei-ellatas-feltetelei">Módszertani útmutató: a családi bölcsődében nyújtott ellátás feltételei</a></li>
+    <li><a href="https://kormanyhivatalok.hu/sites/default/files/2024-05/tajekoztato-a-szolgaltatoi-nyilvantartasba-torteno-bejegyzesrol.pdf">Kormányhivatali tájékoztató a bejegyzésről</a></li>
+  </ul>
+  <h2>Díjak, bérek, támogatások</h2>
+  <ul class="src">
+    <li><a href="https://szulokhaza.hu/gyor/arak/">Szülők Háza Győr, árak</a></li>
+    <li><a href="https://www.penzcentrum.hu/oktatas/20260904/szivhatja-a-fogat-aki-maganbolcsodebe-iratna-gyermeket-2026-ban-evente-akar-25-milliora-is-rughat-a-teritesi-dij-1204705">Pénzcentrum: magánbölcsődei díjak 2026</a></li>
+    <li><a href="https://www.allamkincstar.gov.hu/hirek/tovabbra-is-nagyon-nepszeru-a-bolcsodei-teritesidij-tamogatas">Magyar Államkincstár: bölcsődei térítésidíj-támogatás</a></li>
+    <li><a href="https://njt.jog.gov.hu/jogszabaly/2025-426-20-22">426/2025. Korm. rendelet</a>: minimálbér és garantált bérminimum 2026</li>
+    <li><a href="https://www.csaladibolcsodek.hu/2026/11/20/tamogatas-igenyles-2027-evre/">csaladibolcsodek.hu: támogatásigénylés 2027-re</a></li>
+    <li><a href="https://gyor.hu/tajekoztatas-kisvallalkozok-szamara-a-helyi-iparuzesi-adoval-kapcsolatos-valtozasokrol/">Győr: helyi iparűzési adó</a></li>
+  </ul>
+  <h2>Piackutatás</h2>
+  <ul class="src">
+    <li><a href="https://statinfo.ksh.hu/Statinfo/QueryServlet?ha=TA2025_W">KSH Tájékoztatási adatbázis (T-STAR)</a>: születések, 0–2 évesek, vándorlás településenként</li>
+    <li><a href="https://www.ksh.hu/stadat_files/nep/hu/nep0067.html">KSH STADAT 22.2.2.1.</a>: vármegyei születések 2026</li>
+    <li><a href="https://szocialisportal.hu/szakmai-intezmenykereso/">Szociális Ágazati Portál, szakmai intézménykereső</a>: bölcsődék, férőhelyek, bejegyzési dátumok</li>
+    <li><a href="https://gyor.hu/easy-docs/6a0f27bb5f6b5">Győr MJV: a bölcsődei intézményhálózat 2025. évi beszámolója</a></li>
+    <li><a href="https://gyor.hu/easy-docs/685d31ce59bf0">Győr MJV: a 2024. évi beszámoló</a> (bejáró gyerekek)</li>
+    <li><a href="https://gyoribolcsodek.hu/aktualis">Egyesített Bölcsődei Intézményhálózat Győr</a></li>
+    <li><a href="https://gyor.hu/szalay-utcai-bolcsode-infrastrukturalis-fejlesztese/">Szalay utcai bölcsőde</a> és <a href="https://gyor.hu/ebi-orkeny-istvan-utcai-bolcsode-infrastrukturalis-felujitasa-top_plusz-3-4-1-23-gy1-2025-00003/">Örkény utcai felújítás</a></li>
+    <li><a href="https://szocialisportal.hu/kozlemeny-a-bolcsodei-ellatas-bolcsode-mini-bolcsode-csaladi-bolcsode-munkahelyi-bolcsode-2026-evi-befogadhato-kapacitasairol/">Kapacitásközlemény 2026</a></li>
+    <li><a href="https://www.ksh.hu/stadat_files/szo/hu/szo0009.html">KSH STADAT 25.1.1.9.</a>: családi bölcsődék országosan</li>
+    <li><a href="https://kolyokvar.eu/">Kölyökvár</a>, <a href="https://www.kiscsillagreformatusbolcsode.hu/beiratkozas/">Kiscsillag Református Bölcsőde</a>: díjak</li>
+  </ul>
+</section>
+
+</main>
+
+<script>
+(function(){
+"use strict";
+var $=function(s,r){return (r||document).querySelector(s)};
+var nf=new Intl.NumberFormat("hu-HU",{maximumFractionDigits:0});
+function ft(n){return nf.format(Math.round(n))+" Ft"}
+function mft(n){var v=n/1e6;return (Math.abs(v)>=10?v.toFixed(0):v.toFixed(1)).replace(".",",")+" M Ft"}
+function el(tag,attrs,text){var e=document.createElement(tag);if(attrs)for(var k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;return e}
+
+/* ---------- Fülek ---------- */
+var VIEWS=["attekintes","piac","terv","modell","teendok","forrasok"];
+function show(){
+  var h=(location.hash||"").replace("#","");if(VIEWS.indexOf(h)<0)h="attekintes";
+  VIEWS.forEach(function(v){$("#v-"+v).hidden=v!==h});
+  document.querySelectorAll(".tabs a").forEach(function(a){
+    if(a.getAttribute("href")==="#"+h){a.setAttribute("aria-current","page");a.scrollIntoView({block:"nearest",inline:"center"})}
+    else a.removeAttribute("aria-current")});
+  window.scrollTo(0,0);
+}
+window.addEventListener("hashchange",show);
+
+/* ---------- Modell ---------- */
+var SUPPORT={nonprofit:1992000,forprofit:597600};
+var FEE_CAP=85500, KJT_MIN=431020, SZOCHO=0.13, TOYS=20000, RESERVE=0.05;
+var BASE={form:"nonprofit",funded:0,vat:0,units:4,kids:5,occ:85,fee:100000,mealPrice:2200,mealCost:1800,mealDays:18,
+  wageCarer:480000,helpers:0,wageHelper:380000,subFte:0.5,coord:50000,rent:500000,util:130000,fixed:160000,startup:12000000,ramp:9};
+function mk(o){var p={};for(var k in BASE)p[k]=BASE[k];for(var j in o)p[j]=o[j];return p}
+var PRESETS=[
+  {id:"a",name:"4 × 5 gyerek, támogatás nélkül",p:mk({})},
+  {id:"b",name:"3 × 8 gyerek segítővel, támogatás nélkül",p:mk({units:3,kids:8,helpers:3})},
+  {id:"c",name:"Forprofit, 127 000 Ft-os áfás díjjal",p:mk({form:"forprofit",vat:1,fee:127000})},
+  {id:"d",name:"Nonprofit, befogadva",p:mk({funded:1,fee:FEE_CAP,wageCarer:KJT_MIN})}
+];
+function calc(p,occOverride){
+  var cap=p.units*p.kids, occ=(occOverride==null?p.occ:occOverride)/100, n=cap*occ;
+  var div=p.vat?1.27:1, sup=p.funded?SUPPORT[p.form]:0;
+  var revFee=n*p.fee/div, revMeal=n*p.mealDays*p.mealPrice/div, revSup=n*sup/12;
+  var staff=(p.units*p.wageCarer+p.helpers*p.wageHelper+p.subFte*p.wageCarer+p.coord)*(1+SZOCHO);
+  var meal=n*p.mealDays*p.mealCost, toys=cap*TOYS/12;
+  var sub=staff+p.rent+p.util+p.fixed+meal+toys, reserve=sub*RESERVE, cost=sub+reserve;
+  var rev=revFee+revMeal+revSup;
+  var fixedPart=(staff+p.rent+p.util+p.fixed+toys)*(1+RESERVE);
+  var perKid=p.fee/div+p.mealDays*p.mealPrice/div+sup/12-p.mealDays*p.mealCost*(1+RESERVE);
+  var nBE=perKid>0?fixedPart/perKid:Infinity;
+  var feeBE=n>0?(cost/n-p.mealDays*p.mealPrice/div-sup/12)*div:Infinity;
+  return {cap:cap,n:n,sup:sup,revFee:revFee,revMeal:revMeal,revSup:revSup,rev:rev,staff:staff,meal:meal,toys:toys,reserve:reserve,cost:cost,profit:rev-cost,occBE:nBE/cap*100,feeBE:feeBE};
+}
+function flow(p){
+  var cum=-p.startup, pts=[cum], pay=null;
+  for(var m=1;m<=36;m++){var o=p.occ*Math.min(1,m/Math.max(1,p.ramp));cum+=calc(p,o).profit;pts.push(cum);if(pay===null&&cum>=0)pay=m}
+  return {pts:pts,pay:pay};
+}
+
+var FIELDS=[
+  {g:"Szerkezet",items:[
+    {id:"form",label:"Fenntartó formája",type:"select",opts:[["nonprofit","Nonprofit kft., alapítvány, egyesület"],["forprofit","Forprofit kft., egyéni vállalkozó"]]},
+    {id:"funded",label:"Állami támogatás (befogadott férőhelyek)",type:"check"},
+    {id:"vat",label:"A díj 27% áfát tartalmaz",type:"check"},
+    {id:"units",label:"Egységek (nevelők) száma",min:1,max:6,step:1},
+    {id:"kids",label:"Gyerek egységenként",min:1,max:8,step:1,hint:"Segítő nélkül legfeljebb 5, segítővel legfeljebb 8."},
+    {id:"helpers",label:"Segítők száma",min:0,max:6,step:1},
+    {id:"subFte",label:"Helyettes (tartalék nevelő), állás",min:0,max:2,step:0.25}]},
+  {g:"Bevétel",items:[
+    {id:"occ",label:"Kihasználtság, %",min:30,max:100,step:1,range:1},
+    {id:"fee",label:"Havi díj gyerekenként, Ft",min:40000,max:260000,step:1000,range:1,hint:"Győri magándíjak: 84 000–102 000 Ft. Az önkormányzati bölcsődében a gondozás ingyenes."},
+    {id:"mealPrice",label:"Étkezés díja a szülőnek, Ft/nap",min:0,max:5000,step:50},
+    {id:"mealDays",label:"Étkezési nap havonta, gyerekenként",min:0,max:22,step:1}]},
+  {g:"Költség",items:[
+    {id:"wageCarer",label:"Nevelő bruttó bére, Ft/hó",min:373200,max:900000,step:1000,range:1,hint:"Garantált bérminimum 2026: 373 200 Ft. Ha a tulajdonos is nevelő, az ő bérét is ide kell érteni."},
+    {id:"wageHelper",label:"Segítő bruttó bére, Ft/hó",min:322800,max:700000,step:1000},
+    {id:"coord",label:"Koordinátori pótlék, Ft/hó",min:0,max:300000,step:5000},
+    {id:"rent",label:"Ház bérleti díja vagy törlesztő, Ft/hó",min:0,max:2000000,step:10000,range:1,hint:"Győri kiadó házak (150–170 m²): 410–760 ezer Ft/hó, szűk kínálat."},
+    {id:"util",label:"Rezsi, Ft/hó",min:0,max:600000,step:5000},
+    {id:"fixed",label:"Egyéb fix költség, Ft/hó",min:0,max:1000000,step:5000,hint:"Biztosítás, könyvelés, tisztítószer, szoftver, hirdetés."},
+    {id:"mealCost",label:"Étkezés költsége, Ft/nap",min:0,max:5000,step:50}]},
+  {g:"Indulás",items:[
+    {id:"startup",label:"Induló beruházás, Ft",min:0,max:60000000,step:500000},
+    {id:"ramp",label:"Felfutás a teljes kihasználtságig, hónap",min:1,max:24,step:1}]}
+];
+var P=mk({}), active="a";
+try{var saved=JSON.parse(localStorage.getItem("bolcsode-model-v1")||"null");if(saved&&saved.p){for(var k in BASE)if(k in saved.p)P[k]=saved.p[k];active=saved.active||""}}catch(e){}
+function persist(){try{localStorage.setItem("bolcsode-model-v1",JSON.stringify({p:P,active:active}))}catch(e){}}
+
+function buildInputs(){
+  var form=$("#inputs");
+  FIELDS.forEach(function(grp){
+    var fs=el("fieldset");fs.appendChild(el("legend",null,grp.g));
+    grp.items.forEach(function(f){
+      var row=el("div",{"class":"f"+(f.type==="check"?" check":"")}), inp;
+      if(f.type==="select"){
+        row.appendChild(el("label",{"for":"m-"+f.id},f.label));
+        inp=el("select",{id:"m-"+f.id});f.opts.forEach(function(o){inp.appendChild(el("option",{value:o[0]},o[1]))});
+        row.style.gridTemplateColumns="minmax(0,1fr)";row.appendChild(inp);
+      }else if(f.type==="check"){
+        inp=el("input",{type:"checkbox",id:"m-"+f.id});row.appendChild(inp);row.appendChild(el("label",{"for":"m-"+f.id},f.label));
+      }else{
+        row.appendChild(el("label",{"for":"m-"+f.id},f.label));
+        inp=el("input",{type:"number",id:"m-"+f.id,min:f.min,max:f.max,step:f.step,inputmode:"decimal"});row.appendChild(inp);
+        if(f.range){var r=el("input",{type:"range",id:"r-"+f.id,min:f.min,max:f.max,step:f.step,"aria-label":f.label});row.appendChild(r);
+          r.addEventListener("input",function(){P[f.id]=+r.value;active="";sync(f.id)})}
+      }
+      if(f.hint)row.appendChild(el("div",{"class":"hint"},f.hint));
+      inp.addEventListener(f.type?"change":"input",function(){
+        if(f.type==="check")P[f.id]=inp.checked?1:0;
+        else if(f.type==="select"){P[f.id]=inp.value;P.vat=inp.value==="forprofit"?1:0}
+        else{var v=parseFloat(inp.value);if(isNaN(v))return;P[f.id]=Math.min(f.max,Math.max(f.min,v))}
+        if(f.id==="kids"||f.id==="units"){if(P.kids>5&&P.helpers<P.units)P.helpers=P.units;if(P.kids<=5&&f.id==="kids")P.helpers=0}
+        active="";sync(f.id);
+      });
+      fs.appendChild(row);
+    });
+    form.appendChild(fs);
+  });
+}
+function sync(skip){
+  FIELDS.forEach(function(g){g.items.forEach(function(f){
+    var inp=$("#m-"+f.id);
+    if(f.type==="check")inp.checked=!!P[f.id];
+    else if(f.id!==skip||f.type==="select")inp.value=P[f.id];
+    if(f.range)$("#r-"+f.id).value=P[f.id];
+  })});
+  persist();render();
+}
+function kpi(label,value,sub,cls){var d=el("div",{"class":"kpi"});d.appendChild(el("small",null,label));var b=el("b",cls?{"class":cls}:null,value);d.appendChild(b);if(sub)d.appendChild(el("span",null,sub));return d}
+function render(){
+  var r=calc(P), fl=flow(P);
+  document.querySelectorAll("#presets .chip").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.id===active?"true":"false")});
+  var k=$("#kpis");k.textContent="";
+  k.appendChild(kpi("Havi eredmény",(r.profit>=0?"+":"−")+mft(Math.abs(r.profit)),"adózás előtt, teljes felfutás után",r.profit>=0?"pos":"neg"));
+  k.appendChild(kpi("Fedezeti díj",isFinite(r.feeBE)?ft(Math.max(0,r.feeBE)):"n. a.","gyerekenként havonta, ezen a kihasználtságon"));
+  k.appendChild(kpi("Fedezeti kihasználtság",r.occBE>0&&r.occBE<=100?Math.ceil(r.occBE)+"%":"nem érhető el",r.occBE>0&&r.occBE<=100?"kb. "+Math.ceil(r.occBE*r.cap/100)+" gyerek a "+r.cap+" helyből":"ezen a díjon teli házzal sem"));
+  k.appendChild(kpi("Megtérülés",fl.pay?fl.pay+". hónap":"3 éven túl",fl.pay?"a beruházás visszatérül":"vagy egyáltalán nem"));
+  var w=$("#warns");w.textContent="";
+  function warn(t,bad){w.appendChild(el("div",bad?{"class":"bad"}:null,t))}
+  if(P.kids>5&&P.helpers<P.units)warn("Egységenként 5 főnél több gyerekhez minden egységbe segítő kell: legalább "+P.units+" segítő.",1);
+  if(P.units>=3)warn("Három vagy több egység kötelezően hálózat: koordinátor, SZMSZ és igazolt helyettes kell.");
+  if(P.units>=4)warn("Négy egységnél a negyediknek saját konyha és fürdőszoba kell; a katasztrófavédelem legfeljebb három egységet ajánl egy rendeltetési egységben.");
+  if(P.funded&&P.form==="nonprofit"&&P.fee>FEE_CAP)warn("Támogatott nonprofit fenntartónál a díj legfeljebb "+ft(FEE_CAP)+" lehet havonta.",1);
+  if(P.funded&&P.wageCarer<KJT_MIN)warn("Támogatott fenntartónál a nevelő bére legalább a közalkalmazotti bértábla szerinti, kb. "+ft(KJT_MIN)+".",1);
+  if(P.funded)warn("Támogatás csak befogadott férőhelyre jár; 2026-ban nem volt befogadható kapacitás.");
+  if(P.form==="forprofit"&&!P.vat&&r.rev*12>20000000)warn("Forprofit fenntartónál 20 millió Ft éves bevétel felett a díj a törvény szövege szerint áfás. Adótanácsadóval ellenőrizendő.");
+  var rows=[["Gondozási díj",r.revFee],["Étkezési díj",r.revMeal],["Állami támogatás",r.revSup],["Bevétel összesen",r.rev,1],
+    ["Bérek járulékkal",-r.staff],["Ház",-P.rent],["Rezsi",-P.util],["Egyéb fix költség",-P.fixed],["Étkezés",-r.meal],["Játék- és eszközpótlás",-r.toys],["Tartalék (5%)",-r.reserve],["Költség összesen",-r.cost,1],["Eredmény",r.profit,2]];
+  var tb=$("#breakdown tbody");tb.textContent="";
+  rows.forEach(function(x){var tr=el("tr");var a=el("td",null,x[0]);var b=el("td",{"class":"num"+(x[2]===2?(x[1]>=0?" pos":" neg"):"")},(x[1]<0?"−":"")+nf.format(Math.round(Math.abs(x[1]))));if(x[2]){a.style.fontWeight=600;b.style.fontWeight=600}tr.appendChild(a);tr.appendChild(b);tb.appendChild(tr)});
+  drawChart(fl);
+}
+function drawChart(fl){
+  var W=640,H=250,L=58,R=12,T=12,B=28,pts=fl.pts;
+  var lo=Math.min.apply(null,pts.concat([0])),hi=Math.max.apply(null,pts.concat([0]));if(hi-lo<1e6)hi=lo+1e6;
+  var pad=(hi-lo)*0.08;lo-=pad;hi+=pad;
+  function x(i){return L+(W-L-R)*i/36}function y(v){return T+(H-T-B)*(1-(v-lo)/(hi-lo))}
+  var step=Math.pow(10,Math.floor(Math.log10((hi-lo)/4)));var raw=(hi-lo)/4/step;step*=raw>=5?5:raw>=2?2:1;
+  var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Göngyölített pénzáram 36 hónapra">';
+  for(var v=Math.ceil(lo/step)*step;v<=hi;v+=step){s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(v)+'" y2="'+y(v)+'" stroke="var(--line)" stroke-width="'+(Math.abs(v)<1?1.5:1)+'"'+(Math.abs(v)<1?' stroke="var(--muted)"':'')+'/><text x="'+(L-6)+'" y="'+(y(v)+4)+'" text-anchor="end">'+(v/1e6).toFixed(Math.abs(step)<1e6?1:0).replace(".",",")+' M</text>'}
+  for(var m=0;m<=36;m+=6)s+='<text x="'+x(m)+'" y="'+(H-8)+'" text-anchor="middle">'+m+'. hó</text>';
+  var d="",last=pts[36];pts.forEach(function(p,i){d+=(i?"L":"M")+x(i).toFixed(1)+" "+y(p).toFixed(1)});
+  var col=last>=0?"var(--good)":"var(--bad)";
+  s+='<path d="'+d+'L'+x(36)+' '+y(0)+'L'+x(0)+' '+y(0)+'Z" fill="'+col+'" fill-opacity=".12"/><path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="2.5" stroke-linejoin="round"/>';
+  s+='<circle cx="'+x(36)+'" cy="'+y(last)+'" r="4" fill="'+col+'"/>';
+  if(fl.pay)s+='<line x1="'+x(fl.pay)+'" x2="'+x(fl.pay)+'" y1="'+T+'" y2="'+(H-B)+'" stroke="var(--accent)" stroke-dasharray="4 4"/><text x="'+(x(fl.pay)+(fl.pay>28?-6:6))+'" y="'+(T+12)+'" text-anchor="'+(fl.pay>28?"end":"start")+'" style="fill:var(--accent)">megtérül</text>';
+  s+='</svg>';$("#chart").innerHTML=s;
+}
+function buildPresets(){
+  var box=$("#presets");
+  PRESETS.forEach(function(ps){var b=el("button",{type:"button","class":"chip","data-id":ps.id,"aria-pressed":"false"},ps.name);
+    b.addEventListener("click",function(){P=mk(ps.p);active=ps.id;sync()});box.appendChild(b)});
+  var tb=$("#presetTable tbody");
+  PRESETS.forEach(function(ps){var r=calc(ps.p),tr=el("tr");
+    tr.appendChild(el("td",null,ps.name));tr.appendChild(el("td",{"class":"num"},nf.format(r.cap)));
+    tr.appendChild(el("td",{"class":"num"},mft(r.rev)));tr.appendChild(el("td",{"class":"num"},mft(r.cost)));
+    tr.appendChild(el("td",{"class":"num "+(r.profit>=0?"pos":"neg")},(r.profit>=0?"+":"−")+mft(Math.abs(r.profit))));
+    tr.appendChild(el("td",{"class":"num"},ft(r.feeBE)));tb.appendChild(tr)});
+}
+
+/* ---------- Teendőlista ---------- */
+var TODO=[
+ {h:"Döntések és előzetes egyeztetések",items:[
+  ["a1","Létszám-változat kiválasztása","4 × 5 gyerek négy nevelővel, vagy 3 × 8 gyerek három nevelővel és három segítővel. NM r. 51/F. §"],
+  ["a2","Fenntartói forma eldöntése adótanácsadóval","Áfa, a támogatás mértéke (100% vagy 30%), díjplafon."],
+  ["a3","Megkeresés Győr önkormányzatánál ellátási szerződésről","A befogadás kapacitástól független útja. Gyvt. 145. § (2c) a)"],
+  ["a4","Előzetes állásfoglalás kérése a kormányhivataltól","A tárgyi feltételekről, még a ház kiválasztása előtt. 369/2013. Korm. r. 19. § (2)"],
+  ["a5","Egyeztetés a győri katasztrófavédelmi kirendeltséggel","Négy egység egy házban, emeleti csoportszoba, tűzjelző, villámvédelem."],
+  ["a6","Egyeztetés a főépítésszel és az építésügyi osztállyal","Rendeltetés, településképi bejelentés, parkoló, övezeti arány."],
+  ["a7","Élelmiszerlánc-hatóság megkérdezése","Kell-e regisztráció közös főzéshez vagy beszállításhoz."]]},
+ {h:"Fenntartó és pénzügyek",items:[
+  ["b1","Fenntartó megalapítása vagy a tevékenység felvétele",""],
+  ["b2","Köztartozásmentesség igazolása","NM r. 3/B. § (2)"],
+  ["b3","Könyvelő és bérszámfejtés megszervezése",""],
+  ["b4","Induló forrás biztosítása","A beruházás és a felfutás 6–9 hónapjának vesztesége."],
+  ["b5","Felelősségbiztosítás megkötése","Az igazolás a kérelem melléklete."]]},
+ {h:"Ingatlan",items:[
+  ["c1","Ház kiválasztása egységenként külön csoportszobával","Gyerekenként 3 m² bútor nélkül: 5 gyerekre 15 m², 8 gyerekre 24 m². NM r. 39. §"],
+  ["c2","Csoportszobák a földszinten","Emeleten legfeljebb 5 gyerek lehet, két felnőttel."],
+  ["c3","Konyha és fürdőszoba elrendezése","Legfeljebb három egység használhat közöset; a negyediknek saját kell. NM r. 51/J. § (2)"],
+  ["c4","Játszókert kialakítása","Gyerekenként 10 m² (200–240 m²), vagy közeli játszótér."],
+  ["c5","Használati jogcím igazolása","Tulajdoni lap vagy erre a célra szóló bérleti szerződés."],
+  ["c6","Berendezés","Gyerekenként fektető vagy rácsos ágy, mobil pelenkázó, felnőtt WC."],
+  ["c7","Ablakok ellenőrzése","Forgó- és billenőablak családi bölcsődében nem megengedett; a pontos előírást a hatóságnál ellenőrizd."],
+  ["c8","Tűzvédelem","Tűzoltó készülék, tűzjelző, 12 gyerektől villámvédelmi kockázatelemzés (hatósági ajánlás)."],
+  ["c9","Parkolás és reggeli megállás megoldása",""]]},
+ {h:"Személyzet",items:[
+  ["d1","Nevelők képesítése","100 órás tanfolyam vagy kisgyermeknevelő végzettség. Gyvt. 44/A. § (2)"],
+  ["d2","Helyettes biztosítása","Azonos képesítéssel; a fenntartó igazolja. NM r. 51/G. § (4)"],
+  ["d3","Koordinátor kijelölése","Öt egység alatt az egyik nevelő is lehet."],
+  ["d4","Segítők felvétele","Csak ha egységenként 5 főnél több gyerek lesz."],
+  ["d5","Hatósági erkölcsi bizonyítvány mindenkitől","Gyvt. 10/A. §"],
+  ["d6","Egészségügyi Nyilatkozat mindenkitől","33/1998. NM r."],
+  ["d7","Munkaszerződések megkötése","Munkaviszony; számlázó egyéni vállalkozó nevelő szabálytalan."]]},
+ {h:"Dokumentumok",items:[
+  ["e1","Szakmai program a megállapodás tervezetével",""],
+  ["e2","Szervezeti és működési szabályzat","Hálózat esetén kötelező."],
+  ["e3","Házirend",""],
+  ["e4","Fenntartói nyilatkozat a személyi feltételekről",""],
+  ["e5","Díjszabás","Havi díj, étkezés, hiányzás, beiratkozási díj, kaució."],
+  ["e6","Adatkezelési tájékoztató és nyilvántartások",""]]},
+ {h:"Bejegyzés",items:[
+  ["f1","Kérelem benyújtása elektronikusan, egységenként","Győr-Moson-Sopron Vármegyei Kormányhivatal; illetékmentes."],
+  ["f2","Helyszíni szemlék","Népegészségügy és katasztrófavédelem."],
+  ["f3","Bejegyzés és tanúsítvány","Ügyintézés 60 nap; a tanúsítványt ki kell függeszteni."]]},
+ {h:"Támogatás",items:[
+  ["g1","A januári kapacitásközlemény figyelése","Január 15-ig jelenik meg."],
+  ["g2","Befogadási kérelem vagy egyedi miniszteri döntés kérése","Ha van rá út."],
+  ["g3","Következő évi támogatás igénylése november 30-ig","Feltétel: végleges bejegyzés november 15-ig."],
+  ["g4","Számlázás rendje a szülői támogatáshoz","A szülő nevére szóló, kifizetett számla kell."]]},
+ {h:"Nyitás és működés",items:[
+  ["h1","Megállapodás minden szülővel az ellátás megkezdése előtt","Hálózatnál az egység megjelölésével. Gyvt. 32. §"],
+  ["h2","Étkeztetés megszervezése","Étlap a 37/2014. EMMI rendelet szerint."],
+  ["h3","Országos jelentési rendszer","A díj bejelentése 8 napon belül; adatszolgáltatás április 30-ig és szeptember 30-ig."],
+  ["h4","Nyári zárás","Szülők tájékoztatása február 15-ig, bejelentés március 15-ig; legfeljebb 5 hét."],
+  ["h5","Továbbképzés háromévente",""],
+  ["h6","Napi jelentés a KENYSZI rendszerben","Csak állami támogatás mellett."]]}
+];
+var done={}, dbDoc=null, writing=false, dirty=false, total=0;
+try{done=JSON.parse(localStorage.getItem("bolcsode-todo-v1")||"{}")||{}}catch(e){done={}}
+function buildTodos(){
+  var root=$("#todos");
+  TODO.forEach(function(ph,pi){
+    var sec=el("div",{"class":"phase"});var head=el("div",{"class":"phase-h"});
+    head.appendChild(el("h2",null,(pi+1)+". "+ph.h));head.appendChild(el("span",{id:"ph-"+pi},""));sec.appendChild(head);
+    var ul=el("ul",{"class":"todo"});
+    ph.items.forEach(function(it){total++;
+      var li=el("li"),lab=el("label",{"for":"t-"+it[0]}),cb=el("input",{type:"checkbox",id:"t-"+it[0]});
+      cb.addEventListener("change",function(){if(cb.checked)done[it[0]]=true;else delete done[it[0]];saveTodos();paintTodos()});
+      lab.appendChild(cb);lab.appendChild(el("span",{"class":"t"},it[1]));if(it[2])lab.appendChild(el("span",{"class":"d"},it[2]));
+      li.appendChild(lab);ul.appendChild(li)});
+    sec.appendChild(ul);root.appendChild(sec)});
+}
+function paintTodos(){
+  var all=0;
+  TODO.forEach(function(ph,pi){var c=0;ph.items.forEach(function(it){var on=!!done[it[0]];$("#t-"+it[0]).checked=on;if(on)c++});all+=c;$("#ph-"+pi).textContent=c+" / "+ph.items.length});
+  $("#totalBar").style.width=(total?all/total*100:0)+"%";
+}
+function saveTodos(){
+  try{localStorage.setItem("bolcsode-todo-v1",JSON.stringify(done))}catch(e){}
+  if(!dbDoc)return;dirty=true;if(writing)return;
+  writing=true;(function loop(){dirty=false;var body={done:JSON.parse(JSON.stringify(done))};
+    dbDoc.set(body).then(function(){if(dirty)loop();else{writing=false;$("#sync").textContent="Mentve, minden eszközödön látszik."}})
+    .catch(function(){writing=false;dbDoc=null;$("#sync").textContent="A közös mentés most nem érhető el; a pipák ezen az eszközön maradnak meg."})})();
+}
+function connect(){
+  if(!window.claude||!window.claude.use)return;
+  window.claude.use("db").then(function(db){
+    if(!db)return;dbDoc=db.doc("state/checklist");
+    $("#sync").textContent="Kapcsolódás a közös mentéshez…";
+    var timer=setTimeout(function(){$("#sync").textContent="A közös mentés még nem érhető el; a pipák ezen az eszközön megmaradnak."},10000);
+    var first=true;
+    dbDoc.onSnapshot(function(snap){
+      if(snap.metadata&&snap.metadata.hasPendingWrites)return;
+      if(!snap.metadata||!snap.metadata.fromCache){clearTimeout(timer);$("#sync").textContent="Mentve, minden eszközödön látszik."}
+      if(snap.exists){var d=snap.data();done={};var src=(d&&d.done)||{};for(var k in src)if(src[k]===true)done[k]=true;
+        try{localStorage.setItem("bolcsode-todo-v1",JSON.stringify(done))}catch(e){}paintTodos()}
+      else if(first&&Object.keys(done).length&&(!snap.metadata||!snap.metadata.fromCache)){saveTodos()}
+      if(!snap.metadata||!snap.metadata.fromCache)first=false;
+    },function(){clearTimeout(timer);dbDoc=null;$("#sync").textContent="A közös mentés nem érhető el; a pipák ezen az eszközön maradnak meg."});
+  });
+}
+
+/* ---------- Születési grafikon ---------- */
+function birthChart(){
+  var yrs=[2019,2020,2021,2022,2023,2024,2025], gy=[1182,1255,1365,1257,1151,1078,903], kz=[659,809,811,833,824,731,715];
+  var W=640,H=240,L=46,R=112,T=14,B=26,max=1500;
+  function x(i){return L+(W-L-R)*i/(yrs.length-1)}function y(v){return T+(H-T-B)*(1-v/max)}
+  var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Élveszületések Győrben és a járás községeiben 2019 és 2025 között">';
+  for(var v=0;v<=max;v+=500)s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(v)+'" y2="'+y(v)+'" stroke="var(--line)"/><text x="'+(L-6)+'" y="'+(y(v)+4)+'" text-anchor="end">'+nf.format(v)+'</text>';
+  yrs.forEach(function(yr,i){s+='<text x="'+x(i)+'" y="'+(H-8)+'" text-anchor="middle">'+yr+'</text>'});
+  [[gy,"var(--accent)","Győr"],[kz,"var(--warn)","községek"]].forEach(function(sr){
+    var d="";sr[0].forEach(function(v,i){d+=(i?"L":"M")+x(i)+" "+y(v)});
+    s+='<path d="'+d+'" fill="none" stroke="'+sr[1]+'" stroke-width="2.5" stroke-linejoin="round"/>';
+    sr[0].forEach(function(v,i){s+='<circle cx="'+x(i)+'" cy="'+y(v)+'" r="'+(i===6?4.5:3)+'" fill="'+sr[1]+'"/>'});
+    var last=sr[0][6];s+='<text x="'+(x(6)+8)+'" y="'+(y(last)+4)+'" style="fill:'+sr[1]+';font-weight:600">'+sr[2]+' '+nf.format(last)+'</text>';
+  });
+  s+='<text x="'+x(2)+'" y="'+(y(1365)-8)+'" text-anchor="middle">csúcs: 1 365</text></svg>';
+  $("#birthChart").innerHTML=s;
+}
+
+buildPresets();buildInputs();sync();buildTodos();paintTodos();birthChart();show();connect();
+})();
+</script>
